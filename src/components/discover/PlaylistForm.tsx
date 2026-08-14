@@ -1,0 +1,122 @@
+"use client";
+
+import { useActionState, useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Button } from "@heroui/react";
+import { createPlaylist, updatePlaylist } from "@/lib/actions/playlists";
+import type { ActionState } from "@/lib/actions/profile";
+import { useActionToast } from "@/hooks/useActionToast";
+import { mapUploadError } from "@/lib/errors";
+import { toastError } from "@/lib/toast";
+import { uploadViaApi } from "@/lib/upload-client";
+import { FALLBACK_COVER } from "@/lib/types/music";
+
+const initial: ActionState = {};
+
+export function PlaylistForm({
+  mode = "create",
+  playlistId,
+  initialTitle = "",
+  initialDescription = "",
+  initialCover = "",
+}: {
+  mode?: "create" | "edit";
+  playlistId?: string;
+  initialTitle?: string;
+  initialDescription?: string;
+  initialCover?: string;
+}) {
+  const router = useRouter();
+  const action = mode === "edit" ? updatePlaylist : createPlaylist;
+  const [state, formAction, pending] = useActionState(action, initial);
+  useActionToast(state);
+
+  const [coverUrl, setCoverUrl] = useState(initialCover);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (mode === "create" && state?.actionHref) {
+      router.replace(state.actionHref);
+    }
+  }, [mode, router, state?.actionHref]);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-5">
+      {mode === "edit" && playlistId ? (
+        <input type="hidden" name="playlist_id" value={playlistId} />
+      ) : null}
+      <input type="hidden" name="cover_url" value={coverUrl} />
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <label className="relative mx-auto aspect-square w-full max-w-[180px] shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-white/15 bg-zinc-900 sm:mx-0">
+          <Image
+            src={coverUrl || FALLBACK_COVER}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="180px"
+          />
+          <span className="absolute inset-x-0 bottom-0 bg-black/55 py-2 text-center text-xs text-white">
+            {uploading ? "Envoi…" : coverUrl ? "Changer" : "Cover"}
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            disabled={uploading || pending}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploading(true);
+              try {
+                const url = await uploadViaApi(file, "cover");
+                setCoverUrl(url);
+              } catch (err) {
+                toastError(mapUploadError(err));
+              } finally {
+                setUploading(false);
+                e.target.value = "";
+              }
+            }}
+          />
+        </label>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div>
+            <label className="mb-1.5 block text-xs text-white/45">Titre</label>
+            <input
+              name="title"
+              required
+              maxLength={80}
+              defaultValue={initialTitle}
+              placeholder="Ma playlist"
+              className="h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white outline-none focus:border-white/25"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs text-white/45">
+              Description
+            </label>
+            <textarea
+              name="description"
+              maxLength={400}
+              rows={3}
+              defaultValue={initialDescription}
+              placeholder="Ambiance, moment, mood…"
+              className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-white/25"
+            />
+          </div>
+        </div>
+      </div>
+
+      <Button
+        type="submit"
+        isPending={pending || uploading}
+        className="rounded-full bg-white font-semibold text-black"
+      >
+        {mode === "edit" ? "Enregistrer" : "Créer la playlist"}
+      </Button>
+    </form>
+  );
+}

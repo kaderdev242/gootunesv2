@@ -1,0 +1,9 @@
+name = "gootunes-audio-stream"
+main = "index.ts"
+compatibility_date = "2024-04-01"
+
+r2_buckets = [
+  { binding = "AUDIO_BUCKET", bucket_name = "gootunes-media" }
+]
+
+# Les secrets comme STREAM_SECRET sont configurés via `npx wrangler secret put STREAM_SECRET`
