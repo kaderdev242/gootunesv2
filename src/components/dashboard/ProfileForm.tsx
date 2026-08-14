@@ -24,7 +24,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadViaApi(file, "avatar");
+      const url = (await uploadViaApi(file, "avatar")).fileUrl;
       setAvatarUrl(url);
     } catch {
       toastError("Upload impossible", "Réessaie avec une autre image.");

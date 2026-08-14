@@ -16,6 +16,7 @@ import {
 import { CoverAtmosphere } from "@/components/discover/CoverAtmosphere";
 import { IconButton } from "@/components/ui/IconButton";
 import { FALLBACK_COVER } from "@/lib/types/music";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 import { usePlayer } from "./PlayerProvider";
 
 function formatTime(seconds: number) {
@@ -86,7 +87,13 @@ export function FullscreenPlayer() {
           <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
             {current.title}
           </h2>
-          <p className="mt-1 text-sm text-white/55">{current.artist}</p>
+          <div className="mt-1 flex justify-center">
+            <TrackArtistLine
+              artist={current.artist}
+              explicit={current.explicit}
+              className="text-sm text-white/55"
+            />
+          </div>
           {accessMode === "preview" ? (
             <p className="mt-3 text-xs text-white/40">
               Aperçu {previewSeconds}s

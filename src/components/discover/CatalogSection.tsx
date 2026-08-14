@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { SectionScroller } from "@/components/feed/SectionScroller";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 
 export async function CatalogSection() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
@@ -11,7 +12,7 @@ export async function CatalogSection() {
   const { data: releases } = await supabase
     .from("releases")
     .select(
-      "id, public_id, title, cover_url, genre, owner_id, price_fcfa, type, created_at, artist_id, artists(id, public_id, stage_name, avatar_url, country, bio), tracks(id, title, audio_url, track_number, duration_seconds)",
+      "id, public_id, title, cover_url, genre, owner_id, price_fcfa, type, created_at, artist_id, artists(id, public_id, stage_name, avatar_url, country, bio), tracks(id, title, audio_url, track_number, duration_seconds, is_explicit)",
     )
     .eq("status", "published")
     .order("created_at", { ascending: false })
@@ -31,6 +32,8 @@ export async function CatalogSection() {
           public_id?: string;
           stage_name?: string;
         } | null;
+        const tracks = (r.tracks as { is_explicit?: boolean }[] | null) || [];
+        const explicit = tracks.some((t) => t.is_explicit);
         const artistName = artist?.stage_name || "Artiste";
 
         return (
@@ -62,10 +65,14 @@ export async function CatalogSection() {
               <p className="truncate text-sm font-semibold text-white">
                 {r.title}
               </p>
-              <p className="truncate text-xs text-white/40">
-                {artistName}
-                {r.genre ? ` · ${r.genre}` : ""}
-              </p>
+              <TrackArtistLine
+                artist={artistName}
+                explicit={explicit}
+                className="text-xs text-white/40"
+              />
+              {r.genre ? (
+                <p className="truncate text-[11px] text-white/30">{r.genre}</p>
+              ) : null}
             </div>
           </Link>
         );

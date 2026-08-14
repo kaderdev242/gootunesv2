@@ -18,6 +18,8 @@ export type Track = {
   audioUrl?: string | null;
   liked?: boolean;
   owned?: boolean;
+  /** Paroles / thèmes explicites */
+  explicit?: boolean;
 };
 
 export type RecentPlay = {
@@ -56,6 +58,7 @@ export type Album = {
   year: number;
   tracksCount: number;
   price?: number;
+  explicit?: boolean;
 };
 
 export type Playlist = {

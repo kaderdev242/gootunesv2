@@ -7,7 +7,9 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { FavouriteIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import type { Track } from "@/lib/types/music";
 import { TrackDuration } from "@/components/discover/TrackDuration";
-import { usePlayer, preloadAccess } from "./PlayerProvider";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
+import { usePlayer } from "./PlayerProvider";
+import { PreloadOnVisible } from "./PreloadOnVisible";
 
 type TrackListProps = {
   tracks: Track[];
@@ -39,12 +41,10 @@ export function TrackList({
                 : null;
 
             return (
+              <PreloadOnVisible key={`${track.id}-${index}`} trackId={track.id}>
               <div
-                key={`${track.id}-${index}`}
                 role={href ? "link" : "button"}
                 tabIndex={0}
-                onMouseEnter={() => void preloadAccess(track.id)}
-                onFocus={() => void preloadAccess(track.id)}
                 onClick={() => {
                   if (href) router.push(href);
                   else void playTrack(track, tracks);
@@ -86,12 +86,19 @@ export function TrackList({
                       <Link
                         href={`/discover/artiste/${track.artistPublicId || track.artistId}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="truncate text-xs text-white/40 hover:text-white/70"
+                        className="text-xs text-white/40 hover:text-white/70"
                       >
-                        {track.artist}
+                        <TrackArtistLine
+                          artist={track.artist}
+                          explicit={track.explicit}
+                          className="text-xs"
+                        />
                       </Link>
                     ) : (
-                      <p className="truncate text-xs text-white/40">{track.artist}</p>
+                      <TrackArtistLine
+                        artist={track.artist}
+                        explicit={track.explicit}
+                      />
                     )}
                   </div>
                 </div>
@@ -101,7 +108,7 @@ export function TrackList({
                 </p>
                 <TrackDuration
                   seconds={
-                    track.durationSeconds > 0 && track.duration !== "—"
+                    track.durationSeconds > 0
                       ? track.durationSeconds
                       : null
                   }
@@ -135,6 +142,7 @@ export function TrackList({
                   <HugeiconsIcon icon={FavouriteIcon} size={16} />
                 </button>
               </div>
+              </PreloadOnVisible>
             );
           })}
         </div>

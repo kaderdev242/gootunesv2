@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CoverAtmosphere } from "@/components/discover/CoverAtmosphere";
+import { ExplicitBadge } from "@/components/discover/ExplicitBadge";
 import { ReleaseDetailActions } from "@/components/discover/ReleaseDetailActions";
 import { FALLBACK_COVER } from "@/lib/types/music";
 
@@ -18,6 +19,7 @@ export function ReleaseDetailHero({
   durationLabel,
   year,
   artist,
+  explicit,
 }: {
   releaseId: string;
   title: string;
@@ -29,6 +31,7 @@ export function ReleaseDetailHero({
   trackCount: number;
   durationLabel?: string | null;
   year?: number | null;
+  explicit?: boolean;
   artist?: {
     id: string;
     public_id?: string;
@@ -83,6 +86,7 @@ export function ReleaseDetailHero({
                     sizes="28px"
                   />
                 </span>
+                {explicit ? <ExplicitBadge /> : null}
                 {artist.stage_name}
               </Link>
             ) : null}

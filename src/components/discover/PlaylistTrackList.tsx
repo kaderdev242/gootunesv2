@@ -10,6 +10,7 @@ import { useActionToast } from "@/hooks/useActionToast";
 import { usePlayer } from "@/components/feed/PlayerProvider";
 import { FALLBACK_COVER, type Track } from "@/lib/types/music";
 import { TrackDuration } from "./TrackDuration";
+import { TrackArtistLine } from "./ExplicitBadge";
 
 const initial: ActionState = {};
 
@@ -76,10 +77,15 @@ export function PlaylistTrackList({
               >
                 {track.title}
               </p>
-              <p className="truncate text-xs text-white/40">{track.artist}</p>
+              <TrackArtistLine
+                artist={track.artist}
+                explicit={track.explicit}
+              />
             </div>
             <TrackDuration
-              seconds={track.durationSeconds}
+              seconds={
+                track.durationSeconds > 0 ? track.durationSeconds : null
+              }
               className="hidden shrink-0 text-sm tabular-nums text-white/40 sm:inline"
             />
             <form action={action}>

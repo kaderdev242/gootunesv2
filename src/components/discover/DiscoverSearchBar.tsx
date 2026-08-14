@@ -14,6 +14,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { FALLBACK_COVER } from "@/lib/types/music";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 import type {
   SearchHitArtist,
   SearchHitRelease,
@@ -212,10 +213,13 @@ export function DiscoverSearchBar({
                         <p className="truncate text-sm font-medium text-white">
                           {r.title}
                         </p>
-                        <p className="truncate text-[11px] text-white/40">
-                          {r.artistName} ·{" "}
-                          {r.type === "album" ? "Album" : "Single"}
-                        </p>
+                        <TrackArtistLine
+                          artist={`${r.artistName} · ${
+                            r.type === "album" ? "Album" : "Single"
+                          }`}
+                          explicit={r.explicit}
+                          className="text-[11px] text-white/40"
+                        />
                       </div>
                     </Link>
                   ))}
@@ -244,9 +248,11 @@ export function DiscoverSearchBar({
                         <p className="truncate text-sm font-medium text-white">
                           {t.title}
                         </p>
-                        <p className="truncate text-[11px] text-white/40">
-                          {t.artistName} · {t.releaseTitle}
-                        </p>
+                        <TrackArtistLine
+                          artist={`${t.artistName} · ${t.releaseTitle}`}
+                          explicit={t.explicit}
+                          className="text-[11px] text-white/40"
+                        />
                       </div>
                     </Link>
                   ))}

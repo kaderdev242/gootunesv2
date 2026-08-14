@@ -12,6 +12,7 @@ import {
 import { notifyReleasePublished } from "@/lib/email/notify";
 import { logServerError, mapDbError, USER_ERRORS } from "@/lib/errors";
 import { hasActiveArtistPlan } from "@/lib/artist-plan";
+import { ensureTrackDurationSeconds } from "@/lib/audio/probe-duration";
 import type { ReleaseType } from "@/lib/supabase/database.types";
 import type { ActionState } from "./profile";
 
@@ -55,6 +56,7 @@ export async function createRelease(
     audio_url: string;
     track_number: number;
     duration_seconds?: number;
+    is_explicit?: boolean;
   }[] = [];
 
   try {
@@ -146,6 +148,7 @@ export async function createRelease(
       audio_url: t.audio_url,
       track_number: t.track_number || i + 1,
       duration_seconds: t.duration_seconds ?? null,
+      is_explicit: Boolean(t.is_explicit),
       credits,
     })),
   );
@@ -156,6 +159,23 @@ export async function createRelease(
       error: mapDbError(tracksError, "Impossible d'enregistrer les pistes."),
     };
   }
+
+  const { data: insertedTracks } = await supabase
+    .from("tracks")
+    .select("id, audio_url, duration_seconds")
+    .eq("release_id", release.id);
+
+  await Promise.all(
+    (insertedTracks ?? []).map((t) =>
+      t.audio_url
+        ? ensureTrackDurationSeconds({
+            trackId: t.id,
+            audioUrl: t.audio_url,
+            currentDuration: t.duration_seconds,
+          })
+        : Promise.resolve(null),
+    ),
+  );
 
   revalidateCatalog();
 

@@ -6,6 +6,7 @@ import { ReleaseCardGrid } from "@/components/discover/ReleaseCardGrid";
 import { getViewerCountry } from "@/lib/auth/viewer-country";
 import { searchDiscover } from "@/lib/discover/queries";
 import { FALLBACK_COVER } from "@/lib/types/music";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,7 @@ export default async function RecherchePage({ searchParams }: Props) {
                   type: r.type,
                   artistName: r.artistName,
                   created_at: "",
+                  explicit: r.explicit,
                 }))}
               />
             </section>
@@ -129,9 +131,10 @@ export default async function RecherchePage({ searchParams }: Props) {
                       <p className="truncate text-sm font-medium text-white">
                         {t.title}
                       </p>
-                      <p className="truncate text-xs text-white/40">
-                        {t.artistName} · {t.releaseTitle}
-                      </p>
+                      <TrackArtistLine
+                        artist={`${t.artistName} · ${t.releaseTitle}`}
+                        explicit={t.explicit}
+                      />
                     </div>
                   </Link>
                 ))}

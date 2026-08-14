@@ -33,7 +33,7 @@ export function LabelArtistForm() {
     }
     setUploading(true);
     try {
-      const url = await uploadViaApi(file, "avatar");
+      const url = (await uploadViaApi(file, "avatar")).fileUrl;
       setAvatarUrl(url);
     } catch (e) {
       toastError(mapUploadError(e));

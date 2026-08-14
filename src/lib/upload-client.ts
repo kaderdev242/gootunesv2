@@ -51,8 +51,12 @@ function assertClientFile(file: File, kind: UploadKind) {
 /**
  * Upload navigateur → R2 via URL présignée.
  * Images (avatar / cover) : compression JPEG avant envoi.
+ * Audio : durée serveur renvoyée après PUT (probe R2).
  */
-export async function uploadViaApi(file: File, kind: UploadKind) {
+export async function uploadViaApi(
+  file: File,
+  kind: UploadKind,
+): Promise<{ fileUrl: string; durationSeconds: number | null }> {
   let payload = file;
 
   if (kind === "avatar" || kind === "cover") {
@@ -116,5 +120,29 @@ export async function uploadViaApi(file: File, kind: UploadKind) {
     );
   }
 
-  return presign.fileUrl;
+  let durationSeconds: number | null = null;
+  if (kind === "audio" && presign.key) {
+    try {
+      const metaRes = await fetch("/api/upload/audio-duration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: presign.key }),
+      });
+      if (metaRes.ok) {
+        const meta = (await metaRes.json()) as {
+          durationSeconds?: number | null;
+        };
+        if (
+          typeof meta.durationSeconds === "number" &&
+          meta.durationSeconds > 0
+        ) {
+          durationSeconds = Math.round(meta.durationSeconds);
+        }
+      }
+    } catch {
+      // Durée optionnelle — le navigateur / createRelease peut rattraper.
+    }
+  }
+
+  return { fileUrl: presign.fileUrl, durationSeconds };
 }

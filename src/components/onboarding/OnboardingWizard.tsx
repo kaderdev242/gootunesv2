@@ -84,7 +84,7 @@ export function OnboardingWizard({
     setUploading(true);
     setLocalError(null);
     try {
-      const url = await uploadViaApi(file, "avatar");
+      const url = (await uploadViaApi(file, "avatar")).fileUrl;
       setAvatarUrl(url);
     } catch (e) {
       setLocalError(mapUploadError(e));

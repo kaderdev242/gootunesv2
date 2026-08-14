@@ -78,8 +78,8 @@ const accessCache = new Map<string, { at: number; data: AccessInfo }>();
 const ACCESS_TTL_MS = 5 * 60_000;
 
 /**
- * Préchauffage du cache d'accès au survol d'une piste.
- * Appeler depuis les composants de liste (onMouseEnter / onFocus).
+ * Préchauffage du cache d'accès.
+ * Appeler depuis les listes (visibilité, pointer, focus) et la piste suivante.
  * Silencieux : n'écrit rien en cas d'erreur.
  */
 export async function preloadAccess(trackId: string): Promise<void> {
@@ -114,6 +114,24 @@ function isMediaSourceError(err: unknown) {
 
 function isHttpUrl(value?: string | null) {
   return Boolean(value && /^https?:\/\//i.test(value));
+}
+
+function resolveMediaDuration(audioDuration: number, stored: number) {
+  const storedOk = stored > 0 ? stored : 0;
+  const audioOk =
+    Number.isFinite(audioDuration) && audioDuration > 0 ? audioDuration : 0;
+
+  if (storedOk > 0 && audioOk > 0) {
+    // Stream tronqué / preview : ne pas afficher 0:20 à la place de la vraie durée
+    if (audioOk + 0.5 < storedOk * 0.5) return storedOk;
+    // Worker qui annonce maxBytes (1 Go) → Chrome estime ~741 min au lieu de 4:30
+    if (audioOk > storedOk * 2 + 30) return storedOk;
+    return audioOk;
+  }
+
+  // Sans durée DB, ignorer les estimations absurdes (Content-Length 1 Go).
+  if (audioOk > 60 * 60) return 0;
+  return audioOk || storedOk;
 }
 
 /** URL lisible par <audio> : worker (CORS) ou proxy same-origin — jamais R2 signé. */
@@ -181,10 +199,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const recordedRef = useRef<string | null>(null);
   const isPlayingRef = useRef(false);
 
+  const storedTrackDuration = current?.durationSeconds || 0;
   const effectiveDuration =
     accessMode === "preview"
       ? Math.min(duration || previewSeconds, previewSeconds)
-      : duration || current?.durationSeconds || 0;
+      : resolveMediaDuration(duration, storedTrackDuration) ||
+        storedTrackDuration ||
+        duration;
 
   useEffect(() => {
     currentRef.current = current;
@@ -215,24 +236,79 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTime(t);
     };
 
-    const onMeta = () => {
+    const applyResolvedDuration = () => {
       const mode = (audio.dataset.access as AccessMode) || "preview";
-      const d = audio.duration;
-      if (!Number.isFinite(d) || d <= 0) return;
-      // En preview, la durée média peut être tronquée : garder la limite UX
+      const stored = Number(audio.dataset.storedDuration || 0);
+      const resolved = resolveMediaDuration(audio.duration, stored);
+      if (resolved <= 0) return;
       if (mode === "preview") {
-        setDuration(Math.min(d, Number(audio.dataset.previewSeconds || PREVIEW_SECONDS)));
+        setDuration(
+          Math.min(
+            resolved,
+            Number(audio.dataset.previewSeconds || PREVIEW_SECONDS),
+          ),
+        );
       } else {
-        setDuration(d);
+        setDuration(resolved);
       }
     };
+
+    const fallbackToProxy = () => {
+      const trackId = audio.dataset.trackId;
+      if (!trackId || audio.dataset.fallback === "1") return false;
+      const proxy = trackStreamUrl(trackId);
+      if (audio.dataset.playUrl === proxy) return false;
+      audio.dataset.fallback = "1";
+      const t = audio.currentTime;
+      audio.dataset.playUrl = proxy;
+      audio.src = proxy;
+      audio.load();
+      const resume = () => {
+        try {
+          if (t > 0.4) audio.currentTime = t;
+        } catch {
+          /* ignore */
+        }
+        void safePlay(audio);
+      };
+      audio.addEventListener("canplay", resume, { once: true });
+      return true;
+    };
+
+    const onMeta = () => applyResolvedDuration();
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onEnded = () => {
-      setIsPlaying(false);
       const mode = (audio.dataset.access as AccessMode) || "preview";
+      const stored = Number(audio.dataset.storedDuration || 0);
+      if (
+        mode === "full" &&
+        stored > 0 &&
+        audio.currentTime + 1.5 < stored * 0.85
+      ) {
+        if (fallbackToProxy()) return;
+      }
+      setIsPlaying(false);
       if (mode === "preview") setPreviewEnded(true);
+    };
+    const onError = () => {
+      fallbackToProxy();
+    };
+    let waitingTimer: number | null = null;
+    const onWaiting = () => {
+      if (waitingTimer != null) window.clearTimeout(waitingTimer);
+      waitingTimer = window.setTimeout(() => {
+        waitingTimer = null;
+        fallbackToProxy();
+      }, 4000);
+    };
+    const onPlaying = () => {
+      if (waitingTimer != null) {
+        window.clearTimeout(waitingTimer);
+        waitingTimer = null;
+      }
+      setIsPlaying(true);
     };
 
     audio.addEventListener("timeupdate", onTime);
@@ -241,8 +317,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.addEventListener("play", onPlay);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("playing", onPlaying);
 
     return () => {
+      if (waitingTimer != null) window.clearTimeout(waitingTimer);
       audio.pause();
       audio.removeAttribute("src");
       audio.load();
@@ -252,6 +332,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("playing", onPlaying);
       audioRef.current = null;
     };
   }, []);
@@ -288,9 +371,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.dataset.access = info.access;
     audio.dataset.previewSeconds = String(info.previewSeconds);
     audio.dataset.owned = info.owned ? "1" : "0";
+    audio.dataset.storedDuration = String(info.durationSeconds || 0);
     setAccessMode(info.access);
     setOwned(info.owned);
     setPreviewSeconds(info.previewSeconds);
+    if (info.durationSeconds && info.durationSeconds > 0) {
+      setDuration(
+        info.access === "preview"
+          ? Math.min(info.durationSeconds, info.previewSeconds)
+          : info.durationSeconds,
+      );
+    }
     accessModeRef.current = info.access;
   }, []);
 
@@ -318,12 +409,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const mediaUrl = resolvePlaybackUrl(info, track.id);
 
         applyAccess(audio, info);
+        const storedDuration =
+          info.durationSeconds || track.durationSeconds || 0;
+        audio.dataset.storedDuration = String(storedDuration);
+        audio.dataset.fallback = "";
         setCurrent({
           ...track,
           owned: info.owned,
           audioUrl: mediaUrl,
-          durationSeconds:
-            info.durationSeconds || track.durationSeconds || PREVIEW_SECONDS,
+          durationSeconds: storedDuration,
         });
 
         const alreadyLoaded =
@@ -366,6 +460,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           }
         }
         setIsPlaying(true);
+
+        const list = nextQueue;
+        if (list?.length) {
+          const i = list.findIndex((t) => t.id === track.id);
+          if (i >= 0 && i < list.length - 1) {
+            void preloadAccess(list[i + 1].id);
+          }
+        }
 
         if (
           track.releaseId &&

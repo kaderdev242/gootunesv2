@@ -16,6 +16,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { IconButton } from "@/components/ui/IconButton";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 import { usePlayer } from "./PlayerProvider";
 import { FullscreenPlayer } from "./FullscreenPlayer";
 
@@ -107,7 +108,11 @@ export function FeedPlayer() {
               <p className="truncate text-sm font-semibold text-white">
                 {current.title}
               </p>
-              <p className="truncate text-xs text-white/45">{current.artist}</p>
+              <TrackArtistLine
+                artist={current.artist}
+                explicit={current.explicit}
+                className="text-xs text-white/45"
+              />
             </div>
           </button>
 

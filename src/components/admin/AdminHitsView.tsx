@@ -95,7 +95,7 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadViaApi(file, "cover");
+      const url = (await uploadViaApi(file, "cover")).fileUrl;
       const fd = new FormData();
       fd.set("hit_id", hit.id);
       fd.set("cover_url", url);
@@ -236,7 +236,7 @@ export function AdminHitsView({
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadViaApi(file, "cover");
+      const url = (await uploadViaApi(file, "cover")).fileUrl;
       setCoverUrl(url);
     } catch (e) {
       console.error(e);

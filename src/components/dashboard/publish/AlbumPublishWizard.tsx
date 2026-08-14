@@ -41,6 +41,7 @@ type TrackDraft = {
   track_number: number;
   fileName: string;
   duration_seconds: number;
+  is_explicit: boolean;
 };
 
 export function AlbumPublishWizard({
@@ -88,6 +89,7 @@ export function AlbumPublishWizard({
           audio_url: t.audio_url,
           track_number: i + 1,
           duration_seconds: t.duration_seconds || null,
+          is_explicit: Boolean(t.is_explicit),
         })),
       ),
     [tracks],
@@ -128,7 +130,7 @@ export function AlbumPublishWizard({
     setLocalError(null);
     try {
       await validateCoverFile(file);
-      const url = await uploadViaApi(file, "cover");
+      const url = (await uploadViaApi(file, "cover")).fileUrl;
       setCoverUrl(url);
       setCoverPreview(URL.createObjectURL(file));
     } catch (e) {
@@ -150,17 +152,18 @@ export function AlbumPublishWizard({
         if (!isMp3File(file)) {
           throw new Error(`« ${file.name} » n'est pas un MP3.`);
         }
-        const [url, duration] = await Promise.all([
+        const [uploaded, browserDuration] = await Promise.all([
           uploadViaApi(file, "audio"),
           readAudioDuration(file),
         ]);
         nextTracks.push({
           id: `${Date.now()}-${file.name}-${Math.random()}`,
           title: file.name.replace(/\.mp3$/i, ""),
-          audio_url: url,
+          audio_url: uploaded.fileUrl,
           track_number: nextTracks.length + 1,
           fileName: file.name,
-          duration_seconds: duration,
+          duration_seconds: uploaded.durationSeconds || browserDuration,
+          is_explicit: false,
         });
       }
       setTracks(nextTracks);
@@ -189,6 +192,12 @@ export function AlbumPublishWizard({
   function updateTitle(index: number, value: string) {
     setTracks((prev) =>
       prev.map((t, i) => (i === index ? { ...t, title: value } : t)),
+    );
+  }
+
+  function toggleExplicit(index: number, value: boolean) {
+    setTracks((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, is_explicit: value } : t)),
     );
   }
 
@@ -361,52 +370,65 @@ export function AlbumPublishWizard({
               {tracks.map((track, index) => (
                 <div
                   key={track.id}
-                  className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 p-3"
+                  className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/30 p-3"
                 >
-                  <span className="w-7 text-center text-xs text-white/40">
-                    {index + 1}
-                  </span>
-                  <Input
-                    value={track.title}
-                    onChange={(e) => updateTitle(index, e.target.value)}
-                    className="min-w-0 flex-1 bg-transparent"
-                    aria-label={`Titre piste ${index + 1}`}
-                  />
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      type="button"
-                      isIconOnly
-                      size="sm"
-                      variant="ghost"
-                      className="text-white/60"
-                      onPress={() => moveTrack(index, -1)}
-                      aria-label="Monter"
-                    >
-                      <HugeiconsIcon icon={ArrowUp01Icon} size={16} />
-                    </Button>
-                    <Button
-                      type="button"
-                      isIconOnly
-                      size="sm"
-                      variant="ghost"
-                      className="text-white/60"
-                      onPress={() => moveTrack(index, 1)}
-                      aria-label="Descendre"
-                    >
-                      <HugeiconsIcon icon={ArrowDown01Icon} size={16} />
-                    </Button>
-                    <Button
-                      type="button"
-                      isIconOnly
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-300"
-                      onPress={() => removeTrack(index)}
-                      aria-label="Supprimer"
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={16} />
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 text-center text-xs text-white/40">
+                      {index + 1}
+                    </span>
+                    <Input
+                      value={track.title}
+                      onChange={(e) => updateTitle(index, e.target.value)}
+                      className="min-w-0 flex-1 bg-transparent"
+                      aria-label={`Titre piste ${index + 1}`}
+                    />
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        type="button"
+                        isIconOnly
+                        size="sm"
+                        variant="ghost"
+                        className="text-white/60"
+                        onPress={() => moveTrack(index, -1)}
+                        aria-label="Monter"
+                      >
+                        <HugeiconsIcon icon={ArrowUp01Icon} size={16} />
+                      </Button>
+                      <Button
+                        type="button"
+                        isIconOnly
+                        size="sm"
+                        variant="ghost"
+                        className="text-white/60"
+                        onPress={() => moveTrack(index, 1)}
+                        aria-label="Descendre"
+                      >
+                        <HugeiconsIcon icon={ArrowDown01Icon} size={16} />
+                      </Button>
+                      <Button
+                        type="button"
+                        isIconOnly
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-300"
+                        onPress={() => removeTrack(index)}
+                        aria-label="Supprimer"
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={16} />
+                      </Button>
+                    </div>
                   </div>
+                  <label className="flex cursor-pointer items-center gap-2 pl-9 text-xs text-white/55">
+                    <input
+                      type="checkbox"
+                      checked={track.is_explicit}
+                      onChange={(e) =>
+                        toggleExplicit(index, e.target.checked)
+                      }
+                      className="size-3.5 rounded border-white/30 bg-transparent"
+                    />
+                    Explicite (paroles sensibles) — badge E
+                  </label>
                 </div>
               ))}
               {!tracks.length ? (

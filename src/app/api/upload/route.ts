@@ -104,7 +104,15 @@ export async function POST(request: Request) {
       ? key  // Clé R2 pure — résolution côté serveur uniquement
       : `${(process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "").replace(/\/$/, "")}/${key}`;
 
-    return NextResponse.json({ key, fileUrl });
+    let durationSeconds: number | null = null;
+    if (kind === "audio") {
+      const { probeDurationFromBuffer } = await import(
+        "@/lib/audio/probe-duration"
+      );
+      durationSeconds = await probeDurationFromBuffer(buffer);
+    }
+
+    return NextResponse.json({ key, fileUrl, durationSeconds });
   } catch (e) {
     logServerError("api.upload", e);
     return NextResponse.json(

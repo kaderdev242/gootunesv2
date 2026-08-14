@@ -70,7 +70,7 @@ export function PlaylistForm({
               if (!file) return;
               setUploading(true);
               try {
-                const url = await uploadViaApi(file, "cover");
+                const url = (await uploadViaApi(file, "cover")).fileUrl;
                 setCoverUrl(url);
               } catch (err) {
                 toastError(mapUploadError(err));

@@ -26,17 +26,17 @@ export async function getTrackPlaybackAccess(
   | { status: "unavailable" }
 > {
   const supabase = client ?? (await createClient());
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: track } = await supabase
-    .from("tracks")
-    .select(
-      "id, title, audio_url, duration_seconds, release_id, releases!inner(id, owner_id, status)",
-    )
-    .eq("id", trackId)
-    .maybeSingle();
+  const [{ data: authData }, { data: track }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("tracks")
+      .select(
+        "id, title, audio_url, duration_seconds, release_id, releases!inner(id, owner_id, status)",
+      )
+      .eq("id", trackId)
+      .maybeSingle(),
+  ]);
+  const user = authData?.user ?? null;
 
   if (!track) return { status: "not_found" };
 

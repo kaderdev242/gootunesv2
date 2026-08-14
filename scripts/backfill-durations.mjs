@@ -11,12 +11,22 @@ const limit = Math.min(300, Math.max(1, Number(process.argv[2] || 80)));
 const mode = process.argv[3] || "missing";
 
 function extractKey(fileUrl) {
+  if (!fileUrl || typeof fileUrl !== "string") return null;
+  const trimmed = fileUrl.trim();
+  // Clé R2 déjà stockée telle quelle (ex: audios/userId/file.mp3)
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+    return trimmed;
+  }
   try {
-    const publicBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
-    if (publicBase && fileUrl.startsWith(`${publicBase}/`)) {
-      return decodeURIComponent(fileUrl.slice(publicBase.length + 1));
+    const publicBase = (
+      process.env.R2_PUBLIC_URL ||
+      process.env.NEXT_PUBLIC_R2_PUBLIC_URL ||
+      ""
+    ).replace(/\/$/, "");
+    if (publicBase && trimmed.startsWith(`${publicBase}/`)) {
+      return decodeURIComponent(trimmed.slice(publicBase.length + 1));
     }
-    const url = new URL(fileUrl);
+    const url = new URL(trimmed);
     return decodeURIComponent(url.pathname.replace(/^\//, ""));
   } catch {
     return null;
@@ -82,7 +92,7 @@ async function main() {
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKey = process.env.R2_ACCESS_KEY_ID;
   const secret = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET_NAME;
+  const bucket = process.env.R2_BUCKET || process.env.R2_BUCKET_NAME;
   if (!accountId || !accessKey || !secret || !bucket) {
     throw new Error("R2 env manquant");
   }
@@ -102,45 +112,59 @@ async function main() {
   }
   query += `&limit=${limit}`;
 
-  const tracks = await sbFetch(query);
-  console.log(`Mode=${mode} À traiter: ${tracks?.length ?? 0}`);
-
   let updated = 0;
   let failed = 0;
   let unchanged = 0;
+  let scanned = 0;
+  let batch = 0;
 
-  for (const track of tracks ?? []) {
-    const r2Key = extractKey(track.audio_url);
-    if (!r2Key) {
-      console.log(`SKIP ${track.id} (clé invalide)`);
-      failed += 1;
-      continue;
-    }
-    try {
-      const duration = await probe(r2, bucket, r2Key);
-      if (!duration) {
-        console.log(`FAIL ${track.title || track.id}: durée introuvable`);
+  // En mode missing, les pistes mises à jour sortent du filtre → on boucle.
+  while (batch < 80) {
+    const tracks = await sbFetch(query);
+    const count = tracks?.length ?? 0;
+    if (count === 0) break;
+    batch += 1;
+    scanned += count;
+    console.log(`Mode=${mode} lot ${batch}: ${count} piste(s)`);
+    let batchUpdated = 0;
+
+    for (const track of tracks ?? []) {
+      const r2Key = extractKey(track.audio_url);
+      if (!r2Key) {
+        console.log(`SKIP ${track.id} (clé invalide)`);
         failed += 1;
         continue;
       }
-      if (track.duration_seconds === duration) {
-        unchanged += 1;
-        console.log(`SAME ${track.title || track.id}: ${duration}s`);
-        continue;
+      try {
+        const duration = await probe(r2, bucket, r2Key);
+        if (!duration) {
+          console.log(`FAIL ${track.title || track.id}: durée introuvable`);
+          failed += 1;
+          continue;
+        }
+        if (track.duration_seconds === duration) {
+          unchanged += 1;
+          console.log(`SAME ${track.title || track.id}: ${duration}s`);
+          continue;
+        }
+        await sbFetch(`tracks?id=eq.${track.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ duration_seconds: duration }),
+          prefer: "return=minimal",
+        });
+        updated += 1;
+        batchUpdated += 1;
+        console.log(
+          `OK ${track.title || track.id}: ${track.duration_seconds ?? "null"} → ${duration}s`,
+        );
+      } catch (e) {
+        failed += 1;
+        console.log(`ERR ${track.title || track.id}:`, e?.message || e);
       }
-      await sbFetch(`tracks?id=eq.${track.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ duration_seconds: duration }),
-        prefer: "return=minimal",
-      });
-      updated += 1;
-      console.log(
-        `OK ${track.title || track.id}: ${track.duration_seconds ?? "null"} → ${duration}s`,
-      );
-    } catch (e) {
-      failed += 1;
-      console.log(`ERR ${track.title || track.id}:`, e?.message || e);
     }
+
+    if (mode !== "missing" || count < limit) break;
+    if (batchUpdated === 0) break;
   }
 
   console.log(
@@ -148,7 +172,8 @@ async function main() {
       updated,
       unchanged,
       failed,
-      scanned: tracks?.length ?? 0,
+      scanned,
+      batches: batch,
     }),
   );
 }

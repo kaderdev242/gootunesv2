@@ -78,7 +78,7 @@ export async function getPlaylistById(
       `
       id, position, added_at, track_id,
       tracks(
-        id, title, audio_url, track_number, duration_seconds, release_id,
+        id, title, audio_url, track_number, duration_seconds, is_explicit, release_id,
         releases(
           id, title, cover_url, price_fcfa, genre, type, created_at, artist_id, owner_id,
           artists(id, stage_name, avatar_url, country, bio)
@@ -97,6 +97,7 @@ export async function getPlaylistById(
       audio_url: string | null;
       track_number: number;
       duration_seconds: number | null;
+      is_explicit?: boolean;
       release_id: string;
       releases:
         | {
@@ -151,10 +152,11 @@ export async function getPlaylistById(
       album: release.title,
       cover: release.cover_url || FALLBACK_COVER,
       duration: formatDuration(seconds),
-      durationSeconds: seconds || 180,
+      durationSeconds: seconds,
       genre: release.genre || "—",
       price: Number(release.price_fcfa),
       audioUrl: trackStreamUrl(trackRaw.id),
+      explicit: Boolean(trackRaw.is_explicit),
     });
   }
 

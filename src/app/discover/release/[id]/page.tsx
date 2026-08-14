@@ -12,6 +12,7 @@ import {
 import { ReleaseDetailHero } from "@/components/discover/ReleaseDetailHero";
 import { ReleaseTrackPlayButton } from "@/components/discover/ReleaseTrackPlayButton";
 import { TrackDuration } from "@/components/discover/TrackDuration";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 import { PurchaseUnlock } from "@/components/discover/PurchaseUnlock";
 import { ReleaseCredits } from "@/components/discover/ReleaseCredits";
 import { AddToPlaylistButton } from "@/components/discover/AddToPlaylistButton";
@@ -145,6 +146,7 @@ export default async function ReleaseDetailPage({ params }: Props) {
         durationLabel={durationLabel}
         year={year}
         artist={artist}
+        explicit={tracks.some((t) => t.is_explicit)}
       />
 
       <section className="mt-2 px-0 sm:mt-4">
@@ -184,14 +186,21 @@ export default async function ReleaseDetailPage({ params }: Props) {
                   <p className="truncate text-sm font-medium text-white">
                     {t.title}
                   </p>
-                  <p className="truncate text-xs text-white/40 sm:hidden">
-                    {artistName}
-                  </p>
+                  <span className="sm:hidden">
+                    <TrackArtistLine
+                      artist={artistName}
+                      explicit={uiTrack.explicit}
+                    />
+                  </span>
                 </div>
 
-                <p className="hidden truncate text-sm text-white/55 sm:block">
-                  {artistName}
-                </p>
+                <span className="hidden sm:block">
+                  <TrackArtistLine
+                    artist={artistName}
+                    explicit={uiTrack.explicit}
+                    className="text-sm text-white/55"
+                  />
+                </span>
 
                 <TrackDuration
                   seconds={t.duration_seconds}

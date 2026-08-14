@@ -37,6 +37,7 @@ type ReleaseRow = {
     audio_url: string | null;
     track_number: number;
     duration_seconds: number | null;
+    is_explicit?: boolean;
   }[];
 };
 
@@ -70,12 +71,12 @@ export function releaseToTrack(release: ReleaseRow, track?: ReleaseRow["tracks"]
     album: release.title,
     cover: release.cover_url || FALLBACK_COVER,
     duration: formatDuration(seconds),
-    // Lecteur : fallback temporaire si durée absente en base
-    durationSeconds: seconds || 180,
+    durationSeconds: seconds,
     genre: release.genre || "—",
     price: Number(release.price_fcfa),
     // Jamais l'URL R2 publique côté client — uniquement le proxy sécurisé
     audioUrl: t?.id ? trackStreamUrl(t.id) : null,
+    explicit: Boolean(t?.is_explicit),
   };
 }
 
@@ -91,13 +92,14 @@ export function releaseToAlbum(release: ReleaseRow): Album {
     year: new Date(release.created_at).getFullYear(),
     tracksCount: release.tracks?.length || 0,
     price: Number(release.price_fcfa),
+    explicit: (release.tracks || []).some((t) => t.is_explicit),
   };
 }
 
 const RELEASE_SELECT = `
   id, public_id, title, cover_url, price_fcfa, genre, type, created_at, artist_id, owner_id, featuring, credits,
   artists(id, public_id, stage_name, avatar_url, country, bio),
-  tracks(id, title, audio_url, track_number, duration_seconds)
+  tracks(id, title, audio_url, track_number, duration_seconds, is_explicit)
 `;
 
 function parseCredits(raw: unknown): ReleaseCredits | null {
@@ -444,7 +446,7 @@ export async function getRecentlyPlayed(
     .select(
       `
       id, created_at, track_id, release_id,
-      tracks(id, title, audio_url, duration_seconds, track_number),
+      tracks(id, title, audio_url, duration_seconds, track_number, is_explicit),
       releases(id, public_id, title, cover_url, price_fcfa, genre, type, created_at, artist_id, owner_id, artists(id, public_id, stage_name, avatar_url, country, bio))
     `,
     )
@@ -521,6 +523,7 @@ export async function getCatalogReleases(options?: {
       artistName: r.artists?.stage_name || "Artiste",
       artistPublicId: r.artists?.public_id || "",
       created_at: r.created_at,
+      explicit: (r.tracks || []).some((t) => t.is_explicit),
     }));
 }
 
@@ -535,6 +538,7 @@ export type SearchHitRelease = {
   price_fcfa: number;
   artistName: string;
   artistId: string;
+  explicit?: boolean;
 };
 
 export type SearchHitArtist = {
@@ -554,6 +558,7 @@ export type SearchHitTrack = {
   releaseTitle: string;
   cover_url: string | null;
   artistName: string;
+  explicit?: boolean;
 };
 
 /** Recherche catalogue (releases, artistes, titres) */
@@ -591,7 +596,7 @@ export async function searchDiscover(
       .from("tracks")
       .select(
         `
-        id, title, release_id,
+        id, title, release_id, is_explicit,
         releases!inner(
           id, public_id, title, cover_url, price_fcfa, genre, type, status, is_hidden, created_at, artist_id, owner_id,
           artists(id, public_id, stage_name, avatar_url, country, bio)
@@ -639,6 +644,7 @@ export async function searchDiscover(
       price_fcfa: Number(row.price_fcfa),
       artistName: row.artists?.stage_name || "Artiste",
       artistId: row.artists?.public_id || row.artists?.id || row.artist_id,
+      explicit: (row.tracks || []).some((t) => t.is_explicit),
     });
   }
 
@@ -685,6 +691,9 @@ export async function searchDiscover(
       releaseTitle: release.title,
       cover_url: release.cover_url,
       artistName: artist?.stage_name || "Artiste",
+      explicit: Boolean(
+        (row as { is_explicit?: boolean }).is_explicit,
+      ),
     });
   }
 

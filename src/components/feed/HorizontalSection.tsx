@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Album, Artist, Track } from "@/lib/types/music";
 import { TrackDuration } from "@/components/discover/TrackDuration";
+import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
 import { SectionScroller } from "./SectionScroller";
-import { preloadAccess } from "./PlayerProvider";
+import { PreloadOnVisible } from "./PreloadOnVisible";
 
 type CardSize = "sm" | "md" | "lg";
 
@@ -135,22 +136,24 @@ export function HorizontalSection(props: HorizontalSectionProps) {
             <p className="mt-2.5 truncate text-sm font-semibold text-white">
               {album.title}
             </p>
-            <p className="truncate text-xs text-white/40">{album.artist}</p>
+            <TrackArtistLine
+              artist={album.artist}
+              explicit={album.explicit}
+              className="text-xs text-white/40"
+            />
           </Link>
         ))}
 
       {props.kind === "tracks" &&
         props.items.map((track) => (
+          <PreloadOnVisible key={track.id} trackId={track.id} className="shrink-0">
           <Link
-            key={track.id}
             href={
               track.releasePublicId || track.releaseId
                 ? `/discover/release/${track.releasePublicId || track.releaseId}`
                 : "#"
             }
             className={`${card.width} shrink-0 text-left transition hover:-translate-y-0.5`}
-            onMouseEnter={() => void preloadAccess(track.id)}
-            onFocus={() => void preloadAccess(track.id)}
           >
             <div
               className={`relative aspect-square overflow-hidden ring-1 ring-white/10 ${card.coverRound}`}
@@ -166,17 +169,20 @@ export function HorizontalSection(props: HorizontalSectionProps) {
             <p className="mt-2.5 truncate text-sm font-semibold text-white">
               {track.title}
             </p>
-            <p className="truncate text-xs text-white/40">{track.artist}</p>
+            <TrackArtistLine
+              artist={track.artist}
+              explicit={track.explicit}
+              className="text-xs text-white/40"
+            />
             <TrackDuration
               seconds={
-                track.durationSeconds > 0 && track.duration !== "—"
-                  ? track.durationSeconds
-                  : null
+                track.durationSeconds > 0 ? track.durationSeconds : null
               }
               audioUrl={track.audioUrl}
               className="mt-0.5 block text-xs tabular-nums text-white/35"
             />
           </Link>
+          </PreloadOnVisible>
         ))}
     </SectionScroller>
   );

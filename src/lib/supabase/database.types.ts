@@ -226,6 +226,7 @@ export type Database = {
           audio_url: string | null;
           track_number: number;
           duration_seconds: number | null;
+          is_explicit: boolean;
           price_fcfa: number | null;
           credits: Json;
           created_at: string;
@@ -237,6 +238,7 @@ export type Database = {
           audio_url?: string | null;
           track_number?: number;
           duration_seconds?: number | null;
+          is_explicit?: boolean;
           price_fcfa?: number | null;
           credits?: Json;
           created_at?: string;
@@ -248,6 +250,7 @@ export type Database = {
           audio_url?: string | null;
           track_number?: number;
           duration_seconds?: number | null;
+          is_explicit?: boolean;
           price_fcfa?: number | null;
           credits?: Json;
           created_at?: string;

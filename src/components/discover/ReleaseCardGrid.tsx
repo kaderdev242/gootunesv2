@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { formatMoney } from "@/lib/format";
+import { TrackArtistLine } from "./ExplicitBadge";
 
 export type ReleaseCardItem = {
   id: string;
@@ -11,6 +12,7 @@ export type ReleaseCardItem = {
   price_fcfa?: number | null;
   artistName?: string | null;
   type?: string | null;
+  explicit?: boolean;
 };
 
 export function ReleaseCardGrid({
@@ -45,10 +47,15 @@ export function ReleaseCardGrid({
           </div>
           <div className="space-y-1 px-4 py-4">
             <p className="truncate font-semibold text-white">{r.title}</p>
-            <p className="truncate text-xs text-white/40">
-              {r.artistName || "Artiste"}
-              {r.genre ? ` · ${r.genre}` : ""}
-            </p>
+            <TrackArtistLine
+              artist={
+                r.genre
+                  ? `${r.artistName || "Artiste"} · ${r.genre}`
+                  : r.artistName || "Artiste"
+              }
+              explicit={r.explicit}
+              className="text-xs text-white/40"
+            />
             {r.price_fcfa != null ? (
               <p className="pt-1 text-xs font-medium text-white/55">
                 {formatMoney(Number(r.price_fcfa), country)}

@@ -53,6 +53,7 @@ export function SinglePublishWizard({
   const [producteur, setProducteur] = useState("");
   const [featuring, setFeaturing] = useState("");
   const [ownershipCertified, setOwnershipCertified] = useState(false);
+  const [isExplicit, setIsExplicit] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [state, action, pending] = useActionState(createRelease, initial);
@@ -76,11 +77,12 @@ export function SinglePublishWizard({
                 audio_url: audioUrl,
                 track_number: 1,
                 duration_seconds: audioDuration || null,
+                is_explicit: isExplicit,
               },
             ]
           : [],
       ),
-    [audioUrl, title, audioName, audioDuration],
+    [audioUrl, title, audioName, audioDuration, isExplicit],
   );
 
   function validateStep(index: number) {
@@ -113,7 +115,7 @@ export function SinglePublishWizard({
     setLocalError(null);
     try {
       await validateCoverFile(file);
-      const url = await uploadViaApi(file, "cover");
+      const url = (await uploadViaApi(file, "cover")).fileUrl;
       setCoverUrl(url);
       setCoverPreview(URL.createObjectURL(file));
     } catch (e) {
@@ -134,13 +136,13 @@ export function SinglePublishWizard({
     setUploading(true);
     setLocalError(null);
     try {
-      const [url, duration] = await Promise.all([
+      const [uploaded, browserDuration] = await Promise.all([
         uploadViaApi(file, "audio"),
         readAudioDuration(file),
       ]);
-      setAudioUrl(url);
+      setAudioUrl(uploaded.fileUrl);
       setAudioName(file.name);
-      setAudioDuration(duration);
+      setAudioDuration(uploaded.durationSeconds || browserDuration);
     } catch (e) {
       const msg = mapUploadError(e);
       setLocalError(msg);
@@ -366,6 +368,20 @@ export function SinglePublishWizard({
                 className="bg-white/[0.04]"
               />
             </div>
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <input
+                type="checkbox"
+                checked={isExplicit}
+                onChange={(e) => setIsExplicit(e.target.checked)}
+                className="mt-1 size-4 rounded border-white/30 bg-transparent"
+              />
+              <span className="text-sm leading-relaxed text-white/75">
+                Ce morceau est explicite (paroles à caractère sexuel, violent
+                ou autre contenu sensible). Un badge{" "}
+                <span className="font-semibold text-white">E</span> sera
+                affiché sur Discover.
+              </span>
+            </label>
           </>
         ) : null}
 
@@ -395,6 +411,7 @@ export function SinglePublishWizard({
                   <p className="text-white/45">
                     {artists.find((a) => a.id === artistId)?.stage_name || "—"}
                     {genre ? ` · ${genre}` : ""}
+                    {isExplicit ? " · Explicite" : ""}
                   </p>
                   <p className="text-white/45">
                     Single · {price} {currencyLabel}

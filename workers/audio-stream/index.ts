@@ -62,7 +62,7 @@ export default {
     // Gestion du header Range
     const rangeHeader = request.headers.get("range");
     let start = 0;
-    let end = maxBytes - 1;
+    let requestedEnd: number | null = null;
     let isRangeRequest = false;
 
     if (rangeHeader) {
@@ -70,28 +70,31 @@ export default {
       if (match) {
         isRangeRequest = true;
         if (match[1] !== undefined && match[1] !== "") start = Number(match[1]);
-        if (match[2] !== undefined && match[2] !== "") end = Number(match[2]);
-        else end = maxBytes - 1;
+        if (match[2] !== undefined && match[2] !== "") {
+          requestedEnd = Number(match[2]);
+        }
       }
-
-      if (start >= maxBytes) {
-        return new Response(null, {
-          status: 416,
-          headers: {
-            "Content-Range": `bytes */${maxBytes}`,
-            "Access-Control-Allow-Origin": "*",
-          },
-        });
-      }
-      end = Math.min(end, maxBytes - 1);
     }
 
     start = Math.max(0, start);
-    end = Math.max(start, Math.min(end, maxBytes - 1));
+    if (start >= maxBytes) {
+      return new Response(null, {
+        status: 416,
+        headers: {
+          "Content-Range": `bytes */${maxBytes}`,
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    const length =
+      requestedEnd != null
+        ? Math.max(1, Math.min(requestedEnd, maxBytes - 1) - start + 1)
+        : Math.max(1, maxBytes - start);
 
     // Lecture R2 native dans l'Edge Cloudflare
     const object = await env.AUDIO_BUCKET.get(key, {
-      range: { offset: start, length: end - start + 1 },
+      range: { offset: start, length },
     });
 
     if (!object) {
@@ -101,19 +104,41 @@ export default {
       });
     }
 
+    // maxBytes est un plafond (aperçu / token), pas la taille du fichier.
+    // Annoncer 1 Go fait estimer ~741 min à Chrome au lieu de 4:30.
+    const fileSize = object.size;
+    const totalSize = Math.min(maxBytes, fileSize);
+    if (start >= totalSize) {
+      return new Response(null, {
+        status: 416,
+        headers: {
+          "Content-Range": `bytes */${totalSize}`,
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    const end = Math.min(
+      requestedEnd ?? totalSize - 1,
+      totalSize - 1,
+      start + length - 1,
+    );
+    const contentLength = end - start + 1;
+
     const headers = new Headers();
-    headers.set("Content-Type", object.httpMetadata?.contentType || "audio/mpeg");
+    headers.set(
+      "Content-Type",
+      object.httpMetadata?.contentType || "audio/mpeg",
+    );
     headers.set("Content-Disposition", "inline");
     headers.set("Accept-Ranges", "bytes");
     headers.set("Access-Control-Allow-Origin", "*");
     headers.set("Cache-Control", "private, no-cache, no-store");
     headers.set("X-Content-Type-Options", "nosniff");
-
-    const contentLength = end - start + 1;
     headers.set("Content-Length", String(contentLength));
 
     if (isRangeRequest) {
-      headers.set("Content-Range", `bytes ${start}-${end}/${maxBytes}`);
+      headers.set("Content-Range", `bytes ${start}-${end}/${totalSize}`);
     }
 
     const status = isRangeRequest ? 206 : 200;
