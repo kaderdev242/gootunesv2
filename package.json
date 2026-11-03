@@ -17,7 +17,7 @@
     "@hugeicons/core-free-icons": "^4.2.3",
     "@hugeicons/react": "^1.1.9",
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.109.0",
+    "@supabase/supabase-js": "^2.118.0",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "country-flag-icons": "^1.6.20",
