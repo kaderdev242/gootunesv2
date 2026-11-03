@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { useCoverPalette } from "@/hooks/useCoverPalette";
 import { FALLBACK_COVER } from "@/lib/types/music";
 
@@ -40,7 +40,7 @@ export function CoverAtmosphere({
           : undefined
       }
     >
-      <Image
+      <AppImage
         src={cover}
         alt=""
         fill

@@ -11,6 +11,23 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[global.error]", error);
+    const body = JSON.stringify({
+      source: "global-boundary",
+      message: error.message || "Erreur critique",
+      stack: error.stack || null,
+      path: typeof window !== "undefined" ? window.location.pathname : null,
+      digest: error.digest || null,
+    });
+    try {
+      void fetch("/api/system-log", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        keepalive: true,
+      });
+    } catch {
+      /* ignore */
+    }
   }, [error]);
 
   return (

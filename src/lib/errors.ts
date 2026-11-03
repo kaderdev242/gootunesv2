@@ -37,13 +37,33 @@ function asText(err: unknown): string {
   return "";
 }
 
-/** Log serveur sans exposer à l'utilisateur. */
+/** Log serveur sans exposer à l'utilisateur. Persisté pour l’admin (Logs système). */
 export function logServerError(scope: string, err: unknown, extra?: unknown) {
   if (extra !== undefined) {
     console.error(`[${scope}]`, err, extra);
   } else {
     console.error(`[${scope}]`, err);
   }
+  void import("@/lib/system-log")
+    .then(({ persistSystemLog, errText, errStack }) => {
+      let extraValue: string | null = null;
+      if (extra !== undefined) {
+        try {
+          extraValue =
+            typeof extra === "string" ? extra : JSON.stringify(extra);
+        } catch {
+          extraValue = String(extra);
+        }
+      }
+      return persistSystemLog({
+        source: "server",
+        path: scope,
+        message: `[${scope}] ${errText(err) || "Erreur"}`,
+        stack: errStack(err),
+        context: extraValue ? { scope, extra: extraValue } : { scope },
+      });
+    })
+    .catch(() => undefined);
 }
 
 /** Déjà un message FR « produit » (court, sans jargon technique). */

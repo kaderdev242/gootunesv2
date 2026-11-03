@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { Avatar } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -75,7 +75,7 @@ export function FeedRightPanel({
                 className="flex w-full items-start gap-3 rounded-2xl px-1 py-2 text-left transition hover:bg-white/5"
               >
                 <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-zinc-900">
-                  <Image
+                  <AppImage
                     src={item.track.cover || FALLBACK_COVER}
                     alt=""
                     fill

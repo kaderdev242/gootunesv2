@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { formatDuration } from "@/lib/format";
 import { isUuid } from "@/lib/public-id";
 import type { Album, Artist, RecentPlay, Track } from "@/lib/types/music";
@@ -30,6 +32,7 @@ type ReleaseRow = {
     avatar_url: string | null;
     country: string | null;
     bio: string | null;
+    is_verified?: boolean;
   } | null;
   tracks: {
     id: string;
@@ -48,6 +51,7 @@ function asArtist(rel: ReleaseRow["artists"]) {
     name: rel?.stage_name || "Artiste",
     avatar: rel?.avatar_url || FALLBACK_COVER,
     country: rel?.country || "",
+    verified: Boolean(rel?.is_verified),
   };
 }
 
@@ -77,6 +81,7 @@ export function releaseToTrack(release: ReleaseRow, track?: ReleaseRow["tracks"]
     // Jamais l'URL R2 publique côté client — uniquement le proxy sécurisé
     audioUrl: t?.id ? trackStreamUrl(t.id) : null,
     explicit: Boolean(t?.is_explicit),
+    artistVerified: artist.verified,
   };
 }
 
@@ -93,12 +98,13 @@ export function releaseToAlbum(release: ReleaseRow): Album {
     tracksCount: release.tracks?.length || 0,
     price: Number(release.price_fcfa),
     explicit: (release.tracks || []).some((t) => t.is_explicit),
+    artistVerified: artist.verified,
   };
 }
 
 const RELEASE_SELECT = `
   id, public_id, title, cover_url, price_fcfa, genre, type, created_at, artist_id, owner_id, featuring, credits,
-  artists(id, public_id, stage_name, avatar_url, country, bio),
+  artists(id, public_id, stage_name, avatar_url, country, bio, is_verified),
   tracks(id, title, audio_url, track_number, duration_seconds, is_explicit)
 `;
 
@@ -126,9 +132,9 @@ function normalizeRelease(row: ReleaseRow): ReleaseRow {
   };
 }
 
-async function fetchPublishedReleases(limit = 40) {
+async function fetchPublishedReleasesUncached(limit = 40) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [] as ReleaseRow[];
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("releases")
     .select(RELEASE_SELECT)
@@ -138,6 +144,16 @@ async function fetchPublishedReleases(limit = 40) {
     .limit(limit);
 
   return ((data as unknown as ReleaseRow[]) || []).map(normalizeRelease);
+}
+
+/** Catalogue public — cache 60s (tag `discover-releases`). */
+async function fetchPublishedReleases(limit = 40) {
+  const cached = unstable_cache(
+    () => fetchPublishedReleasesUncached(limit),
+    [`discover-releases-${limit}`],
+    { revalidate: 15, tags: ["discover-releases"] },
+  );
+  return cached();
 }
 
 /** Sorties récentes : dernières publications */
@@ -341,7 +357,7 @@ export async function getRisingArtists(limit = 10): Promise<Artist[]> {
 
   const { data: artists } = await supabase
     .from("artists")
-    .select("id, public_id, stage_name, avatar_url, country, bio")
+    .select("id, public_id, stage_name, avatar_url, country, bio, is_verified")
     .in("id", artistIds);
 
   const genreByArtist = new Map<string, string>();
@@ -358,6 +374,7 @@ export async function getRisingArtists(limit = 10): Promise<Artist[]> {
     stage_name: string;
     avatar_url: string | null;
     country: string | null;
+    is_verified?: boolean;
   }[])
     .map((a) => ({
       id: a.public_id,
@@ -366,6 +383,7 @@ export async function getRisingArtists(limit = 10): Promise<Artist[]> {
       avatar: a.avatar_url || FALLBACK_COVER,
       genre: genreByArtist.get(a.id) || "—",
       country: a.country || "",
+      verified: Boolean(a.is_verified),
     }))
     .sort(
       (a, b) =>
@@ -398,7 +416,9 @@ export async function getArtistById(idOrPublicId: string) {
   const supabase = await createClient();
   let artistQuery = supabase
     .from("artists")
-    .select("id, public_id, stage_name, avatar_url, country, bio, label_id, owner_id");
+    .select(
+      "id, public_id, stage_name, avatar_url, country, bio, label_id, owner_id, is_verified",
+    );
 
   artistQuery = isUuid(key)
     ? artistQuery.eq("id", key)
@@ -493,38 +513,93 @@ export async function getRecentlyPlayed(
   return items;
 }
 
-/** Catalogue / recherche pour les pages Discover */
+export type CatalogReleaseCard = {
+  id: string;
+  uuid: string;
+  title: string;
+  cover_url: string | null;
+  genre: string | null;
+  price_fcfa: number;
+  type: "single" | "album";
+  artistName: string;
+  artistPublicId: string;
+  created_at: string;
+  explicit: boolean;
+};
+
+function toCatalogCard(r: ReleaseRow): CatalogReleaseCard {
+  return {
+    id: r.public_id,
+    uuid: r.id,
+    title: r.title,
+    cover_url: r.cover_url,
+    genre: r.genre,
+    price_fcfa: Number(r.price_fcfa),
+    type: r.type,
+    artistName: r.artists?.stage_name || "Artiste",
+    artistPublicId: r.artists?.public_id || "",
+    created_at: r.created_at,
+    explicit: (r.tracks || []).some((t) => t.is_explicit),
+  };
+}
+
+/** Catalogue paginé côté Postgres (plus de fetch 80 + slice mémoire). */
 export async function getCatalogReleases(options?: {
   limit?: number;
+  page?: number;
   genre?: string | null;
   query?: string | null;
-}) {
-  const limit = options?.limit ?? 48;
-  const releases = await fetchPublishedReleases(Math.max(limit, 80));
-  const genre = options?.genre?.trim().toLowerCase();
-  const q = options?.query?.trim().toLowerCase();
+  type?: "single" | "album" | null;
+}): Promise<{
+  items: CatalogReleaseCard[];
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}> {
+  const pageSize = Math.min(Math.max(options?.limit ?? 48, 1), 60);
+  const page = Math.max(options?.page ?? 1, 1);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize; // +1 pour détecter hasMore
+  const genre = options?.genre?.trim() || null;
+  const q = options?.query?.trim() || null;
 
-  return releases
-    .filter((r) => {
-      if (genre && (r.genre || "").toLowerCase() !== genre) return false;
-      if (!q) return true;
-      const hay = `${r.title} ${r.artists?.stage_name || ""} ${r.genre || ""}`.toLowerCase();
-      return hay.includes(q);
-    })
-    .slice(0, limit)
-    .map((r) => ({
-      id: r.public_id,
-      uuid: r.id,
-      title: r.title,
-      cover_url: r.cover_url,
-      genre: r.genre,
-      price_fcfa: Number(r.price_fcfa),
-      type: r.type,
-      artistName: r.artists?.stage_name || "Artiste",
-      artistPublicId: r.artists?.public_id || "",
-      created_at: r.created_at,
-      explicit: (r.tracks || []).some((t) => t.is_explicit),
-    }));
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return { items: [], page, pageSize, hasMore: false };
+  }
+
+  const fetchPage = unstable_cache(
+    async () => {
+      const supabase = createPublicClient();
+      let query = supabase
+        .from("releases")
+        .select(RELEASE_SELECT)
+        .eq("status", "published")
+        .eq("is_hidden", false)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (options?.type) query = query.eq("type", options.type);
+      if (genre) query = query.ilike("genre", genre);
+      if (q) query = query.or(`title.ilike.%${q}%,featuring.ilike.%${q}%`);
+
+      const { data } = await query;
+      return ((data as unknown as ReleaseRow[]) || []).map(normalizeRelease);
+    },
+    [
+      "catalog",
+      String(page),
+      String(pageSize),
+      options?.type || "",
+      genre || "",
+      q || "",
+    ],
+    { revalidate: 15, tags: ["discover-releases"] },
+  );
+
+  const rows = await fetchPage();
+  const hasMore = rows.length > pageSize;
+  const items = rows.slice(0, pageSize).map(toCatalogCard);
+  return { items, page, pageSize, hasMore };
 }
 
 export type SearchHitRelease = {
@@ -539,6 +614,7 @@ export type SearchHitRelease = {
   artistName: string;
   artistId: string;
   explicit?: boolean;
+  artistVerified?: boolean;
 };
 
 export type SearchHitArtist = {
@@ -548,6 +624,7 @@ export type SearchHitArtist = {
   name: string;
   avatar_url: string | null;
   country: string | null;
+  verified?: boolean;
 };
 
 export type SearchHitTrack = {
@@ -559,6 +636,7 @@ export type SearchHitTrack = {
   cover_url: string | null;
   artistName: string;
   explicit?: boolean;
+  artistVerified?: boolean;
 };
 
 /** Recherche catalogue (releases, artistes, titres) */
@@ -599,7 +677,7 @@ export async function searchDiscover(
         id, title, release_id, is_explicit,
         releases!inner(
           id, public_id, title, cover_url, price_fcfa, genre, type, status, is_hidden, created_at, artist_id, owner_id,
-          artists(id, public_id, stage_name, avatar_url, country, bio)
+          artists(id, public_id, stage_name, avatar_url, country, bio, is_verified)
         )
       `,
       )
@@ -607,7 +685,7 @@ export async function searchDiscover(
       .limit(limit),
     supabase
       .from("artists")
-      .select("id, public_id, stage_name, avatar_url, country")
+      .select("id, public_id, stage_name, avatar_url, country, is_verified")
       .ilike("stage_name", pattern)
       .limit(limit),
   ]);
@@ -645,6 +723,7 @@ export async function searchDiscover(
       artistName: row.artists?.stage_name || "Artiste",
       artistId: row.artists?.public_id || row.artists?.id || row.artist_id,
       explicit: (row.tracks || []).some((t) => t.is_explicit),
+      artistVerified: Boolean(row.artists?.is_verified),
     });
   }
 
@@ -659,8 +738,8 @@ export async function searchDiscover(
           status: string;
           is_hidden: boolean;
           artists:
-            | { stage_name: string }
-            | { stage_name: string }[]
+            | { stage_name: string; is_verified?: boolean }
+            | { stage_name: string; is_verified?: boolean }[]
             | null;
         }
       | {
@@ -671,8 +750,8 @@ export async function searchDiscover(
           status: string;
           is_hidden: boolean;
           artists:
-            | { stage_name: string }
-            | { stage_name: string }[]
+            | { stage_name: string; is_verified?: boolean }
+            | { stage_name: string; is_verified?: boolean }[]
             | null;
         }[]
       | null;
@@ -694,6 +773,7 @@ export async function searchDiscover(
       explicit: Boolean(
         (row as { is_explicit?: boolean }).is_explicit,
       ),
+      artistVerified: Boolean(artist?.is_verified),
     });
   }
 
@@ -705,6 +785,9 @@ export async function searchDiscover(
       name: a.stage_name,
       avatar_url: a.avatar_url,
       country: a.country,
+      verified: Boolean(
+        (a as { is_verified?: boolean }).is_verified,
+      ),
     })),
     tracks: tracks.slice(0, limit),
   };

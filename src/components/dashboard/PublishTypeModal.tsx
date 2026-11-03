@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { Modal } from "@heroui/react";
 import type { ReleaseType } from "@/lib/supabase/database.types";
 
@@ -39,7 +39,7 @@ export function PublishTypeModal({
                   onClick={() => onSelect("single")}
                   className="group flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center transition hover:border-white/25 hover:bg-white/[0.08]"
                 >
-                  <Image
+                  <AppImage
                     src="/single.png"
                     alt="Single"
                     width={96}
@@ -59,7 +59,7 @@ export function PublishTypeModal({
                   onClick={() => onSelect("album")}
                   className="group flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center transition hover:border-white/25 hover:bg-white/[0.08]"
                 >
-                  <Image
+                  <AppImage
                     src="/album.png"
                     alt="Album"
                     width={96}

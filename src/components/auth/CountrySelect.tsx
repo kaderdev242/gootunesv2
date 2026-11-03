@@ -40,7 +40,7 @@ export function CountrySelect({
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-12 w-full items-center gap-3 rounded-2xl border border-white/12 bg-white/[0.04] px-3.5 text-left text-sm text-white outline-none transition hover:bg-white/[0.07] focus-visible:border-white/30"
+        className="flex h-12 w-full items-center gap-3 rounded-2xl border border-white/12 bg-white/[0.04] px-3.5 text-left text-base text-white outline-none transition hover:bg-white/[0.07] focus-visible:border-white/30"
       >
         <CountryFlag code={selected.code} title={selected.label} />
         <span className="flex-1 font-medium">{selected.label}</span>

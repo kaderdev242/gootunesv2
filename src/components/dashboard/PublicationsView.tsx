@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -205,7 +205,7 @@ export function PublicationsView({
 
       {!releases.length ? (
         <div className="flex flex-col items-center rounded-[28px] border border-dashed border-white/15 px-6 py-16 text-center">
-          <Image
+          <AppImage
             src="/music-upload.png"
             alt=""
             width={140}
@@ -250,7 +250,7 @@ export function PublicationsView({
                 <div className="flex items-center gap-4 p-4">
                   <div className="relative size-[72px] shrink-0 overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10">
                     {release.cover_url ? (
-                      <Image
+                      <AppImage
                         src={release.cover_url}
                         alt={release.title}
                         fill

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { Button, Input, Label } from "@heroui/react";
 import { createLabelArtist } from "@/lib/actions/label";
 import type { ActionState } from "@/lib/actions/profile";
@@ -55,7 +55,7 @@ export function LabelArtistForm() {
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
         <div className="relative size-20 overflow-hidden rounded-full border border-white/15 bg-black/30">
           {avatarUrl ? (
-            <Image
+            <AppImage
               src={avatarUrl}
               alt="Photo artiste"
               fill

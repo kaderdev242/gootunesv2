@@ -12,7 +12,8 @@ export type PaymentMethod =
   | "vodacom"
   | "moov"
   | "africell"
-  | "mpesa";
+  | "mpesa"
+  | "apple";
 export type ReportReason =
   | "copyright"
   | "illegal"
@@ -51,6 +52,7 @@ export type Database = {
           balance_fcfa: number;
           is_admin: boolean;
           is_suspended: boolean;
+          login_otp_verified_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -72,6 +74,7 @@ export type Database = {
           balance_fcfa?: number;
           is_admin?: boolean;
           is_suspended?: boolean;
+          login_otp_verified_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -93,10 +96,49 @@ export type Database = {
           balance_fcfa?: number;
           is_admin?: boolean;
           is_suspended?: boolean;
+          login_otp_verified_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      creator_login_challenges: {
+        Row: {
+          id: string;
+          user_id: string;
+          code_hash: string;
+          expires_at: string;
+          attempts: number;
+          session_payload: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          code_hash: string;
+          expires_at: string;
+          attempts?: number;
+          session_payload?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          code_hash?: string;
+          expires_at?: string;
+          attempts?: number;
+          session_payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "creator_login_challenges_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       artists: {
         Row: {
@@ -108,6 +150,7 @@ export type Database = {
           bio: string | null;
           avatar_url: string | null;
           country: string | null;
+          is_verified: boolean;
           created_at: string;
         };
         Insert: {
@@ -119,6 +162,7 @@ export type Database = {
           bio?: string | null;
           avatar_url?: string | null;
           country?: string | null;
+          is_verified?: boolean;
           created_at?: string;
         };
         Update: {
@@ -130,6 +174,7 @@ export type Database = {
           bio?: string | null;
           avatar_url?: string | null;
           country?: string | null;
+          is_verified?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -162,6 +207,7 @@ export type Database = {
           genre: string | null;
           status: ReleaseStatus;
           is_hidden: boolean;
+          hidden_by_suspension: boolean;
           credits: Json;
           featuring: string | null;
           created_at: string;
@@ -179,6 +225,7 @@ export type Database = {
           genre?: string | null;
           status?: ReleaseStatus;
           is_hidden?: boolean;
+          hidden_by_suspension?: boolean;
           credits?: Json;
           featuring?: string | null;
           created_at?: string;
@@ -196,6 +243,7 @@ export type Database = {
           genre?: string | null;
           status?: ReleaseStatus;
           is_hidden?: boolean;
+          hidden_by_suspension?: boolean;
           credits?: Json;
           featuring?: string | null;
           created_at?: string;
@@ -677,6 +725,7 @@ export type Database = {
           title: string;
           description: string;
           cover_url: string | null;
+          is_public: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -686,6 +735,7 @@ export type Database = {
           title: string;
           description?: string;
           cover_url?: string | null;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -695,6 +745,7 @@ export type Database = {
           title?: string;
           description?: string;
           cover_url?: string | null;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -704,6 +755,42 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      playlist_saves: {
+        Row: {
+          id: string;
+          user_id: string;
+          playlist_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          playlist_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          playlist_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "playlist_saves_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "playlist_saves_playlist_id_fkey";
+            columns: ["playlist_id"];
+            isOneToOne: false;
+            referencedRelation: "playlists";
             referencedColumns: ["id"];
           },
         ];
@@ -854,6 +941,56 @@ export type Database = {
           {
             foreignKeyName: "track_plays_owner_id_fkey";
             columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      system_logs: {
+        Row: {
+          id: string;
+          level: string;
+          source: string;
+          message: string;
+          stack: string | null;
+          path: string | null;
+          digest: string | null;
+          user_agent: string | null;
+          user_id: string | null;
+          context: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          level?: string;
+          source: string;
+          message: string;
+          stack?: string | null;
+          path?: string | null;
+          digest?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+          context?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          level?: string;
+          source?: string;
+          message?: string;
+          stack?: string | null;
+          path?: string | null;
+          digest?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+          context?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "system_logs_user_id_fkey";
+            columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];

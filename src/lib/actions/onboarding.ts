@@ -1,7 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { creatorHome } from "@/lib/dashboard/paths";
 import { isMusicGenre } from "@/lib/genres";
 import { isCountryCode } from "@/lib/geo";
@@ -27,6 +29,7 @@ export async function completeOnboarding(
   const phone = String(formData.get("phone") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const avatarUrl = String(formData.get("avatar_url") || "").trim();
+  const targetRole = String(formData.get("target_role") || "").trim();
   const genresRaw = String(formData.get("genres") || "");
   const genres = genresRaw
     .split(",")
@@ -57,8 +60,42 @@ export async function completeOnboarding(
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile || (profile.role !== "artist" && profile.role !== "label")) {
+  if (!profile) return { error: "Profil introuvable." };
+
+  // Fan → artiste / label : le rôle est protégé (trigger), seul le service role peut le changer
+  const converting = profile.role === "fan";
+  if (converting) {
+    if (targetRole !== "artist" && targetRole !== "label") {
+      return { error: "Choisis un type de compte créateur." };
+    }
+    const { error: roleError } = await createAdminClient()
+      .from("profiles")
+      .update({ role: targetRole, onboarding_completed: false })
+      .eq("id", user.id)
+      .eq("role", "fan");
+    if (roleError) {
+      logServerError("onboarding.convert.role", roleError);
+      return {
+        error: mapDbError(roleError, "Impossible de changer le type de compte."),
+      };
+    }
+    profile.role = targetRole;
+  }
+
+  if (profile.role !== "artist" && profile.role !== "label") {
     return { error: "Onboarding réservé aux artistes et labels." };
+  }
+
+  /** En cas d'échec pendant une conversion, on rend le compte fan à nouveau. */
+  async function fail(error: string): Promise<OnboardingState> {
+    if (converting) {
+      const { error: revertError } = await createAdminClient()
+        .from("profiles")
+        .update({ role: "fan", onboarding_completed: true })
+        .eq("id", user!.id);
+      if (revertError) logServerError("onboarding.convert.revert", revertError);
+    }
+    return { error };
   }
 
   const { error: profileError } = await supabase
@@ -76,9 +113,7 @@ export async function completeOnboarding(
 
   if (profileError) {
     logServerError("onboarding.profile", profileError);
-    return {
-      error: mapDbError(profileError, "Impossible de finaliser ton profil."),
-    };
+    return fail(mapDbError(profileError, "Impossible de finaliser ton profil."));
   }
 
   if (profile.role === "artist") {
@@ -101,9 +136,7 @@ export async function completeOnboarding(
         .eq("id", existing.id);
       if (error) {
         logServerError("onboarding.artist.update", error);
-        return {
-          error: mapDbError(error, "Impossible de mettre à jour l'artiste."),
-        };
+        return fail(mapDbError(error, "Impossible de mettre à jour l'artiste."));
       }
     } else {
       const { error } = await supabase.from("artists").insert({
@@ -115,12 +148,11 @@ export async function completeOnboarding(
       });
       if (error) {
         logServerError("onboarding.artist.insert", error);
-        return {
-          error: mapDbError(error, "Impossible de créer le profil artiste."),
-        };
+        return fail(mapDbError(error, "Impossible de créer le profil artiste."));
       }
     }
   }
 
+  if (converting) revalidatePath("/", "layout");
   redirect(creatorHome(profile.role));
 }

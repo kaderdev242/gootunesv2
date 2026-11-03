@@ -142,6 +142,17 @@ export function purchaseDevBypass() {
   return process.env.PURCHASE_DEV_BYPASS?.trim() === "1";
 }
 
+/**
+ * Bloque les flux payants en production si la clé Mbiyo est absente.
+ * Retourne un message d'erreur utilisateur, ou null si OK.
+ */
+export function mbiyoRequiredInProduction(): string | null {
+  if (process.env.NODE_ENV === "production" && !mbiyoConfigured()) {
+    return "Paiement temporairement indisponible. Réessaie plus tard.";
+  }
+  return null;
+}
+
 export function mbiyoBaseUrl() {
   return (
     process.env.MBIYO_API_BASE_URL?.replace(/\/$/, "") ||

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Modal } from "@heroui/react";
 import { RoleSignUpForm } from "@/components/auth/RoleSignUpForm";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -34,20 +35,25 @@ export function FanAuthModal({
         variant="blur"
         className="bg-black/70"
       >
-        <Modal.Container size="md" placement="center" className="px-4">
-          <Modal.Dialog className="overflow-hidden rounded-[28px] border border-white/12 bg-[#0d0d0d] text-white shadow-2xl">
+        <Modal.Container
+          size="md"
+          // Bottom sheet-ish on mobile → clavier moins gênant
+          placement="center"
+          className="items-end px-0 sm:items-center sm:px-4"
+        >
+          <Modal.Dialog className="max-h-[min(92dvh,720px)] w-full overflow-hidden rounded-t-[28px] border border-white/12 bg-[#0d0d0d] text-white shadow-2xl sm:max-h-[min(88dvh,640px)] sm:rounded-[28px]">
             <Modal.CloseTrigger className="text-white/50" />
-            <Modal.Header className="border-b border-white/8 px-6 pt-6 pb-4">
-              <Modal.Heading className="font-display text-2xl font-bold tracking-tight">
+            <Modal.Header className="shrink-0 border-b border-white/8 px-4 pt-5 pb-3 sm:px-6 sm:pt-6 sm:pb-4">
+              <Modal.Heading className="font-display text-xl font-bold tracking-tight sm:text-2xl">
                 {mode === "signup" ? "Compte fan" : "Connexion"}
               </Modal.Heading>
-              <p className="mt-1.5 text-sm text-white/45">
+              <p className="mt-1 text-sm text-white/45">
                 {mode === "signup"
                   ? "Achète, écoute et construis ta bibliothèque."
                   : "Retrouve Discover et ta bibliothèque."}
               </p>
 
-              <div className="mt-4 grid grid-cols-2 gap-1 rounded-2xl bg-white/5 p-1">
+              <div className="mt-3 grid grid-cols-2 gap-1 rounded-2xl bg-white/5 p-1 sm:mt-4">
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
@@ -73,9 +79,20 @@ export function FanAuthModal({
               </div>
             </Modal.Header>
 
-            <Modal.Body className="px-6 py-5">
+            <Modal.Body className="min-h-0 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-5">
               {mode === "signup" ? (
-                <RoleSignUpForm role="fan" compact />
+                <>
+                  <RoleSignUpForm role="fan" compact />
+                  <p className="mt-4 text-center text-sm text-white/45">
+                    Artiste ou label ?{" "}
+                    <Link
+                      href="/inscription?role=artist"
+                      className="text-white underline-offset-2 hover:underline"
+                    >
+                      Créer un compte créateur
+                    </Link>
+                  </p>
+                </>
               ) : (
                 <SignInForm next="/discover" showSignupLink={false} />
               )}

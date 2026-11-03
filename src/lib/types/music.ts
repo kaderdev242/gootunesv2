@@ -20,6 +20,8 @@ export type Track = {
   owned?: boolean;
   /** Paroles / thèmes explicites */
   explicit?: boolean;
+  /** Artiste certifié (badge bleu) */
+  artistVerified?: boolean;
 };
 
 export type RecentPlay = {
@@ -45,6 +47,7 @@ export type Artist = {
   avatar: string;
   genre: string;
   country: string;
+  verified?: boolean;
 };
 
 export type Album = {
@@ -59,6 +62,7 @@ export type Album = {
   tracksCount: number;
   price?: number;
   explicit?: boolean;
+  artistVerified?: boolean;
 };
 
 export type Playlist = {

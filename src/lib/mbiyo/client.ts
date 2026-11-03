@@ -135,13 +135,25 @@ export async function finalizeMbiyoPayment(
   );
 }
 
-/** Vérifie Signature HMAC-SHA256 si MBIYO_WEBHOOK_SECRET est défini */
+/**
+ * Vérifie Signature HMAC-SHA256.
+ * Fail-closed : sans MBIYO_WEBHOOK_SECRET en production → rejeté.
+ * En hors-prod uniquement, absence de secret = skip (dev local).
+ */
 export function verifyMbiyoWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,
 ): boolean {
   const secret = process.env.MBIYO_WEBHOOK_SECRET?.trim();
-  if (!secret) return true;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[mbiyo] MBIYO_WEBHOOK_SECRET manquant en production — webhook rejeté",
+      );
+      return false;
+    }
+    return true;
+  }
   if (!signatureHeader) return false;
 
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");

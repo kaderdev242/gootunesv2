@@ -185,7 +185,12 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    if (path.startsWith("/onboarding") && onboarded) {
+    const isConversion =
+      role === "fan" &&
+      ["artist", "label"].includes(
+        request.nextUrl.searchParams.get("devenir") ?? "",
+      );
+    if (path.startsWith("/onboarding") && onboarded && !isConversion) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = home;
       return NextResponse.redirect(redirectUrl);

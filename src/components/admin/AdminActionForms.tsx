@@ -2,12 +2,16 @@
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import {
+  adminSetArtistVerified,
+  adminSetCreatorPlan,
   deleteReleaseAdmin,
   setMaintenance,
   setReleaseHidden,
   setUserSuspended,
   updateReportStatus,
 } from "@/lib/actions/admin";
+import { hasActiveArtistPlan } from "@/lib/artist-plan";
+import type { ArtistPlan, LabelPlan } from "@/lib/supabase/database.types";
 import type { ActionState } from "@/lib/actions/profile";
 import { useActionToast } from "@/hooks/useActionToast";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -168,6 +172,163 @@ export function ReportReviewForm({
         className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
       >
         {pending ? "…" : "Enregistrer"}
+      </button>
+    </form>
+  );
+}
+
+function planActive(expiresAt: string | null | undefined) {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() > Date.now();
+}
+
+export function CreatorPlanControls({
+  userId,
+  role,
+  artistPlan,
+  artistPlanExpiresAt,
+  labelPlan,
+  labelPlanExpiresAt,
+}: {
+  userId: string;
+  role: "artist" | "label";
+  artistPlan?: ArtistPlan | string | null;
+  artistPlanExpiresAt?: string | null;
+  labelPlan?: LabelPlan | string | null;
+  labelPlanExpiresAt?: string | null;
+}) {
+  const [state, action, pending] = useActionState(adminSetCreatorPlan, initial);
+  useActionToast(state);
+
+  if (role === "artist") {
+    const active = hasActiveArtistPlan({
+      artist_plan: artistPlan,
+      artist_plan_expires_at: artistPlanExpiresAt,
+    });
+    return (
+      <div className="flex flex-col items-start gap-1.5">
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            active
+              ? "bg-violet-50 text-violet-700"
+              : "bg-zinc-100 text-zinc-500"
+          }`}
+        >
+          {active
+            ? `Abo artiste · jusqu’au ${new Date(artistPlanExpiresAt!).toLocaleDateString("fr-FR")}`
+            : "Sans abo artiste"}
+        </span>
+        <form action={action} className="flex flex-wrap items-center gap-1.5">
+          <input type="hidden" name="user_id" value={userId} />
+          <input type="hidden" name="kind" value="artist" />
+          {active ? (
+            <button
+              type="submit"
+              name="action"
+              value="revoke"
+              disabled={pending}
+              className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-200 disabled:opacity-50"
+            >
+              {pending ? "…" : "Révoquer"}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              name="action"
+              value="activate"
+              disabled={pending}
+              className="rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-violet-500 disabled:opacity-50"
+            >
+              {pending ? "…" : "Activer 1 an"}
+            </button>
+          )}
+        </form>
+      </div>
+    );
+  }
+
+  const active =
+    labelPlan !== "none" && planActive(labelPlanExpiresAt);
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <span
+        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+          active
+            ? "bg-sky-50 text-sky-700"
+            : "bg-zinc-100 text-zinc-500"
+        }`}
+      >
+        {active
+          ? `Abo ${labelPlan} · jusqu’au ${new Date(labelPlanExpiresAt!).toLocaleDateString("fr-FR")}`
+          : "Sans abo label"}
+      </span>
+      <form action={action} className="flex flex-wrap items-center gap-1.5">
+        <input type="hidden" name="user_id" value={userId} />
+        <input type="hidden" name="kind" value="label" />
+        {active ? (
+          <button
+            type="submit"
+            name="action"
+            value="revoke"
+            disabled={pending}
+            className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-200 disabled:opacity-50"
+          >
+            {pending ? "…" : "Révoquer"}
+          </button>
+        ) : (
+          <>
+            <select
+              name="label_plan"
+              defaultValue="unlimited"
+              className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[11px] text-zinc-700"
+            >
+              <option value="starter">Starter</option>
+              <option value="unlimited">Unlimited</option>
+            </select>
+            <button
+              type="submit"
+              name="action"
+              value="activate"
+              disabled={pending}
+              className="rounded-full bg-sky-600 px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-sky-500 disabled:opacity-50"
+            >
+              {pending ? "…" : "Activer 1 an"}
+            </button>
+          </>
+        )}
+      </form>
+    </div>
+  );
+}
+
+export function VerifyArtistButton({
+  artistId,
+  verified,
+}: {
+  artistId: string;
+  verified: boolean;
+}) {
+  const [state, action, pending] = useActionState(adminSetArtistVerified, initial);
+  useActionToast(state);
+
+  return (
+    <form action={action}>
+      <input type="hidden" name="artist_id" value={artistId} />
+      <input
+        type="hidden"
+        name="verified"
+        value={verified ? "false" : "true"}
+      />
+      <button
+        type="submit"
+        disabled={pending}
+        className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+          verified
+            ? "bg-sky-50 text-sky-700 hover:bg-sky-100"
+            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+        }`}
+      >
+        {pending ? "…" : verified ? "Retirer badge" : "Certifier"}
       </button>
     </form>
   );

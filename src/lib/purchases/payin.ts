@@ -14,6 +14,7 @@ import {
   isValidMbiyoPhone,
   mbiyoConfigured,
   normalizeMbiyoPhone,
+  mbiyoRequiredInProduction,
   purchaseDevBypass,
   siteUrl,
   toMbiyoPhoneE164,
@@ -22,12 +23,17 @@ import {
   failPurchaseByOrderId,
   fulfillPurchaseByOrderId,
 } from "@/lib/mbiyo/fulfill";
+import {
+  isPendingOlderThanTtl,
+  TTL_EXPIRE_SOURCE,
+} from "@/lib/purchases/expire-pending";
 import { notifyPurchaseCompleted } from "@/lib/email/notify";
 import {
   logServerError,
   mapDbError,
   mapPaymentError,
 } from "@/lib/errors";
+import { payinFormSchema } from "@/lib/validation/schemas";
 import {
   currencyLabelForCountry,
   toMbiyoPayAmount,
@@ -47,13 +53,14 @@ function revalidatePurchasePaths(releaseId: string) {
 
 async function findPublishedRelease(supabase: Sb, releaseId: string) {
   const select =
-    "id, public_id, owner_id, price_fcfa, status, title" as const;
+    "id, public_id, owner_id, price_fcfa, status, title, is_hidden" as const;
 
   const byId = await supabase
     .from("releases")
     .select(select)
     .eq("id", releaseId)
     .eq("status", "published")
+    .eq("is_hidden", false)
     .maybeSingle();
 
   if (byId.data) return byId.data;
@@ -63,6 +70,7 @@ async function findPublishedRelease(supabase: Sb, releaseId: string) {
     .select(select)
     .eq("public_id", releaseId)
     .eq("status", "published")
+    .eq("is_hidden", false)
     .maybeSingle();
 
   return byPublic.data;
@@ -77,16 +85,21 @@ export async function runInitiatePurchase(
     phoneRaw: string;
   },
 ): Promise<ActionState> {
-  const { releaseId, paymentMethod: payment_method, phoneRaw } = input;
-
-  if (!releaseId || !payment_method) {
-    return { error: "Publication et moyen de paiement requis." };
+  const parsed = payinFormSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      error:
+        parsed.error.issues[0]?.message ||
+        "Publication, opérateur et numéro requis.",
+    };
   }
-  if (!phoneRaw.trim()) {
-    return { error: "Numéro Mobile Money requis." };
-  }
+  const {
+    releaseId,
+    paymentMethod: payment_method,
+    phoneRaw,
+  } = parsed.data;
 
-  // ── Garde de sécurité : bypass interdit en production ──────────────────────
+  // ── Gardes de sécurité production ──────────────────────────────────────────
   if (process.env.NODE_ENV === "production" && purchaseDevBypass()) {
     logServerError(
       "purchase.bypass_production",
@@ -94,7 +107,14 @@ export async function runInitiatePurchase(
     );
     return { error: "Configuration invalide. Contactez le support." };
   }
-
+  const mbiyoGate = mbiyoRequiredInProduction();
+  if (mbiyoGate) {
+    logServerError(
+      "purchase.mbiyo_missing_production",
+      new Error("MBIYO_API_KEY absente en production — achat bloqué"),
+    );
+    return { error: mbiyoGate };
+  }
 
   const {
     data: { user },
@@ -324,7 +344,9 @@ export async function runCheckPurchaseStatus(
 
   const { data: purchase } = await supabase
     .from("purchases")
-    .select("id, status, release_id, provider_transaction_id, order_id")
+    .select(
+      "id, status, release_id, provider_transaction_id, order_id, created_at, provider",
+    )
     .eq("order_id", orderId)
     .eq("buyer_id", user.id)
     .maybeSingle();
@@ -363,6 +385,19 @@ export async function runCheckPurchaseStatus(
     }
   } catch {
     /* garde pending */
+  }
+
+  // TTL 5 min : si toujours pending côté PSP, marquer échec.
+  if (
+    purchase.provider !== "apple" &&
+    isPendingOlderThanTtl(purchase.created_at)
+  ) {
+    await failPurchaseByOrderId(orderId, purchase.provider_transaction_id, {
+      source: TTL_EXPIRE_SOURCE,
+      expired_at: new Date().toISOString(),
+      via: "poll",
+    });
+    return { status: "failed", releaseId: purchase.release_id };
   }
 
   return { status: "pending", releaseId: purchase.release_id };

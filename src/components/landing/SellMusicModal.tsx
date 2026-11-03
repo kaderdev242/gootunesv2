@@ -50,7 +50,7 @@ export function SellMusicModal({
               <p className="mt-1.5 text-sm text-white/45">
                 {role
                   ? "Renseigne tes infos pour publier sur Gootunes."
-                  : "Choisis ton parcours — inscription gratuite pour les artistes."}
+                  : "Choisis ton parcours — compte artiste à 990 FCFA/an, publications illimitées."}
               </p>
             </Modal.Header>
 

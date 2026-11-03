@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { Avatar } from "@heroui/react";
 import { formatMoney } from "@/lib/format";
@@ -70,7 +70,7 @@ export function StatsView({
                   <span className="w-6 text-sm text-white/35">{i + 1}</span>
                   <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-zinc-900">
                     {row.coverUrl ? (
-                      <Image
+                      <AppImage
                         src={row.coverUrl}
                         alt=""
                         fill

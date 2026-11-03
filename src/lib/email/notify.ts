@@ -3,6 +3,7 @@ import { contactInbox, sendEmailSafe } from "./client";
 import {
   accountReactivatedEmail,
   accountSuspendedEmail,
+  loginOtpEmail,
   labelArtistCreatedEmail,
   purchaseBuyerEmail,
   purchaseSellerEmail,
@@ -139,6 +140,20 @@ export async function notifyPurchaseCompleted(purchaseId: string) {
   } catch (e) {
     console.error("[email] notifyPurchaseCompleted", e);
   }
+}
+
+export function notifyLoginOtp(input: {
+  email: string;
+  displayName?: string | null;
+  code: string;
+}) {
+  const mail = loginOtpEmail(input);
+  sendEmailSafe({
+    to: input.email,
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text,
+  });
 }
 
 export function notifyAccountSuspended(input: {

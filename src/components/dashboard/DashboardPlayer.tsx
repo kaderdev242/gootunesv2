@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Cancel01Icon,
@@ -62,7 +62,7 @@ export function DashboardPlayer({
         <div className="relative flex items-center gap-3 p-3 pr-12 sm:gap-4 sm:p-4 sm:pr-14">
           <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10 sm:size-16">
             {coverUrl ? (
-              <Image
+              <AppImage
                 src={coverUrl}
                 alt=""
                 fill

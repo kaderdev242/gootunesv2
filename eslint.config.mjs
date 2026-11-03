@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vidéos motion design (hors app)
+    "motion/**",
   ]),
 ]);
 

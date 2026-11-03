@@ -1,10 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import type { Album, Artist, Track } from "@/lib/types/music";
-import { TrackDuration } from "@/components/discover/TrackDuration";
-import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
+import { LazyCover } from "@/components/discover/LazyCover";
+import {
+  TrackArtistLine,
+  TrackTitleLine,
+} from "@/components/discover/ExplicitBadge";
+import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import { SectionScroller } from "./SectionScroller";
 import { PreloadOnVisible } from "./PreloadOnVisible";
 
@@ -15,38 +18,38 @@ const CARD: Record<
   { width: string; sizes: string; coverRound: string }
 > = {
   sm: {
-    width: "w-[108px] sm:w-[118px]",
-    sizes: "118px",
-    coverRound: "rounded-xl",
+    width: "w-[132px] sm:w-[148px]",
+    sizes: "148px",
+    coverRound: "rounded-md",
   },
   md: {
-    width: "w-[140px] sm:w-[156px]",
-    sizes: "156px",
-    coverRound: "rounded-2xl",
+    width: "w-[156px] sm:w-[176px]",
+    sizes: "176px",
+    coverRound: "rounded-md",
   },
   lg: {
-    width: "w-[160px] sm:w-[180px]",
-    sizes: "180px",
-    coverRound: "rounded-2xl",
+    width: "w-[176px] sm:w-[200px]",
+    sizes: "200px",
+    coverRound: "rounded-md",
   },
 };
 
 const ARTIST: Record<CardSize, { width: string; avatar: string; sizes: string }> =
   {
     sm: {
-      width: "w-[100px] sm:w-[110px]",
-      avatar: "size-[100px] sm:size-[110px]",
-      sizes: "110px",
-    },
-    md: {
       width: "w-[120px] sm:w-[132px]",
       avatar: "size-[120px] sm:size-[132px]",
       sizes: "132px",
     },
+    md: {
+      width: "w-[140px] sm:w-[156px]",
+      avatar: "size-[140px] sm:size-[156px]",
+      sizes: "156px",
+    },
     lg: {
-      width: "w-[132px] sm:w-[148px]",
-      avatar: "size-[132px] sm:size-[148px]",
-      sizes: "148px",
+      width: "w-[156px] sm:w-[176px]",
+      avatar: "size-[156px] sm:size-[176px]",
+      sizes: "176px",
     },
   };
 
@@ -95,23 +98,21 @@ export function HorizontalSection(props: HorizontalSectionProps) {
           <Link
             key={artist.id}
             href={`/discover/artiste/${artist.id}`}
-            className={`${artistCard.width} shrink-0 text-center transition hover:-translate-y-0.5`}
+            className={`${artistCard.width} shrink-0 text-center`}
           >
-            <div
-              className={`relative mx-auto overflow-hidden rounded-full ring-1 ring-white/10 ${artistCard.avatar}`}
-            >
-              <Image
-                src={artist.avatar}
-                alt={artist.name}
-                fill
-                className="object-cover"
-                sizes={artistCard.sizes}
-              />
-            </div>
-            <p className="mt-2.5 truncate text-sm font-semibold text-white">
-              {artist.name}
+            <LazyCover
+              src={artist.avatar}
+              alt={artist.name}
+              sizes={artistCard.sizes}
+              className={`mx-auto rounded-full ${artistCard.avatar}`}
+            />
+            <p className="mt-3 flex items-center justify-center gap-1 truncate text-sm font-medium text-white">
+              <span className="truncate">{artist.name}</span>
+              {artist.verified ? (
+                <VerifiedBadge size={13} className="shrink-0" />
+              ) : null}
             </p>
-            <p className="truncate text-xs text-white/40">{artist.genre}</p>
+            <p className="truncate text-[13px] text-white/45">{artist.genre}</p>
           </Link>
         ))}
 
@@ -120,68 +121,65 @@ export function HorizontalSection(props: HorizontalSectionProps) {
           <Link
             key={album.id}
             href={`/discover/release/${album.id}`}
-            className={`${card.width} shrink-0 transition hover:-translate-y-0.5`}
+            className={`group ${card.width} shrink-0`}
           >
-            <div
-              className={`relative aspect-square overflow-hidden ring-1 ring-white/10 ${card.coverRound}`}
-            >
-              <Image
+            <div className="overflow-hidden">
+              <LazyCover
                 src={album.cover}
                 alt={album.title}
-                fill
-                className="object-cover"
                 sizes={card.sizes}
+                className={`aspect-square ${card.coverRound}`}
+                imgClassName="transition duration-300 group-hover:scale-[1.03]"
               />
             </div>
-            <p className="mt-2.5 truncate text-sm font-semibold text-white">
-              {album.title}
-            </p>
+            <TrackTitleLine
+              title={album.title}
+              explicit={album.explicit}
+              className="mt-2.5 line-clamp-2 text-sm font-medium leading-snug text-white"
+            />
             <TrackArtistLine
               artist={album.artist}
-              explicit={album.explicit}
-              className="text-xs text-white/40"
+              verified={album.artistVerified}
+              className="mt-0.5 text-[13px] text-white/45"
             />
           </Link>
         ))}
 
       {props.kind === "tracks" &&
         props.items.map((track) => (
-          <PreloadOnVisible key={track.id} trackId={track.id} className="shrink-0">
-          <Link
-            href={
-              track.releasePublicId || track.releaseId
-                ? `/discover/release/${track.releasePublicId || track.releaseId}`
-                : "#"
-            }
-            className={`${card.width} shrink-0 text-left transition hover:-translate-y-0.5`}
+          <PreloadOnVisible
+            key={track.id}
+            trackId={track.id}
+            className={`${card.width} shrink-0`}
           >
-            <div
-              className={`relative aspect-square overflow-hidden ring-1 ring-white/10 ${card.coverRound}`}
-            >
-              <Image
-                src={track.cover}
-                alt={track.title}
-                fill
-                className="object-cover"
-                sizes={card.sizes}
-              />
-            </div>
-            <p className="mt-2.5 truncate text-sm font-semibold text-white">
-              {track.title}
-            </p>
-            <TrackArtistLine
-              artist={track.artist}
-              explicit={track.explicit}
-              className="text-xs text-white/40"
-            />
-            <TrackDuration
-              seconds={
-                track.durationSeconds > 0 ? track.durationSeconds : null
+            <Link
+              href={
+                track.releasePublicId || track.releaseId
+                  ? `/discover/release/${track.releasePublicId || track.releaseId}`
+                  : "#"
               }
-              audioUrl={track.audioUrl}
-              className="mt-0.5 block text-xs tabular-nums text-white/35"
-            />
-          </Link>
+              className="group block w-full text-left"
+            >
+              <div className="overflow-hidden">
+                <LazyCover
+                  src={track.cover}
+                  alt={track.title}
+                  sizes={card.sizes}
+                  className={`aspect-square ${card.coverRound}`}
+                  imgClassName="transition duration-300 group-hover:scale-[1.03]"
+                />
+              </div>
+              <TrackTitleLine
+                title={track.title}
+                explicit={track.explicit}
+                className="mt-2.5 line-clamp-2 text-sm font-medium leading-snug text-white"
+              />
+              <TrackArtistLine
+                artist={track.artist}
+                verified={track.artistVerified}
+                className="mt-0.5 text-[13px] text-white/45"
+              />
+            </Link>
           </PreloadOnVisible>
         ))}
     </SectionScroller>

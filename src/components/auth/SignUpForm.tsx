@@ -48,7 +48,7 @@ export function SignUpForm({
       <p className="text-center text-sm text-white/45">
         Tu es fan ?{" "}
         <Link
-          href="/discover"
+          href="/"
           className="text-white underline-offset-2 hover:underline"
         >
           Inscris-toi depuis Discover

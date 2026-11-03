@@ -243,6 +243,29 @@ export function accountSuspendedEmail(input: {
   };
 }
 
+export function loginOtpEmail(input: {
+  displayName?: string | null;
+  code: string;
+}) {
+  const who = input.displayName?.trim() || "toi";
+  return {
+    subject: "Ton code de connexion Gootunes Artistes",
+    html: emailLayout({
+      preheader: "Ton code expire dans 10 minutes.",
+      title: "Code de connexion",
+      bodyHtml: [
+        p(`Bonjour ${who},`),
+        p(
+          "Voici le code pour confirmer ta première connexion à Gootunes Artistes.",
+        ),
+        strongLine("Code", input.code),
+        p("Ce code expire dans 10 minutes. Si tu n’es pas à l’origine de cette demande, ignore cet e-mail."),
+      ].join(""),
+    }),
+    text: `Bonjour ${who}. Ton code Gootunes Artistes : ${input.code}. Expire dans 10 minutes.`,
+  };
+}
+
 export function accountReactivatedEmail(input: {
   displayName?: string | null;
   role: string;

@@ -13,6 +13,7 @@ import {
   getMbiyoCurrency,
   isValidMbiyoPhone,
   mbiyoConfigured,
+  mbiyoRequiredInProduction,
   normalizeMbiyoPhone,
   siteUrl,
   toMbiyoPhoneE164,
@@ -21,6 +22,10 @@ import {
   failArtistPlanByOrderId,
   fulfillArtistPlanByOrderId,
 } from "@/lib/mbiyo/fulfill";
+import {
+  isPendingOlderThanTtl,
+  TTL_EXPIRE_SOURCE,
+} from "@/lib/purchases/expire-pending";
 import {
   logServerError,
   mapDbError,
@@ -74,6 +79,15 @@ export async function initiateArtistPlan(
 
   const currency = getMbiyoCurrency(country);
   const orderId = `ART-ANN-${randomUUID().slice(0, 8)}`;
+
+  const mbiyoGate = mbiyoRequiredInProduction();
+  if (mbiyoGate) {
+    logServerError(
+      "artist.plan.mbiyo_missing_production",
+      new Error("MBIYO_API_KEY absente en production"),
+    );
+    return { error: mbiyoGate };
+  }
 
   if (!mbiyoConfigured()) {
     const expires = new Date();
@@ -199,7 +213,7 @@ export async function checkArtistPlanStatus(orderId: string): Promise<{
 
   const { data: order } = await supabase
     .from("artist_plan_orders")
-    .select("id, status, provider_transaction_id, order_id")
+    .select("id, status, provider_transaction_id, order_id, created_at")
     .eq("order_id", orderId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -228,6 +242,15 @@ export async function checkArtistPlanStatus(orderId: string): Promise<{
     }
   } catch {
     /* pending */
+  }
+
+  if (isPendingOlderThanTtl(order.created_at)) {
+    await failArtistPlanByOrderId(orderId, order.provider_transaction_id, {
+      source: TTL_EXPIRE_SOURCE,
+      expired_at: new Date().toISOString(),
+      via: "poll",
+    });
+    return { status: "failed" };
   }
 
   return { status: "pending" };

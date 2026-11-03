@@ -1,7 +1,12 @@
 import { formatMoney } from "@/lib/format";
+import { isApplePaymentMethod } from "@/lib/purchases/apple-tiers";
 
 type Bar = { label: string; value: number };
-type Sale = { created_at: string; artist_net_fcfa: number };
+type Sale = {
+  created_at: string;
+  artist_net_fcfa: number;
+  payment_method?: string | null;
+};
 
 export function OverviewStats({
   title,
@@ -15,7 +20,7 @@ export function OverviewStats({
   country,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   balance: number;
   totalGross: number;
   totalNet: number;
@@ -26,6 +31,12 @@ export function OverviewStats({
 }) {
   const maxBar = Math.max(...bars.map((b) => b.value), 1);
   const money = (n: number) => formatMoney(n, country);
+  const momoNet = sales
+    .filter((s) => !isApplePaymentMethod(s.payment_method))
+    .reduce((s, p) => s + Number(p.artist_net_fcfa), 0);
+  const appleNet = sales
+    .filter((s) => isApplePaymentMethod(s.payment_method))
+    .reduce((s, p) => s + Number(p.artist_net_fcfa), 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -37,15 +48,17 @@ export function OverviewStats({
           <h1 className="font-display mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
             {title}
           </h1>
-          <p className="mt-1 text-sm text-white/45">{subtitle}</p>
+          {subtitle ? (
+            <p className="mt-1 text-sm text-white/45">{subtitle}</p>
+          ) : null}
         </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Solde disponible", value: money(balance), accent: true },
-          { label: "Ventes brutes", value: money(totalGross) },
-          { label: "Net (80%)", value: money(totalNet) },
+          { label: "Solde retirable (MoMo)", value: money(balance), accent: true },
+          { label: "Net Mobile Money (80 %)", value: money(momoNet) },
+          { label: "Net iOS (70 %)", value: money(appleNet) },
           { label: "Publications", value: String(releasesCount) },
         ].map((card) => (
           <div
@@ -63,6 +76,10 @@ export function OverviewStats({
           </div>
         ))}
       </div>
+      <p className="text-xs text-white/35">
+        Ventes brutes {money(totalGross)} · net total {money(totalNet)}. Apple
+        nous paie de son côté ; tu retires tout le solde en Mobile Money.
+      </p>
 
       <section className="rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Revenus nets (7 jours)</h2>
@@ -96,6 +113,11 @@ export function OverviewStats({
               >
                 <span className="text-white/60">
                   {new Date(sale.created_at).toLocaleString("fr-FR")}
+                  <span className="ml-2 text-white/35">
+                    {isApplePaymentMethod(sale.payment_method)
+                      ? "iOS · 70 %"
+                      : "MoMo · 80 %"}
+                  </span>
                 </span>
                 <span className="font-semibold text-white">
                   +{money(Number(sale.artist_net_fcfa))}

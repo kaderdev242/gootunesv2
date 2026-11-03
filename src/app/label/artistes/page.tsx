@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -61,7 +61,7 @@ export default async function ArtistesPage() {
               >
                 <div className="relative size-12 shrink-0 overflow-hidden rounded-full border border-white/10 bg-zinc-900">
                   {a.avatar_url ? (
-                    <Image
+                    <AppImage
                       src={a.avatar_url}
                       alt={a.stage_name}
                       fill

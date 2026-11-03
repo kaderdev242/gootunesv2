@@ -6,13 +6,17 @@ import {
   DEFAULT_COUNTRY,
   detectCountryFromBrowser,
   detectCountryFromIp,
+  isCountryCode,
 } from "@/lib/geo";
 
-export function useDefaultCountry() {
-  const [country, setCountry] = useState<CountryCode>(DEFAULT_COUNTRY);
-  const [ready, setReady] = useState(false);
+/** Pays par défaut ; `initial` (ex. pays du profil) désactive la détection auto. */
+export function useDefaultCountry(initial?: string | null) {
+  const known = initial && isCountryCode(initial) ? initial : null;
+  const [country, setCountry] = useState<CountryCode>(known ?? DEFAULT_COUNTRY);
+  const [ready, setReady] = useState(Boolean(known));
 
   useEffect(() => {
+    if (known) return;
     let cancelled = false;
 
     async function resolve() {
@@ -34,7 +38,7 @@ export function useDefaultCountry() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [known]);
 
   return { country, setCountry, ready };
 }

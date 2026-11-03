@@ -1,2 +1,8 @@
-# App Flutter — hors périmètre du déploiement Next.js
-mobile
+# Apps Flutter à la racine seulement.
+# Sans le « / », « creator » exclut aussi src/lib/creator et src/app/api/creator.
+/mobile
+/creator
+
+# Vidéos motion design — jamais déployées
+/motion
+/.claude/skills/gootunes-motion

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -53,7 +53,7 @@ export default async function LabelArtistStatsPage({ params }: Props) {
           <div className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
             <div className="relative size-20 shrink-0 overflow-hidden rounded-full border border-white/15 bg-zinc-900 sm:size-24">
               {artist.avatar_url ? (
-                <Image
+                <AppImage
                   src={artist.avatar_url}
                   alt={artist.stage_name}
                   fill

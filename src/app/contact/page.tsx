@@ -6,14 +6,14 @@ import { contactInbox } from "@/lib/email/client";
 export const metadata: Metadata = {
   title: "Contact & Support — Gootunes",
   description:
-    "Contacter le support Gootunes : aide compte, bibliothèque iOS, achats web et signalements.",
+    "Contacter le support Gootunes : aide compte, bibliothèque, achats iOS et signalements.",
 };
 
 export default function ContactPage() {
   const support = contactInbox();
 
   return (
-    <LegalShell title="Contact & Support" updated="4 août 2026">
+    <LegalShell title="Contact & Support" updated="23 août 2026">
       <LegalSection title="Nous écrire">
         <p>
           Pour toute question sur ton compte, ta bibliothèque, un paiement ou un
@@ -36,20 +36,18 @@ export default function ContactPage() {
 
       <LegalSection title="Application iOS">
         <p>
-          Sur iPhone et iPad, Gootunes est une application de lecture : elle
-          affiche et lit la musique déjà présente dans ta bibliothèque après
-          connexion avec le même compte.
+          Sur iPhone et iPad, tu parcours le catalogue et tu achètes la musique
+          uniquement via les achats intégrés Apple (In-App Purchase). Après
+          paiement, le titre est débloqué dans ta bibliothèque.
         </p>
         <p>
-          Les achats de musique se font sur le site web{" "}
-          <Link
-            href="/"
-            className="text-white underline decoration-white/25 underline-offset-4 hover:decoration-white"
-          >
-            gootunes.app
-          </Link>
-          . Une fois l&apos;achat effectué, reconnecte-toi dans l&apos;app pour
-          retrouver tes titres.
+          Il n&apos;y a pas d&apos;aperçu 20 secondes : l&apos;écoute complète
+          commence après l&apos;achat. Les paiements Mobile Money ne sont pas
+          proposés dans l&apos;app iOS.
+        </p>
+        <p>
+          Si un achat n&apos;apparaît pas après réinstallation : Paramètres →{" "}
+          <strong className="text-white">Restaurer les achats</strong>.
         </p>
       </LegalSection>
 
@@ -57,14 +55,13 @@ export default function ContactPage() {
         <ul className="list-disc space-y-3 pl-5">
           <li>
             <strong className="text-white">Bibliothèque vide sur iOS ?</strong>{" "}
-            Vérifie que tu es connecté avec le compte utilisé sur le web, puis
-            tire pour actualiser. Les titres apparaissent après un achat validé
-            sur le site.
+            Connecte-toi avec le même compte, puis restaure les achats. Les
+            titres apparaissent après un achat In-App Purchase validé.
           </li>
           <li>
-            <strong className="text-white">Achat / Mobile Money ?</strong> Les
-            paiements fans se gèrent sur le site web (ou Android). L&apos;app
-            iOS ne propose pas d&apos;achat in-app.
+            <strong className="text-white">Achat / Mobile Money ?</strong> Sur
+            iOS, uniquement Apple In-App Purchase. Mobile Money est réservé au
+            site web et à Android.
           </li>
           <li>
             <strong className="text-white">Compte artiste / label ?</strong> La

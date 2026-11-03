@@ -1,83 +1,95 @@
-import { listProfilesByRole } from "@/lib/admin/queries";
-import { SuspendUserButton } from "@/components/admin/AdminActionForms";
+import {
+  listArtistsAdmin,
+  listProfilesByRole,
+} from "@/lib/admin/queries";
+import {
+  AdminArtistesView,
+  type AdminCatalogArtistRow,
+  type AdminCreatorRow,
+} from "@/components/admin/AdminArtistesView";
+
+function one<T>(v: T | T[] | null | undefined): T | null {
+  if (!v) return null;
+  return Array.isArray(v) ? v[0] || null : v;
+}
 
 export default async function AdminArtistesPage() {
-  const [artists, labels] = await Promise.all([
+  const [artists, labels, catalogArtists] = await Promise.all([
     listProfilesByRole("artist"),
     listProfilesByRole("label"),
+    listArtistsAdmin(),
   ]);
 
-  const rows = [
-    ...artists.map((p) => ({ ...p, kind: "Artiste" as const })),
-    ...labels.map((p) => ({ ...p, kind: "Label" as const })),
+  const catalogByOwner = new Map<string, string>();
+  for (const a of catalogArtists) {
+    if (!catalogByOwner.has(a.owner_id)) {
+      catalogByOwner.set(a.owner_id, a.id);
+    }
+  }
+
+  const rows: AdminCreatorRow[] = [
+    ...artists.map((p) => ({
+      id: p.id,
+      email: p.email,
+      display_name: p.display_name,
+      role: p.role,
+      country: p.country,
+      is_suspended: p.is_suspended,
+      created_at: p.created_at,
+      artist_plan: p.artist_plan,
+      artist_plan_expires_at: p.artist_plan_expires_at,
+      label_plan: p.label_plan,
+      label_plan_expires_at: p.label_plan_expires_at,
+      kind: "Artiste" as const,
+      catalogId: catalogByOwner.get(p.id) || null,
+    })),
+    ...labels.map((p) => ({
+      id: p.id,
+      email: p.email,
+      display_name: p.display_name,
+      role: p.role,
+      country: p.country,
+      is_suspended: p.is_suspended,
+      created_at: p.created_at,
+      artist_plan: p.artist_plan,
+      artist_plan_expires_at: p.artist_plan_expires_at,
+      label_plan: p.label_plan,
+      label_plan_expires_at: p.label_plan_expires_at,
+      kind: "Label" as const,
+      catalogId: catalogByOwner.get(p.id) || null,
+    })),
   ].sort(
     (a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
-  return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-          Artistes & labels
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          {rows.length} comptes créateurs
-        </p>
-      </header>
+  const catalog: AdminCatalogArtistRow[] = catalogArtists.map((a) => {
+    const owner = one(
+      a.profiles as
+        | {
+            display_name: string | null;
+            email: string | null;
+            role: string;
+          }
+        | {
+            display_name: string | null;
+            email: string | null;
+            role: string;
+          }[]
+        | null,
+    );
+    return {
+      id: a.id,
+      public_id: a.public_id,
+      stage_name: a.stage_name,
+      avatar_url: a.avatar_url,
+      is_verified: Boolean(a.is_verified),
+      owner_id: a.owner_id,
+      ownerName: owner?.display_name || "—",
+      ownerEmail: owner?.email || "—",
+      ownerRole: owner?.role || "",
+    };
+  });
 
-      <div className="overflow-hidden rounded-[28px] border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/5">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-zinc-100 bg-zinc-50/80 text-xs text-zinc-400">
-              <tr>
-                <th className="px-5 py-3.5 font-medium">Compte</th>
-                <th className="px-5 py-3.5 font-medium">Type</th>
-                <th className="px-5 py-3.5 font-medium">Pays</th>
-                <th className="px-5 py-3.5 font-medium">Solde</th>
-                <th className="px-5 py-3.5 font-medium">Statut</th>
-                <th className="px-5 py-3.5 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((p) => (
-                <tr key={p.id} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-5 py-3.5">
-                    <p className="font-medium text-zinc-900">
-                      {p.display_name || "—"}
-                    </p>
-                    <p className="text-xs text-zinc-400">{p.email}</p>
-                  </td>
-                  <td className="px-5 py-3.5 text-zinc-600">{p.kind}</td>
-                  <td className="px-5 py-3.5 text-zinc-500">
-                    {p.country || "—"}
-                  </td>
-                  <td className="px-5 py-3.5 tabular-nums text-zinc-700">
-                    {(p.balance_fcfa || 0).toLocaleString("fr-FR")}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {p.is_suspended ? (
-                      <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
-                        Suspendu
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                        Actif
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <SuspendUserButton
-                      userId={p.id}
-                      suspended={p.is_suspended}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+  return <AdminArtistesView rows={rows} catalogArtists={catalog} />;
 }

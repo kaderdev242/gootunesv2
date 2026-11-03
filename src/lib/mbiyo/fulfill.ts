@@ -1,8 +1,17 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LABEL_PLANS } from "@/lib/constants";
 import { notifyPurchaseCompleted } from "@/lib/email/notify";
+import { isTtlExpireMeta } from "@/lib/purchases/expire-pending";
 import type { Json, LabelPlan } from "@/lib/supabase/database.types";
 import { revalidatePath } from "next/cache";
+
+function canFulfillFromStatus(
+  status: string,
+  providerMeta: unknown,
+): status is "pending" | "failed" {
+  if (status === "pending") return true;
+  return status === "failed" && isTtlExpireMeta(providerMeta);
+}
 
 /** Marque un achat comme completed (trigger → solde + library). */
 export async function fulfillPurchaseByOrderId(
@@ -14,13 +23,16 @@ export async function fulfillPurchaseByOrderId(
 
   const { data: purchase } = await admin
     .from("purchases")
-    .select("id, release_id, status")
+    .select("id, release_id, status, provider_meta")
     .eq("order_id", orderId)
     .maybeSingle();
 
   if (!purchase) return { ok: false as const, reason: "not_found" as const };
   if (purchase.status === "completed") {
     return { ok: true as const, already: true as const, purchase };
+  }
+  if (!canFulfillFromStatus(purchase.status, purchase.provider_meta)) {
+    return { ok: false as const, reason: "not_pending" as const };
   }
 
   const { error } = await admin
@@ -31,7 +43,7 @@ export async function fulfillPurchaseByOrderId(
       provider_meta: meta ?? {},
     })
     .eq("id", purchase.id)
-    .eq("status", "pending");
+    .eq("status", purchase.status);
 
   if (error) return { ok: false as const, reason: "update_failed" as const };
 
@@ -74,13 +86,16 @@ export async function fulfillLabelPlanByOrderId(
 
   const { data: order } = await admin
     .from("label_plan_orders")
-    .select("id, user_id, plan, status")
+    .select("id, user_id, plan, status, provider_meta")
     .eq("order_id", orderId)
     .maybeSingle();
 
   if (!order) return { ok: false as const, reason: "not_found" as const };
   if (order.status === "completed") {
     return { ok: true as const, already: true as const, order };
+  }
+  if (!canFulfillFromStatus(order.status, order.provider_meta)) {
+    return { ok: false as const, reason: "not_pending" as const };
   }
 
   const plan = order.plan as Exclude<LabelPlan, "none">;
@@ -99,7 +114,7 @@ export async function fulfillLabelPlanByOrderId(
       provider_meta: meta ?? {},
     })
     .eq("id", order.id)
-    .eq("status", "pending");
+    .eq("status", order.status);
 
   if (orderErr) return { ok: false as const, reason: "update_failed" as const };
 
@@ -155,13 +170,16 @@ export async function fulfillArtistPlanByOrderId(
 
   const { data: order } = await admin
     .from("artist_plan_orders")
-    .select("id, user_id, plan, status")
+    .select("id, user_id, plan, status, provider_meta")
     .eq("order_id", orderId)
     .maybeSingle();
 
   if (!order) return { ok: false as const, reason: "not_found" as const };
   if (order.status === "completed") {
     return { ok: true as const, already: true as const, order };
+  }
+  if (!canFulfillFromStatus(order.status, order.provider_meta)) {
+    return { ok: false as const, reason: "not_pending" as const };
   }
   if (order.plan !== "annual") {
     return { ok: false as const, reason: "invalid_plan" as const };
@@ -178,7 +196,7 @@ export async function fulfillArtistPlanByOrderId(
       provider_meta: meta ?? {},
     })
     .eq("id", order.id)
-    .eq("status", "pending");
+    .eq("status", order.status);
 
   if (orderErr) return { ok: false as const, reason: "update_failed" as const };
 

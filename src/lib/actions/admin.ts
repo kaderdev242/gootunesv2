@@ -8,11 +8,12 @@ import {
   notifyAccountSuspended,
 } from "@/lib/email/notify";
 import { logServerError, mapDbError } from "@/lib/errors";
-import type { ReportStatus } from "@/lib/supabase/database.types";
+import type { LabelPlan, ReportStatus } from "@/lib/supabase/database.types";
 import type { ActionState } from "./profile";
 
 function touchAdmin(...extra: string[]) {
   revalidatePath("/goo-admin");
+  revalidatePath("/goo-admin/artistes", "layout");
   for (const p of extra) revalidatePath(p);
   revalidatePath("/discover");
 }
@@ -73,11 +74,11 @@ export async function setUserSuspended(
     }
   }
 
-  touchAdmin("/goo-admin/fans", "/goo-admin/artistes");
+  touchAdmin("/goo-admin/fans", "/goo-admin/artistes", "/goo-admin/morceaux");
   return {
     success: suspended
-      ? "Compte suspendu. Un e-mail a été envoyé."
-      : "Compte réactivé. Un e-mail a été envoyé.",
+      ? "Compte suspendu. Ses morceaux sont masqués. Un e-mail a été envoyé."
+      : "Compte réactivé. Les morceaux masqués par la suspension sont remis en ligne. Un e-mail a été envoyé.",
   };
 }
 
@@ -93,9 +94,23 @@ export async function setReleaseHidden(
   if (!releaseId) return { error: "Morceau invalide." };
 
   const db = createAdminClient();
+  const { data: release } = await db
+    .from("releases")
+    .select("id, public_id, artist_id")
+    .eq("id", releaseId)
+    .maybeSingle();
+
+  if (!release) return { error: "Publication introuvable." };
+
+  // Hide admin : clear le flag suspension pour qu'une réactivation
+  // ne remette pas en ligne un titre volontairement masqué.
   const { error } = await db
     .from("releases")
-    .update({ is_hidden: hidden })
+    .update(
+      hidden
+        ? { is_hidden: true, hidden_by_suspension: false }
+        : { is_hidden: false, hidden_by_suspension: false },
+    )
     .eq("id", releaseId);
 
   if (error) {
@@ -103,7 +118,12 @@ export async function setReleaseHidden(
     return { error: mapDbError(error, "Impossible de mettre à jour.") };
   }
 
-  touchAdmin("/goo-admin/morceaux", `/discover/release/${releaseId}`);
+  touchAdmin(
+    "/goo-admin/morceaux",
+    "/goo-admin/artistes",
+    `/goo-admin/artistes/${release.artist_id}`,
+    `/discover/release/${release.public_id || release.id}`,
+  );
   return {
     success: hidden ? "Morceau masqué." : "Morceau remis en ligne.",
   };
@@ -134,7 +154,11 @@ export async function deleteReleaseAdmin(
     return { error: mapDbError(error, "Impossible de supprimer.") };
   }
 
-  touchAdmin("/goo-admin/morceaux", "/goo-admin/signalements");
+  touchAdmin(
+    "/goo-admin/morceaux",
+    "/goo-admin/artistes",
+    "/goo-admin/signalements",
+  );
   return {
     success: `« ${release.title} » a été supprimé.`,
   };
@@ -199,7 +223,7 @@ export async function updateReportStatus(
     if (track?.release_id) {
       await db
         .from("releases")
-        .update({ is_hidden: true })
+        .update({ is_hidden: true, hidden_by_suspension: false })
         .eq("id", track.release_id);
     }
   }
@@ -570,4 +594,149 @@ export async function searchHitsCatalogAction(query: string) {
   if (!admin) return [] as Awaited<ReturnType<typeof searchCatalogForHits>>;
   const { searchCatalogForHits } = await import("@/lib/admin/queries");
   return searchCatalogForHits(query);
+}
+
+/** Active / révoque manuellement un abonnement artiste ou label. */
+export async function adminSetCreatorPlan(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
+
+  const userId = String(formData.get("user_id") || "").trim();
+  const kind = String(formData.get("kind") || "").trim(); // artist | label
+  const action = String(formData.get("action") || "").trim(); // activate | revoke
+  const labelPlanRaw = String(formData.get("label_plan") || "unlimited").trim();
+  const yearsRaw = Number(formData.get("years") || "1");
+  const years = Number.isFinite(yearsRaw) && yearsRaw > 0 ? Math.min(yearsRaw, 10) : 1;
+
+  if (!userId) return { error: "Compte invalide." };
+  if (kind !== "artist" && kind !== "label") {
+    return { error: "Type de compte invalide." };
+  }
+
+  const db = createAdminClient();
+  const { data: target } = await db
+    .from("profiles")
+    .select("id, role, display_name, email, artist_plan, label_plan")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!target) return { error: "Compte introuvable." };
+
+  if (kind === "artist" && target.role !== "artist") {
+    return { error: "Ce compte n’est pas un artiste." };
+  }
+  if (kind === "label" && target.role !== "label") {
+    return { error: "Ce compte n’est pas un label." };
+  }
+
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + years);
+
+  if (kind === "artist") {
+    const patch =
+      action === "revoke"
+        ? {
+            artist_plan: "none" as const,
+            artist_plan_expires_at: null,
+          }
+        : {
+            artist_plan: "annual" as const,
+            artist_plan_expires_at: expires.toISOString(),
+          };
+
+    const { error } = await db.from("profiles").update(patch).eq("id", userId);
+    if (error) {
+      logServerError("admin.artist_plan", error);
+      return { error: mapDbError(error, "Impossible de mettre à jour l’abonnement.") };
+    }
+
+    touchAdmin("/goo-admin/artistes", "/artist", "/artist/abonnement");
+    return {
+      success:
+        action === "revoke"
+          ? "Abonnement artiste révoqué."
+          : `Abonnement artiste activé jusqu’au ${expires.toLocaleDateString("fr-FR")}.`,
+    };
+  }
+
+  const labelPlan: LabelPlan =
+    labelPlanRaw === "starter" || labelPlanRaw === "unlimited"
+      ? labelPlanRaw
+      : "unlimited";
+
+  const patch: {
+    label_plan: LabelPlan;
+    label_plan_expires_at: string | null;
+  } =
+    action === "revoke"
+      ? {
+          label_plan: "none",
+          label_plan_expires_at: null,
+        }
+      : {
+          label_plan: labelPlan,
+          label_plan_expires_at: expires.toISOString(),
+        };
+
+  const { error } = await db.from("profiles").update(patch).eq("id", userId);
+  if (error) {
+    logServerError("admin.label_plan", error);
+    return { error: mapDbError(error, "Impossible de mettre à jour l’abonnement.") };
+  }
+
+  touchAdmin("/goo-admin/artistes", "/label", "/label/abonnement");
+  return {
+    success:
+      action === "revoke"
+        ? "Abonnement label révoqué."
+        : `Abonnement label « ${labelPlan} » activé jusqu’au ${expires.toLocaleDateString("fr-FR")}.`,
+  };
+}
+
+/** Pose / retire le badge de certification sur un artiste catalogue. */
+export async function adminSetArtistVerified(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
+
+  const artistId = String(formData.get("artist_id") || "").trim();
+  const verified = String(formData.get("verified") || "") === "true";
+  if (!artistId) return { error: "Artiste invalide." };
+
+  const db = createAdminClient();
+  const { data: artist } = await db
+    .from("artists")
+    .select("id, stage_name, public_id, is_verified")
+    .eq("id", artistId)
+    .maybeSingle();
+
+  if (!artist) return { error: "Artiste introuvable." };
+
+  const { error } = await db
+    .from("artists")
+    .update({ is_verified: verified })
+    .eq("id", artistId);
+
+  if (error) {
+    logServerError("admin.artist_verified", error);
+    return { error: mapDbError(error, "Impossible de mettre à jour la certification.") };
+  }
+
+  touchAdmin(
+    "/goo-admin/artistes",
+    `/goo-admin/artistes/${artist.id}`,
+    "/discover",
+    "/discover/artistes",
+    `/discover/artiste/${artist.public_id}`,
+  );
+  return {
+    success: verified
+      ? `Badge de certification ajouté pour « ${artist.stage_name} ».`
+      : `Badge retiré pour « ${artist.stage_name} ».`,
+  };
 }

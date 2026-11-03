@@ -51,24 +51,32 @@ export function RoleSignUpForm({
   }, [state.success, onSuccessMessage]);
 
   return (
-    <form action={action} className={`flex flex-col ${compact ? "gap-3" : "gap-4"}`}>
+    <form
+      action={action}
+      className={`flex flex-col ${compact ? "gap-3" : "gap-3.5 sm:gap-4"}`}
+    >
       <input type="hidden" name="role" value={role} />
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`display_name_${role}`} className="text-white/70">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <Label
+          htmlFor={`display_name_${role}`}
+          className="text-sm text-white/70"
+        >
           {labels.nameLabel}
         </Label>
         <Input
           id={`display_name_${role}`}
           name="display_name"
           required
+          autoComplete="nickname"
+          enterKeyHint="next"
           placeholder={labels.namePlaceholder}
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04]"
+          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
         />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`country_${role}`} className="text-white/70">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <Label htmlFor={`country_${role}`} className="text-sm text-white/70">
           Pays
         </Label>
         <CountrySelect
@@ -81,8 +89,8 @@ export function RoleSignUpForm({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`email_${role}`} className="text-white/70">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <Label htmlFor={`email_${role}`} className="text-sm text-white/70">
           Email
         </Label>
         <Input
@@ -91,13 +99,15 @@ export function RoleSignUpForm({
           type="email"
           required
           autoComplete="email"
+          inputMode="email"
+          enterKeyHint="next"
           placeholder="toi@email.com"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04]"
+          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
         />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`password_${role}`} className="text-white/70">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <Label htmlFor={`password_${role}`} className="text-sm text-white/70">
           Mot de passe
         </Label>
         <Input
@@ -107,8 +117,9 @@ export function RoleSignUpForm({
           required
           minLength={6}
           autoComplete="new-password"
+          enterKeyHint="go"
           placeholder="Min. 6 caractères"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04]"
+          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
         />
       </div>
 
@@ -135,9 +146,9 @@ export function RoleSignUpForm({
       <Button
         type="submit"
         isPending={pending}
-        className="mt-1 h-12 rounded-full bg-white font-semibold text-black"
+        className="mt-1 h-12 rounded-full bg-white text-base font-semibold text-black"
       >
-        {labels.submit}
+        {compact && role === "fan" ? "Créer mon compte" : labels.submit}
       </Button>
     </form>
   );

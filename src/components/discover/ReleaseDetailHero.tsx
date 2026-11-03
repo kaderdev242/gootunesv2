@@ -1,9 +1,10 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { CoverAtmosphere } from "@/components/discover/CoverAtmosphere";
 import { ExplicitBadge } from "@/components/discover/ExplicitBadge";
+import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import { ReleaseDetailActions } from "@/components/discover/ReleaseDetailActions";
 import { FALLBACK_COVER } from "@/lib/types/music";
 
@@ -37,6 +38,7 @@ export function ReleaseDetailHero({
     public_id?: string;
     stage_name: string;
     avatar_url?: string | null;
+    is_verified?: boolean;
   } | null;
 }) {
   const metaParts = [
@@ -47,12 +49,12 @@ export function ReleaseDetailHero({
   ].filter(Boolean);
 
   return (
-    <section className="relative -mx-4 overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[28px]">
-      <CoverAtmosphere coverUrl={cover} intensity="panel" className="lg:rounded-[28px]" />
+    <section className="relative -mx-5 overflow-hidden sm:-mx-8 lg:-mx-10">
+      <CoverAtmosphere coverUrl={cover} intensity="panel" />
 
-      <div className="relative flex flex-col gap-8 px-4 pt-8 pb-10 sm:px-6 sm:pt-10 sm:pb-12 md:flex-row md:items-end md:gap-10 lg:px-8">
+      <div className="relative flex flex-col gap-8 px-5 pt-10 pb-10 sm:px-8 sm:pt-12 sm:pb-12 md:flex-row md:items-end md:gap-10 lg:px-10">
         <div className="relative mx-auto aspect-square w-full max-w-[280px] shrink-0 overflow-hidden rounded-lg shadow-[0_24px_80px_rgba(0,0,0,0.55)] ring-1 ring-white/10 md:mx-0 md:w-[280px] lg:max-w-[320px] lg:w-[320px]">
-          <Image
+          <AppImage
             src={cover}
             alt={title}
             fill
@@ -78,7 +80,7 @@ export function ReleaseDetailHero({
                 className="mt-4 inline-flex items-center gap-2.5 text-sm font-medium text-white transition hover:text-white/80"
               >
                 <span className="relative size-7 overflow-hidden rounded-full ring-1 ring-white/25">
-                  <Image
+                  <AppImage
                     src={artist.avatar_url || FALLBACK_COVER}
                     alt=""
                     fill
@@ -88,6 +90,9 @@ export function ReleaseDetailHero({
                 </span>
                 {explicit ? <ExplicitBadge /> : null}
                 {artist.stage_name}
+                {artist.is_verified ? (
+                  <VerifiedBadge size={15} className="shrink-0" />
+                ) : null}
               </Link>
             ) : null}
 

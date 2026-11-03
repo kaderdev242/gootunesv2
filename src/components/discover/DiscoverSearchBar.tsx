@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +14,11 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { FALLBACK_COVER } from "@/lib/types/music";
-import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
+import {
+  TrackArtistLine,
+  TrackTitleLine,
+} from "@/components/discover/ExplicitBadge";
+import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import type {
   SearchHitArtist,
   SearchHitRelease,
@@ -126,7 +130,7 @@ export function DiscoverSearchBar({
           }}
           onFocus={() => setOpen(true)}
           placeholder="Rechercher…"
-          className={`w-full rounded-full border border-white/10 bg-white/[0.06] pr-9 pl-10 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/25 focus:bg-white/[0.08] ${
+          className={`w-full rounded-full border-0 bg-[#1a1a1a] pr-9 pl-10 text-sm text-white outline-none transition placeholder:text-white/35 focus:bg-[#222] ${
             compact ? "h-10" : "h-11"
           }`}
           aria-label="Rechercher"
@@ -152,7 +156,7 @@ export function DiscoverSearchBar({
       {open && value.trim().length > 0 ? (
         <div
           id={listId}
-          className="absolute top-[calc(100%+8px)] right-0 left-0 z-50 max-h-[min(70vh,420px)] overflow-y-auto rounded-2xl border border-white/12 bg-[#161616] shadow-2xl shadow-black/50"
+          className="absolute top-[calc(100%+8px)] right-0 left-0 z-50 max-h-[min(70vh,420px)] overflow-y-auto rounded-xl border border-white/10 bg-[#111] shadow-2xl shadow-black/60"
         >
           {loading ? (
             <p className="px-4 py-3 text-xs text-white/40">Recherche…</p>
@@ -172,7 +176,7 @@ export function DiscoverSearchBar({
                       className="flex items-center gap-3 px-3 py-2 transition hover:bg-white/8"
                     >
                       <div className="relative size-9 overflow-hidden rounded-full bg-zinc-800">
-                        <Image
+                        <AppImage
                           src={a.avatar_url || FALLBACK_COVER}
                           alt=""
                           fill
@@ -181,8 +185,11 @@ export function DiscoverSearchBar({
                         />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-white">
-                          {a.name}
+                        <p className="flex items-center gap-1 truncate text-sm font-medium text-white">
+                          <span className="truncate">{a.name}</span>
+                          {a.verified ? (
+                            <VerifiedBadge size={13} className="shrink-0" />
+                          ) : null}
                         </p>
                         <p className="text-[11px] text-white/40">Artiste</p>
                       </div>
@@ -201,7 +208,7 @@ export function DiscoverSearchBar({
                       className="flex items-center gap-3 px-3 py-2 transition hover:bg-white/8"
                     >
                       <div className="relative size-9 overflow-hidden rounded-lg bg-zinc-800">
-                        <Image
+                        <AppImage
                           src={r.cover_url || FALLBACK_COVER}
                           alt=""
                           fill
@@ -210,14 +217,16 @@ export function DiscoverSearchBar({
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-white">
-                          {r.title}
-                        </p>
+                        <TrackTitleLine
+                          title={r.title}
+                          explicit={r.explicit}
+                          className="truncate text-sm font-medium text-white"
+                        />
                         <TrackArtistLine
                           artist={`${r.artistName} · ${
                             r.type === "album" ? "Album" : "Single"
                           }`}
-                          explicit={r.explicit}
+                          verified={r.artistVerified}
                           className="text-[11px] text-white/40"
                         />
                       </div>
@@ -236,7 +245,7 @@ export function DiscoverSearchBar({
                       className="flex items-center gap-3 px-3 py-2 transition hover:bg-white/8"
                     >
                       <div className="relative size-9 overflow-hidden rounded-lg bg-zinc-800">
-                        <Image
+                        <AppImage
                           src={t.cover_url || FALLBACK_COVER}
                           alt=""
                           fill
@@ -245,12 +254,14 @@ export function DiscoverSearchBar({
                         />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-white">
-                          {t.title}
-                        </p>
+                        <TrackTitleLine
+                          title={t.title}
+                          explicit={t.explicit}
+                          className="truncate text-sm font-medium text-white"
+                        />
                         <TrackArtistLine
                           artist={`${t.artistName} · ${t.releaseTitle}`}
-                          explicit={t.explicit}
+                          verified={t.artistVerified}
                           className="text-[11px] text-white/40"
                         />
                       </div>

@@ -1,4 +1,5 @@
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatFcfa } from "@/lib/format";
 import { isCountryCode } from "@/lib/geo";
 import { CountryFlag } from "@/components/auth/CountryFlag";
@@ -103,14 +104,11 @@ export function AdminStatsView({ data }: { data: Analytics }) {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-          Statistiques
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Origine des utilisateurs, pays d&apos;achat, ventes et mix produits
-        </p>
-      </header>
+      <AdminPageHeader
+        title="Statistiques"
+        description="Origine des utilisateurs, pays d'achat, ventes et mix produits"
+        action={{ href: "/goo-admin", label: "Vue d'ensemble" }}
+      />
 
       {/* Periods */}
       <section className="grid gap-3 md:grid-cols-3">
@@ -293,7 +291,7 @@ export function AdminStatsView({ data }: { data: Analytics }) {
                 <span className="w-5 text-sm text-zinc-300">{i + 1}</span>
                 <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
                   {r.cover ? (
-                    <Image
+                    <AppImage
                       src={r.cover}
                       alt=""
                       fill

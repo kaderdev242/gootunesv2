@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { Button, Input, Label, TextArea } from "@heroui/react";
 import { CountrySelect } from "@/components/auth/CountrySelect";
 import { GenrePicker } from "@/components/genres/GenrePicker";
@@ -18,18 +18,32 @@ function countWords(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+export type OnboardingDefaults = {
+  displayName?: string;
+  phone?: string;
+  country?: string;
+  genres?: string[];
+  avatarUrl?: string;
+};
+
 export function OnboardingWizard({
   role,
+  conversion = false,
+  defaults,
 }: {
   role: Extract<UserRole, "artist" | "label">;
+  /** Fan qui devient artiste / label : le rôle change à la validation */
+  conversion?: boolean;
+  defaults?: OnboardingDefaults;
 }) {
   const [step, setStep] = useState(0);
-  const { country, setCountry } = useDefaultCountry();
-  const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
+  const { country, setCountry } = useDefaultCountry(defaults?.country);
+  const [displayName, setDisplayName] = useState(defaults?.displayName ?? "");
+  const [phone, setPhone] = useState(defaults?.phone ?? "");
   const [bio, setBio] = useState("");
-  const [genres, setGenres] = useState<string[]>([]);
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [genres, setGenres] = useState<string[]>(defaults?.genres ?? []);
+  const [avatarUrl, setAvatarUrl] = useState(defaults?.avatarUrl ?? "");
+
   const [uploading, setUploading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [state, action, pending] = useActionState(completeOnboarding, initial);
@@ -127,6 +141,9 @@ export function OnboardingWizard({
         <input type="hidden" name="avatar_url" value={avatarUrl} />
         <input type="hidden" name="genres" value={genres.join(",")} />
         <input type="hidden" name="country" value={country} />
+        {conversion ? (
+          <input type="hidden" name="target_role" value={role} />
+        ) : null}
 
         {step === 0 ? (
           <>
@@ -192,7 +209,7 @@ export function OnboardingWizard({
           <div className="flex flex-col items-center gap-5">
             <div className="relative size-36 overflow-hidden rounded-full border border-white/15 bg-white/5">
               {avatarUrl ? (
-                <Image
+                <AppImage
                   src={avatarUrl}
                   alt="Photo de profil"
                   fill
@@ -254,7 +271,9 @@ export function OnboardingWizard({
               isDisabled={!avatarUrl || uploading}
               className="h-12 flex-1 rounded-full bg-white font-semibold text-black"
             >
-              Terminer & accéder
+              {conversion
+                ? `Devenir ${role === "label" ? "label" : "artiste"}`
+                : "Terminer & accéder"}
             </Button>
           )}
         </div>

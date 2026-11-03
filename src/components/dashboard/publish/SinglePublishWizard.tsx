@@ -1,16 +1,19 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { Button, Input, Label } from "@heroui/react";
 import { GenrePicker } from "@/components/genres/GenrePicker";
 import { StepHeader } from "@/components/dashboard/publish/StepHeader";
+import { PriceTierPicker } from "@/components/dashboard/publish/PriceTierPicker";
+import { UploadBusy } from "@/components/dashboard/publish/UploadBusy";
 import { createRelease } from "@/lib/actions/publish";
+import { formatMoney } from "@/lib/format";
 import {
-  currencyLabelForCountry,
-  minReleasePriceLocal,
-} from "@/lib/currency";
+  DEFAULT_SINGLE_PRICE_FCFA,
+  isReleasePriceTier,
+} from "@/lib/purchases/apple-tiers";
 import type { ActionState } from "@/lib/actions/profile";
 import type { CreatorBase } from "@/lib/dashboard/paths";
 import {
@@ -36,12 +39,10 @@ export function SinglePublishWizard({
   basePath: CreatorBase;
   country?: string | null;
 }) {
-  const minPrice = minReleasePriceLocal(country);
-  const currencyLabel = currencyLabelForCountry(country);
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
   const [artistId, setArtistId] = useState(artists[0]?.id || "");
-  const [price, setPrice] = useState(String(Math.round(minPrice)));
+  const [priceFcfa, setPriceFcfa] = useState(DEFAULT_SINGLE_PRICE_FCFA);
   const [genre, setGenre] = useState<string | null>("Afrobeats");
   const [coverUrl, setCoverUrl] = useState("");
   const [coverPreview, setCoverPreview] = useState("");
@@ -55,6 +56,7 @@ export function SinglePublishWizard({
   const [ownershipCertified, setOwnershipCertified] = useState(false);
   const [isExplicit, setIsExplicit] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [state, action, pending] = useActionState(createRelease, initial);
   const allowSubmitRef = useRef(false);
@@ -90,8 +92,8 @@ export function SinglePublishWizard({
       if (!title.trim()) return "Titre obligatoire.";
       if (!artistId) return "Artiste obligatoire.";
       if (!genre) return "Genre obligatoire.";
-      if (!price || Number(price) < minPrice) {
-        return `Prix minimum : ${minPrice} ${currencyLabel}.`;
+      if (!isReleasePriceTier(priceFcfa)) {
+        return "Choisis un palier de prix.";
       }
     }
     if (index === 1 && !coverUrl) return "Cover 1000×1000 obligatoire.";
@@ -112,6 +114,7 @@ export function SinglePublishWizard({
   async function onCover(file: File | null) {
     if (!file) return;
     setUploading(true);
+    setUploadPercent(null);
     setLocalError(null);
     try {
       await validateCoverFile(file);
@@ -124,6 +127,7 @@ export function SinglePublishWizard({
       toastError(msg);
     } finally {
       setUploading(false);
+      setUploadPercent(null);
     }
   }
 
@@ -134,10 +138,11 @@ export function SinglePublishWizard({
       return;
     }
     setUploading(true);
+    setUploadPercent(0);
     setLocalError(null);
     try {
       const [uploaded, browserDuration] = await Promise.all([
-        uploadViaApi(file, "audio"),
+        uploadViaApi(file, "audio", setUploadPercent),
         readAudioDuration(file),
       ]);
       setAudioUrl(uploaded.fileUrl);
@@ -149,6 +154,7 @@ export function SinglePublishWizard({
       toastError(msg);
     } finally {
       setUploading(false);
+      setUploadPercent(null);
     }
   }
 
@@ -191,7 +197,7 @@ export function SinglePublishWizard({
         <input type="hidden" name="status" value="published" />
         <input type="hidden" name="title" value={title} />
         <input type="hidden" name="artist_id" value={artistId} />
-        <input type="hidden" name="price_fcfa" value={price} />
+        <input type="hidden" name="price_fcfa" value={priceFcfa} />
         <input type="hidden" name="genre" value={genre || ""} />
         <input type="hidden" name="auteur" value={auteur} />
         <input type="hidden" name="compositeur" value={compositeur} />
@@ -236,15 +242,11 @@ export function SinglePublishWizard({
                 </select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>
-                  Prix ({currencyLabel}) — min. {Math.round(minPrice)}
-                </Label>
-                <Input
-                  type="number"
-                  min={Math.round(minPrice)}
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="h-12 rounded-2xl bg-white/[0.04]"
+                <Label>Prix</Label>
+                <PriceTierPicker
+                  valueFcfa={priceFcfa}
+                  onChange={setPriceFcfa}
+                  country={country}
                 />
               </div>
               <GenrePicker
@@ -266,9 +268,12 @@ export function SinglePublishWizard({
               subtitle={`Image carrée obligatoire ${COVER_SIZE}×${COVER_SIZE} px.`}
             />
             <div className="flex flex-col items-center gap-4">
-              <div className="relative size-48 overflow-hidden rounded-2xl border border-white/15 bg-black/40">
+              <div
+                className="relative size-48 overflow-hidden rounded-2xl border border-white/15 bg-black/40"
+                aria-busy={uploading}
+              >
                 {coverPreview || coverUrl ? (
-                  <Image
+                  <AppImage
                     src={coverPreview || coverUrl}
                     alt="Cover"
                     fill
@@ -280,9 +285,20 @@ export function SinglePublishWizard({
                     {COVER_SIZE}×{COVER_SIZE}
                   </div>
                 )}
+                {uploading ? (
+                  <UploadBusy overlay label="Envoi de la cover…" />
+                ) : null}
               </div>
-              <label className="inline-flex cursor-pointer rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black">
-                {uploading ? "Envoi…" : coverUrl ? "Changer la cover" : "Ajouter la cover"}
+              <label
+                className={`inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black ${
+                  uploading ? "pointer-events-none opacity-60" : "cursor-pointer"
+                }`}
+              >
+                {uploading
+                  ? "Envoi…"
+                  : coverUrl
+                    ? "Changer la cover"
+                    : "Ajouter la cover"}
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -303,13 +319,25 @@ export function SinglePublishWizard({
               title="Fichier audio"
               subtitle="Format accepté : MP3 uniquement."
             />
-            <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 px-4 py-10">
-              <span className="text-sm font-medium text-white">
-                {audioName || "Sélectionner un MP3"}
-              </span>
-              <span className="text-xs text-white/40">
-                {uploading ? "Upload…" : "audio/mpeg · .mp3"}
-              </span>
+            <label
+              className={`flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/15 px-4 py-10 ${
+                uploading ? "pointer-events-none opacity-90" : "cursor-pointer"
+              }`}
+              aria-busy={uploading}
+            >
+              {uploading ? (
+                <UploadBusy
+                  label="Envoi du morceau…"
+                  percent={uploadPercent}
+                />
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-white">
+                    {audioName || "Sélectionner un MP3"}
+                  </span>
+                  <span className="text-xs text-white/40">audio/mpeg · .mp3</span>
+                </>
+              )}
               <input
                 type="file"
                 accept="audio/mpeg,.mp3"
@@ -318,7 +346,7 @@ export function SinglePublishWizard({
                 onChange={(e) => onAudio(e.target.files?.[0] || null)}
               />
             </label>
-            {audioUrl ? (
+            {audioUrl && !uploading ? (
               <p className="mt-3 text-center text-xs text-emerald-300">
                 Audio prêt
               </p>
@@ -397,7 +425,7 @@ export function SinglePublishWizard({
               <div className="flex gap-4">
                 <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-white/5">
                   {coverUrl ? (
-                    <Image
+                    <AppImage
                       src={coverUrl}
                       alt=""
                       fill
@@ -414,7 +442,7 @@ export function SinglePublishWizard({
                     {isExplicit ? " · Explicite" : ""}
                   </p>
                   <p className="text-white/45">
-                    Single · {price} {currencyLabel}
+                    Single · {formatMoney(priceFcfa, country)}
                   </p>
                   <p className="truncate text-xs text-white/35">
                     Audio : {audioName || "—"}
@@ -462,6 +490,7 @@ export function SinglePublishWizard({
               type="button"
               variant="outline"
               className="h-12 flex-1 rounded-full border-white/20 bg-transparent text-white"
+              isDisabled={uploading}
               onPress={() => {
                 setLocalError(null);
                 setStep((s) => s - 1);

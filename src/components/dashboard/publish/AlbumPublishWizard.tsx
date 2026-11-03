@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { Button, Input, Label } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -12,12 +12,14 @@ import {
 } from "@hugeicons/core-free-icons";
 import { GenrePicker } from "@/components/genres/GenrePicker";
 import { StepHeader } from "@/components/dashboard/publish/StepHeader";
+import { PriceTierPicker } from "@/components/dashboard/publish/PriceTierPicker";
+import { UploadBusy } from "@/components/dashboard/publish/UploadBusy";
 import { createRelease } from "@/lib/actions/publish";
+import { formatMoney } from "@/lib/format";
 import {
-  currencyLabelForCountry,
-  fcfaToLocal,
-  minReleasePriceLocal,
-} from "@/lib/currency";
+  DEFAULT_ALBUM_PRICE_FCFA,
+  isReleasePriceTier,
+} from "@/lib/purchases/apple-tiers";
 import type { ActionState } from "@/lib/actions/profile";
 import type { CreatorBase } from "@/lib/dashboard/paths";
 import {
@@ -53,12 +55,10 @@ export function AlbumPublishWizard({
   basePath: CreatorBase;
   country?: string | null;
 }) {
-  const minPrice = minReleasePriceLocal(country);
-  const currencyLabel = currencyLabelForCountry(country);
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
   const [artistId, setArtistId] = useState(artists[0]?.id || "");
-  const [price, setPrice] = useState(String(Math.round(fcfaToLocal(1500, country))));
+  const [priceFcfa, setPriceFcfa] = useState(DEFAULT_ALBUM_PRICE_FCFA);
   const [genre, setGenre] = useState<string | null>("Afrobeats");
   const [coverUrl, setCoverUrl] = useState("");
   const [coverPreview, setCoverPreview] = useState("");
@@ -69,6 +69,9 @@ export function AlbumPublishWizard({
   const [featuring, setFeaturing] = useState("");
   const [ownershipCertified, setOwnershipCertified] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  const [uploadIndex, setUploadIndex] = useState(0);
+  const [uploadTotal, setUploadTotal] = useState(0);
   const [localError, setLocalError] = useState<string | null>(null);
   const [state, action, pending] = useActionState(createRelease, initial);
   const allowSubmitRef = useRef(false);
@@ -100,8 +103,8 @@ export function AlbumPublishWizard({
       if (!title.trim()) return "Titre de l'album obligatoire.";
       if (!artistId) return "Artiste obligatoire.";
       if (!genre) return "Genre obligatoire.";
-      if (!price || Number(price) < minPrice) {
-        return `Prix minimum : ${minPrice} ${currencyLabel}.`;
+      if (!isReleasePriceTier(priceFcfa)) {
+        return "Choisis un palier de prix.";
       }
     }
     if (index === 1 && !coverUrl) return "Cover globale 1000×1000 obligatoire.";
@@ -127,6 +130,9 @@ export function AlbumPublishWizard({
   async function onCover(file: File | null) {
     if (!file) return;
     setUploading(true);
+    setUploadPercent(null);
+    setUploadIndex(0);
+    setUploadTotal(0);
     setLocalError(null);
     try {
       await validateCoverFile(file);
@@ -139,21 +145,29 @@ export function AlbumPublishWizard({
       toastError(msg);
     } finally {
       setUploading(false);
+      setUploadPercent(null);
     }
   }
 
   async function onAudios(files: FileList | null) {
     if (!files?.length) return;
+    const list = Array.from(files);
     setUploading(true);
+    setUploadPercent(0);
+    setUploadIndex(0);
+    setUploadTotal(list.length);
     setLocalError(null);
     try {
       const nextTracks = [...tracks];
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        setUploadIndex(i + 1);
+        setUploadPercent(0);
         if (!isMp3File(file)) {
           throw new Error(`« ${file.name} » n'est pas un MP3.`);
         }
         const [uploaded, browserDuration] = await Promise.all([
-          uploadViaApi(file, "audio"),
+          uploadViaApi(file, "audio", setUploadPercent),
           readAudioDuration(file),
         ]);
         nextTracks.push({
@@ -173,6 +187,9 @@ export function AlbumPublishWizard({
       toastError(msg);
     } finally {
       setUploading(false);
+      setUploadPercent(null);
+      setUploadIndex(0);
+      setUploadTotal(0);
     }
   }
 
@@ -239,7 +256,7 @@ export function AlbumPublishWizard({
         <input type="hidden" name="status" value="published" />
         <input type="hidden" name="title" value={title} />
         <input type="hidden" name="artist_id" value={artistId} />
-        <input type="hidden" name="price_fcfa" value={price} />
+        <input type="hidden" name="price_fcfa" value={priceFcfa} />
         <input type="hidden" name="genre" value={genre || ""} />
         <input type="hidden" name="auteur" value={auteur} />
         <input type="hidden" name="compositeur" value={compositeur} />
@@ -283,15 +300,11 @@ export function AlbumPublishWizard({
                 </select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>
-                  Prix album ({currencyLabel}) — min. {Math.round(minPrice)}
-                </Label>
-                <Input
-                  type="number"
-                  min={Math.round(minPrice)}
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="h-12 rounded-2xl bg-white/[0.04]"
+                <Label>Prix album</Label>
+                <PriceTierPicker
+                  valueFcfa={priceFcfa}
+                  onChange={setPriceFcfa}
+                  country={country}
                 />
               </div>
               <GenrePicker
@@ -313,9 +326,12 @@ export function AlbumPublishWizard({
               subtitle={`Une seule cover carrée ${COVER_SIZE}×${COVER_SIZE} pour tout l'album.`}
             />
             <div className="flex flex-col items-center gap-4">
-              <div className="relative size-48 overflow-hidden rounded-2xl border border-white/15 bg-black/40">
+              <div
+                className="relative size-48 overflow-hidden rounded-2xl border border-white/15 bg-black/40"
+                aria-busy={uploading}
+              >
                 {coverPreview || coverUrl ? (
-                  <Image
+                  <AppImage
                     src={coverPreview || coverUrl}
                     alt="Cover album"
                     fill
@@ -327,9 +343,20 @@ export function AlbumPublishWizard({
                     {COVER_SIZE}×{COVER_SIZE}
                   </div>
                 )}
+                {uploading ? (
+                  <UploadBusy overlay label="Envoi de la cover…" />
+                ) : null}
               </div>
-              <label className="inline-flex cursor-pointer rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black">
-                {uploading ? "Envoi…" : coverUrl ? "Changer la cover" : "Ajouter la cover"}
+              <label
+                className={`inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black ${
+                  uploading ? "pointer-events-none opacity-60" : "cursor-pointer"
+                }`}
+              >
+                {uploading
+                  ? "Envoi…"
+                  : coverUrl
+                    ? "Changer la cover"
+                    : "Ajouter la cover"}
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -351,11 +378,31 @@ export function AlbumPublishWizard({
               subtitle="Multi-upload MP3, renomme et réorganise l'ordre."
             />
 
-            <label className="mb-4 flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-white/15 px-4 py-8">
-              <span className="text-sm font-medium text-white">
-                {uploading ? "Upload en cours…" : "Ajouter des MP3"}
-              </span>
-              <span className="text-xs text-white/40">Plusieurs fichiers · .mp3</span>
+            <label
+              className={`mb-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-white/15 px-4 py-8 ${
+                uploading ? "pointer-events-none opacity-90" : "cursor-pointer"
+              }`}
+              aria-busy={uploading}
+            >
+              {uploading ? (
+                <UploadBusy
+                  label={
+                    uploadTotal > 1
+                      ? `Envoi ${uploadIndex}/${uploadTotal}…`
+                      : "Envoi du morceau…"
+                  }
+                  percent={uploadPercent}
+                />
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-white">
+                    Ajouter des MP3
+                  </span>
+                  <span className="text-xs text-white/40">
+                    Plusieurs fichiers · .mp3
+                  </span>
+                </>
+              )}
               <input
                 type="file"
                 accept="audio/mpeg,.mp3"
@@ -497,7 +544,7 @@ export function AlbumPublishWizard({
               <div className="flex gap-4">
                 <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-white/5">
                   {coverUrl ? (
-                    <Image
+                    <AppImage
                       src={coverUrl}
                       alt=""
                       fill
@@ -513,7 +560,7 @@ export function AlbumPublishWizard({
                     {genre ? ` · ${genre}` : ""}
                   </p>
                   <p className="text-white/45">
-                    Album · {tracks.length} titres · {price} {currencyLabel}
+                    Album · {tracks.length} titres · {formatMoney(priceFcfa, country)}
                   </p>
                 </div>
               </div>
@@ -565,6 +612,7 @@ export function AlbumPublishWizard({
               type="button"
               variant="outline"
               className="h-12 flex-1 rounded-full border-white/20 bg-transparent text-white"
+              isDisabled={uploading}
               onPress={() => {
                 setLocalError(null);
                 setStep((s) => s - 1);

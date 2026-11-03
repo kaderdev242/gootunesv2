@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request-client";
 import { probeDurationFromR2Key } from "@/lib/audio/probe-duration";
 import { logServerError } from "@/lib/errors";
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createRequestClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();

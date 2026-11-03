@@ -10,7 +10,7 @@ export default async function LabelHomePage() {
   const supabase = await createClient();
   const { data: purchases } = await supabase
     .from("purchases")
-    .select("amount_fcfa, artist_net_fcfa, created_at, status")
+    .select("amount_fcfa, artist_net_fcfa, created_at, status, payment_method")
     .eq("seller_id", session.userId)
     .eq("status", "completed")
     .order("created_at", { ascending: false });
@@ -49,7 +49,6 @@ export default async function LabelHomePage() {
   return (
     <OverviewStats
       title={session.profile.display_name || "Ton label"}
-      subtitle="Espace label — catalogue, artistes et revenus."
       balance={Number(session.profile.balance_fcfa)}
       totalGross={totalGross}
       totalNet={totalNet}

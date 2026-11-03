@@ -1,86 +1,70 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Add01Icon,
+  Compass01Icon,
+  GridViewIcon,
+  Home01Icon,
+  LibraryIcon,
+  NewReleasesIcon,
+  Playlist01Icon,
+  Search01Icon,
+  Settings02Icon,
+} from "@hugeicons/core-free-icons";
 import { Logo } from "@/components/landing/Logo";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import type { PlaylistSummary } from "@/lib/playlists/queries";
 
-/** Icônes Streamline Flex Line – Free (CC BY 4.0) — sidebar Discover uniquement. */
 const menuItems = [
   {
-    href: "/discover",
+    href: "/",
     label: "Accueil",
-    icon: "/icons/discover/home.svg",
+    icon: Home01Icon,
     exact: true,
   },
   {
     href: "/discover/recherche",
     label: "Recherche",
-    icon: "/icons/discover/search.svg",
+    icon: Search01Icon,
   },
   {
     href: "/discover/decouvrir",
     label: "Découvrir",
-    icon: "/icons/discover/discover.svg",
+    icon: Compass01Icon,
   },
   {
     href: "/discover/genres",
     label: "Genres",
-    icon: "/icons/discover/genres.svg",
+    icon: GridViewIcon,
   },
   {
     href: "/discover/nouveautes",
     label: "Nouveautés",
-    icon: "/icons/discover/nouveautes.svg",
+    icon: NewReleasesIcon,
   },
   {
     href: "/discover/bibliotheque",
     label: "Bibliothèque",
-    icon: "/icons/discover/bibliotheque.svg",
+    icon: LibraryIcon,
   },
   {
     href: "/discover/playlists",
     label: "Playlists",
-    icon: "/icons/discover/playlists.svg",
+    icon: Playlist01Icon,
   },
 ] as const;
-
-function SidebarIcon({
-  src,
-  active,
-  size = 20,
-}: {
-  src: string;
-  active?: boolean;
-  size?: number;
-}) {
-  return (
-    <span
-      className={`relative shrink-0 transition ${
-        active ? "opacity-100" : "opacity-70"
-      }`}
-      style={{ width: size, height: size }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt=""
-        width={size}
-        height={size}
-        className="size-full object-contain"
-        draggable={false}
-      />
-    </span>
-  );
-}
 
 type FeedSidebarProps = {
   open?: boolean;
   onClose?: () => void;
   recentPlaylists?: PlaylistSummary[];
   isLoggedIn?: boolean;
+  /** Paramètres Discover : réservé aux comptes fans */
+  isFan?: boolean;
 };
 
 export function FeedSidebar({
@@ -88,8 +72,10 @@ export function FeedSidebar({
   onClose,
   recentPlaylists = [],
   isLoggedIn = false,
+  isFan = false,
 }: FeedSidebarProps) {
   const pathname = usePathname();
+  const settingsActive = pathname.startsWith("/discover/parametres");
 
   return (
     <>
@@ -102,15 +88,15 @@ export function FeedSidebar({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-[240px] flex-col border-r border-white/5 bg-[#0b0b0b] px-4 py-6 transition-transform lg:static lg:z-0 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-[240px] flex-col border-r border-white/[0.06] bg-black px-3 py-5 transition-transform lg:static lg:z-0 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <Link
-          href="/discover"
-          className="mb-8 flex items-center px-1"
+          href="/"
+          className="mb-8 flex items-center px-3"
           onClick={onClose}
-          aria-label="Accueil Discover"
+          aria-label="Accueil Gootunes"
         >
           <Logo size="sm" />
         </Link>
@@ -120,21 +106,27 @@ export function FeedSidebar({
         </p>
         <nav className="flex flex-col gap-1">
           {menuItems.map((item) => {
-            const active = "exact" in item && item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
+            const active =
+              "exact" in item && item.exact
+                ? pathname === item.href || pathname === "/discover"
+                : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition ${
                   active
-                    ? "bg-white/15 text-white"
-                    : "text-white/55 hover:bg-white/5 hover:text-white"
+                    ? "bg-[#1a1a1a] text-white"
+                    : "text-white/55 hover:bg-white/[0.04] hover:text-white"
                 }`}
               >
-                <SidebarIcon src={item.icon} active={active} />
+                <HugeiconsIcon
+                  icon={item.icon}
+                  size={20}
+                  strokeWidth={active ? 2 : 1.5}
+                  className={active ? "text-white" : "text-white/70"}
+                />
                 {item.label}
               </Link>
             );
@@ -152,7 +144,12 @@ export function FeedSidebar({
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-white"
               >
-                <SidebarIcon src="/icons/discover/add.svg" size={18} />
+                <HugeiconsIcon
+                  icon={Add01Icon}
+                  size={18}
+                  strokeWidth={1.5}
+                  className="text-white/70"
+                />
                 Créer
               </Link>
               {recentPlaylists.length === 0 ? (
@@ -172,7 +169,7 @@ export function FeedSidebar({
                     }`}
                   >
                     <span className="relative size-8 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
-                      <Image
+                      <AppImage
                         src={p.cover_url || FALLBACK_COVER}
                         alt=""
                         fill
@@ -195,6 +192,28 @@ export function FeedSidebar({
             </Link>
           )}
         </div>
+
+        {isFan ? (
+          <div className="mt-3 border-t border-white/[0.06] pt-3">
+            <Link
+              href="/discover/parametres"
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition ${
+                settingsActive
+                  ? "bg-[#1a1a1a] text-white"
+                  : "text-white/55 hover:bg-white/[0.04] hover:text-white"
+              }`}
+            >
+              <HugeiconsIcon
+                icon={Settings02Icon}
+                size={20}
+                strokeWidth={settingsActive ? 2 : 1.5}
+                className={settingsActive ? "text-white" : "text-white/70"}
+              />
+              Paramètres
+            </Link>
+          </div>
+        ) : null}
       </aside>
     </>
   );

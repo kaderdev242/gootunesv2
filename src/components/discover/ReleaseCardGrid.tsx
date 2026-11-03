@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { formatMoney } from "@/lib/format";
-import { TrackArtistLine } from "./ExplicitBadge";
+import { TrackArtistLine, TrackTitleLine } from "./ExplicitBadge";
+import { LazyCover } from "./LazyCover";
 
 export type ReleaseCardItem = {
   id: string;
@@ -36,24 +36,25 @@ export function ReleaseCardGrid({
           href={`/discover/release/${r.id}`}
           className="group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 transition hover:-translate-y-0.5 hover:border-white/20"
         >
-          <div className="relative aspect-square bg-zinc-900">
-            <Image
-              src={r.cover_url || FALLBACK_COVER}
-              alt={r.title}
-              fill
-              className="object-cover transition duration-300 group-hover:scale-[1.03]"
-              sizes="280px"
-            />
-          </div>
+          <LazyCover
+            src={r.cover_url || FALLBACK_COVER}
+            alt={r.title}
+            sizes="280px"
+            className="aspect-square bg-zinc-900"
+            imgClassName="transition duration-300 group-hover:scale-[1.03]"
+          />
           <div className="space-y-1 px-4 py-4">
-            <p className="truncate font-semibold text-white">{r.title}</p>
+            <TrackTitleLine
+              title={r.title}
+              explicit={r.explicit}
+              className="truncate font-semibold text-white"
+            />
             <TrackArtistLine
               artist={
                 r.genre
                   ? `${r.artistName || "Artiste"} · ${r.genre}`
                   : r.artistName || "Artiste"
               }
-              explicit={r.explicit}
               className="text-xs text-white/40"
             />
             {r.price_fcfa != null ? (

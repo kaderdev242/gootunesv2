@@ -39,26 +39,31 @@ export function AuthShell({
         </div>
       </div>
 
-      <div className="violet-wash relative flex min-h-dvh items-center justify-center px-4 py-12 sm:px-8">
+      <div className="violet-wash relative flex min-h-dvh items-start justify-center px-4 py-8 sm:items-center sm:px-8 sm:py-12">
         <div className="pointer-events-none absolute inset-0 opacity-40">
           <div className="line-grid absolute inset-0" />
           <div className="dot-grid absolute inset-0" />
         </div>
 
-        <div className="relative z-10 w-full max-w-[440px]">
-          <Link href="/" className="mb-8 flex justify-center lg:justify-start">
+        <div className="relative z-10 w-full max-w-[440px] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <Link
+            href="/"
+            className="mb-5 flex justify-center sm:mb-8 lg:justify-start"
+          >
             <Logo size="md" priority />
           </Link>
 
-          <div className="rounded-[32px] border border-white/10 bg-black/45 p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:p-8">
+          <div className="rounded-[28px] border border-white/10 bg-black/45 p-5 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:rounded-[32px] sm:p-8">
             <p className="text-[11px] font-semibold tracking-[0.18em] text-white/35 uppercase">
               {eyebrow}
             </p>
-            <h1 className="font-display mt-2 text-3xl font-bold tracking-tight text-white">
+            <h1 className="font-display mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
               {title}
             </h1>
-            <p className="mt-2 text-sm leading-relaxed text-white/50">{subtitle}</p>
-            <div className="mt-7">{children}</div>
+            <p className="mt-2 text-sm leading-relaxed text-white/50">
+              {subtitle}
+            </p>
+            <div className="mt-5 sm:mt-7">{children}</div>
           </div>
         </div>
       </div>

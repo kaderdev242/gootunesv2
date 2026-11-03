@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import type { UserRole } from "@/lib/supabase/database.types";
+import { NOINDEX } from "@/lib/seo";
+
+export const metadata: Metadata = NOINDEX;
 
 export default async function InscriptionPage({
   searchParams,

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  verifyMbiyoWebhookSignature,
-  type MbiyoWebhookPayload,
-} from "@/lib/mbiyo/client";
+import { verifyMbiyoWebhookSignature } from "@/lib/mbiyo/client";
 import { failByOrderId, fulfillByOrderId } from "@/lib/mbiyo/fulfill";
 import type { Json } from "@/lib/supabase/database.types";
+import { mbiyoWebhookSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,16 +23,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Signature invalide" }, { status: 401 });
   }
 
-  let payload: MbiyoWebhookPayload;
+  let json: unknown;
   try {
-    payload = JSON.parse(rawBody) as MbiyoWebhookPayload;
+    json = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  if (!payload.order_id || !payload.status) {
+  const parsed = mbiyoWebhookSchema.safeParse(json);
+  if (!parsed.success) {
     return NextResponse.json({ error: "Payload incomplet" }, { status: 400 });
   }
+  const payload = parsed.data;
 
   const status = String(payload.status).toLowerCase();
 

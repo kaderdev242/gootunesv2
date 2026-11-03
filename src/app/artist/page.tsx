@@ -10,7 +10,7 @@ export default async function ArtistHomePage() {
   const supabase = await createClient();
   const { data: purchases } = await supabase
     .from("purchases")
-    .select("amount_fcfa, artist_net_fcfa, created_at, status")
+    .select("amount_fcfa, artist_net_fcfa, created_at, status, payment_method")
     .eq("seller_id", session.userId)
     .eq("status", "completed")
     .order("created_at", { ascending: false });
@@ -49,7 +49,6 @@ export default async function ArtistHomePage() {
   return (
     <OverviewStats
       title={`Salut, ${session.profile.display_name || "artiste"}`}
-      subtitle="Espace artiste — commission Gootunes 20%, net 80%."
       balance={Number(session.profile.balance_fcfa)}
       totalGross={totalGross}
       totalNet={totalNet}

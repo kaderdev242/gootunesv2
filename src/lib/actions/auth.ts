@@ -1,10 +1,13 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { creatorHome } from "@/lib/dashboard/paths";
 import { notifyWelcome } from "@/lib/email/notify";
 import { logServerError, mapAuthError } from "@/lib/errors";
+import { checkRateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
+import { signInSchema, signUpSchema } from "@/lib/validation/schemas";
 import type { UserRole } from "@/lib/supabase/database.types";
 
 export type AuthState = {
@@ -12,16 +15,31 @@ export type AuthState = {
   success?: string;
 };
 
+async function authClientIp() {
+  const h = await headers();
+  return clientIpFromHeaders(h);
+}
+
 export async function signIn(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const email = String(formData.get("email") || "").trim();
-  const password = String(formData.get("password") || "");
-  const next = String(formData.get("next") || "");
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    next: formData.get("next") || "",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Données invalides." };
+  }
 
-  if (!email || !password) {
-    return { error: "Email et mot de passe requis." };
+  const { email, password, next } = parsed.data;
+  const ip = await authClientIp();
+  const rl = await checkRateLimit(`auth:signIn:${ip}`, 10, 60_000, {
+    strict: true,
+  });
+  if (!rl.allowed) {
+    return { error: "Trop de tentatives. Réessaie dans une minute." };
   }
 
   const supabase = await createClient();
@@ -59,25 +77,31 @@ export async function signUp(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const email = String(formData.get("email") || "").trim();
-  const password = String(formData.get("password") || "");
-  const role = String(formData.get("role") || "fan") as UserRole;
-  const displayName = String(formData.get("display_name") || "").trim();
-  const country = String(formData.get("country") || "").trim();
-
-  if (!email || !password) {
-    return { error: "Email et mot de passe requis." };
-  }
-  if (password.length < 6) {
-    return { error: "Le mot de passe doit contenir au moins 6 caractères." };
-  }
-  if (!["fan", "artist", "label"].includes(role)) {
-    return { error: "Rôle invalide." };
+  const parsed = signUpSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    role: formData.get("role") || "fan",
+    display_name: formData.get("display_name") || "",
+    country: formData.get("country") || "",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Données invalides." };
   }
 
-  // Fans peuvent encore envoyer un pseudo optionnel ; créateurs → onboarding
+  const { email, password, role, display_name: displayName, country } =
+    parsed.data;
+
+  // Fans : pseudo requis
   if (role === "fan" && !displayName) {
     return { error: "Pseudo, email et mot de passe requis." };
+  }
+
+  const ip = await authClientIp();
+  const rl = await checkRateLimit(`auth:signUp:${ip}`, 5, 60_000, {
+    strict: true,
+  });
+  if (!rl.allowed) {
+    return { error: "Trop d'inscriptions. Réessaie dans une minute." };
   }
 
   const supabase = await createClient();
@@ -89,7 +113,7 @@ export async function signUp(
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
       data: {
-        role,
+        role: role as UserRole,
         display_name: displayName || null,
         country: country || null,
       },
@@ -108,7 +132,6 @@ export async function signUp(
   });
 
   async function syncProfile(userId: string) {
-    // Le trigger crée le profil ; on force le pseudo/pays (fans surtout)
     const { error: profileError } = await supabase
       .from("profiles")
       .update({

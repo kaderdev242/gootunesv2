@@ -38,7 +38,7 @@ function getClientIp(request: NextRequest): string {
 export async function GET(request: NextRequest, { params }: Params) {
   // ── Rate limiting : 120 requêtes/min par IP (chunked streaming compris) ──
   const ip = getClientIp(request);
-  const rl = checkRateLimit(`stream:${ip}`, 120, 60_000);
+  const rl = await checkRateLimit(`stream:${ip}`, 120, 60_000);
   if (!rl.allowed) {
     return new NextResponse(null, {
       status: 429,

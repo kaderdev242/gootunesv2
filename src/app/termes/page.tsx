@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermesPage() {
   return (
-    <LegalShell title="Conditions d'utilisation" updated="2 août 2026">
+    <LegalShell title="Conditions d'utilisation" updated="17 août 2026">
       <LegalSection title="1. Objet">
         <p>
           Gootunes est une marketplace Direct-to-Fan qui met en relation des
@@ -96,10 +96,15 @@ export default function TermesPage() {
 
       <LegalSection title="6. Commissions et paiements">
         <p>
-          Les ventes et abonnements label peuvent donner lieu à une commission
-          plateforme et à des frais opérateurs Mobile Money. Les montants nets
-          crédités sur le solde créateur sont indiqués dans le parcours de vente
-          et de retrait.
+          Les ventes Mobile Money (web et Android) créditent l&apos;artiste ou
+          le label à hauteur de 80 % du palier catalogue. Les ventes iOS via
+          In-App Purchase Apple créditent 70 % du même palier (commission Apple
+          d&apos;environ 30 %, sans commission Gootunes supplémentaire).
+        </p>
+        <p>
+          Le solde créateur mélange ces deux sources. Les retraits se font
+          uniquement en Mobile Money : Apple verse Gootunes, qui reverse ensuite
+          le net iOS sur ce solde.
         </p>
         <p>
           Les paiements sont traités via des prestataires tiers. Gootunes

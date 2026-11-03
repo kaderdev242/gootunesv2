@@ -17,9 +17,11 @@ import { toastError, toastSuccess } from "@/lib/toast";
 export function ShareButton({
   title,
   path,
+  compact = false,
 }: {
   title: string;
   path: string;
+  compact?: boolean;
 }) {
   const [url, setUrl] = useState(path);
 
@@ -45,10 +47,15 @@ export function ShareButton({
       <Button
         type="button"
         variant="ghost"
-        className="h-11 rounded-full border border-white/15 bg-white/5 px-5 text-white"
+        aria-label="Partager"
+        className={
+          compact
+            ? "hidden size-12 rounded-full border border-white/15 bg-white/5 text-white sm:inline-flex"
+            : "hidden h-11 rounded-full border border-white/15 bg-white/5 px-5 text-white sm:inline-flex"
+        }
       >
         <HugeiconsIcon icon={Share01Icon} size={16} />
-        <span className="ml-2">Partager</span>
+        {compact ? null : <span className="ml-2">Partager</span>}
       </Button>
       <Modal.Backdrop className="bg-black/70">
         <Modal.Container className="px-4">

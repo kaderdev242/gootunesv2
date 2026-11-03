@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
+import { AppImage } from "@/components/media/AppImage";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowExpand01Icon,
@@ -10,15 +9,25 @@ import {
   PauseIcon,
   PlayIcon,
   PreviousIcon,
-  ShoppingBag01Icon,
   VolumeHighIcon,
   VolumeMute01Icon,
 } from "@hugeicons/core-free-icons";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { IconButton } from "@/components/ui/IconButton";
-import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
+import {
+  TrackArtistLine,
+  TrackTitleLine,
+} from "@/components/discover/ExplicitBadge";
+import dynamic from "next/dynamic";
 import { usePlayer } from "./PlayerProvider";
-import { FullscreenPlayer } from "./FullscreenPlayer";
+
+const FullscreenPlayer = dynamic(
+  () =>
+    import("./FullscreenPlayer").then((m) => ({
+      default: m.FullscreenPlayer,
+    })),
+  { ssr: false },
+);
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
@@ -34,10 +43,6 @@ export function FeedPlayer() {
     isPlaying,
     currentTime,
     effectiveDuration,
-    accessMode,
-    owned,
-    previewEnded,
-    previewSeconds,
     volume,
     muted,
     togglePlay,
@@ -48,7 +53,6 @@ export function FeedPlayer() {
     previous,
     openFullscreen,
     closePlayer,
-    closeFullscreen,
   } = usePlayer();
 
   if (!hasTrack || !current) return <FullscreenPlayer />;
@@ -58,36 +62,9 @@ export function FeedPlayer() {
       ? Math.min(100, (currentTime / effectiveDuration) * 100)
       : 0;
 
-  const buyHref = current.releasePublicId || current.releaseId
-    ? `/discover/release/${current.releasePublicId || current.releaseId}/acheter`
-    : null;
-
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-[#0e0e0e]/95 backdrop-blur-xl">
-        {accessMode === "preview" ? (
-          <div className="flex items-center justify-center gap-2 border-b border-white/5 bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/55">
-            <span>
-              Aperçu {previewSeconds}s
-              {previewEnded ? " terminé — achète pour écouter en entier" : ""}
-            </span>
-            {buyHref && !owned ? (
-              <Link
-                href={buyHref}
-                onClick={closeFullscreen}
-                className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 font-semibold text-black"
-              >
-                <HugeiconsIcon icon={ShoppingBag01Icon} size={12} />
-                Acheter
-              </Link>
-            ) : null}
-          </div>
-        ) : (
-          <div className="border-b border-white/5 bg-emerald-500/10 px-3 py-1 text-center text-[11px] font-medium text-emerald-200">
-            Titre acheté — écoute illimitée
-          </div>
-        )}
-
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         {/* Mobile: couverture + infos | contrôles | fermer — Desktop: 3 colonnes */}
         <div className="mx-auto flex max-w-[1600px] items-center gap-2 px-2 py-2 sm:grid sm:h-[84px] sm:grid-cols-[minmax(0,1fr)_minmax(240px,420px)_minmax(0,1fr)] sm:gap-4 sm:px-5 sm:py-0">
           <button
@@ -96,7 +73,7 @@ export function FeedPlayer() {
             className="flex min-w-0 flex-1 items-center gap-2.5 text-left sm:flex-none"
           >
             <div className="relative size-11 shrink-0 overflow-hidden rounded-xl sm:size-12">
-              <Image
+              <AppImage
                 src={current.cover || FALLBACK_COVER}
                 alt={current.title}
                 fill
@@ -105,12 +82,13 @@ export function FeedPlayer() {
               />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
-                {current.title}
-              </p>
+              <TrackTitleLine
+                title={current.title}
+                explicit={current.explicit}
+                className="truncate text-sm font-semibold text-white"
+              />
               <TrackArtistLine
                 artist={current.artist}
-                explicit={current.explicit}
                 className="text-xs text-white/45"
               />
             </div>

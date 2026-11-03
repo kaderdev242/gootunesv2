@@ -13,6 +13,7 @@ import {
   getMbiyoCurrency,
   isValidMbiyoPhone,
   mbiyoConfigured,
+  mbiyoRequiredInProduction,
   normalizeMbiyoPhone,
   siteUrl,
   toMbiyoPhoneE164,
@@ -21,6 +22,10 @@ import {
   failLabelPlanByOrderId,
   fulfillLabelPlanByOrderId,
 } from "@/lib/mbiyo/fulfill";
+import {
+  isPendingOlderThanTtl,
+  TTL_EXPIRE_SOURCE,
+} from "@/lib/purchases/expire-pending";
 import { notifyLabelArtistCreated } from "@/lib/email/notify";
 import {
   logServerError,
@@ -79,6 +84,15 @@ export async function initiateLabelPlan(
 
   const currency = getMbiyoCurrency(country);
   const orderId = `LAB-${plan.slice(0, 3).toUpperCase()}-${randomUUID().slice(0, 8)}`;
+
+  const mbiyoGate = mbiyoRequiredInProduction();
+  if (mbiyoGate) {
+    logServerError(
+      "label.plan.mbiyo_missing_production",
+      new Error("MBIYO_API_KEY absente en production"),
+    );
+    return { error: mbiyoGate };
+  }
 
   if (!mbiyoConfigured()) {
     const expires = new Date();
@@ -206,7 +220,7 @@ export async function checkLabelPlanStatus(orderId: string): Promise<{
 
   const { data: order } = await supabase
     .from("label_plan_orders")
-    .select("id, status, provider_transaction_id, order_id")
+    .select("id, status, provider_transaction_id, order_id, created_at")
     .eq("order_id", orderId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -236,6 +250,15 @@ export async function checkLabelPlanStatus(orderId: string): Promise<{
     }
   } catch {
     /* pending */
+  }
+
+  if (isPendingOlderThanTtl(order.created_at)) {
+    await failLabelPlanByOrderId(orderId, order.provider_transaction_id, {
+      source: TTL_EXPIRE_SOURCE,
+      expired_at: new Date().toISOString(),
+      via: "poll",
+    });
+    return { status: "failed" };
   }
 
   return { status: "pending" };

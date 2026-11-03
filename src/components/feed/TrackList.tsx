@@ -1,13 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FavouriteIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import type { Track } from "@/lib/types/music";
+import { LazyCover } from "@/components/discover/LazyCover";
 import { TrackDuration } from "@/components/discover/TrackDuration";
-import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
+import {
+  TrackArtistLine,
+  TrackTitleLine,
+} from "@/components/discover/ExplicitBadge";
 import { usePlayer } from "./PlayerProvider";
 import { PreloadOnVisible } from "./PreloadOnVisible";
 
@@ -65,23 +68,20 @@ export function TrackList({
                 </span>
 
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="relative size-11 shrink-0 overflow-hidden rounded-xl">
-                    <Image
-                      src={track.cover}
-                      alt={track.title}
-                      fill
-                      className="object-cover"
-                      sizes="44px"
-                    />
-                  </div>
+                  <LazyCover
+                    src={track.cover}
+                    alt={track.title}
+                    sizes="44px"
+                    className="size-11 shrink-0 rounded-xl"
+                  />
                   <div className="min-w-0">
-                    <p
+                    <TrackTitleLine
+                      title={track.title}
+                      explicit={track.explicit}
                       className={`truncate text-sm font-semibold ${
                         active ? "text-white" : "text-white/90"
                       }`}
-                    >
-                      {track.title}
-                    </p>
+                    />
                     {track.artistPublicId || track.artistId ? (
                       <Link
                         href={`/discover/artiste/${track.artistPublicId || track.artistId}`}
@@ -90,14 +90,14 @@ export function TrackList({
                       >
                         <TrackArtistLine
                           artist={track.artist}
-                          explicit={track.explicit}
+                          verified={track.artistVerified}
                           className="text-xs"
                         />
                       </Link>
                     ) : (
                       <TrackArtistLine
                         artist={track.artist}
-                        explicit={track.explicit}
+                        verified={track.artistVerified}
                       />
                     )}
                   </div>

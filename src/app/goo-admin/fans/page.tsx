@@ -1,17 +1,16 @@
 import { listProfilesByRole } from "@/lib/admin/queries";
 import { SuspendUserButton } from "@/components/admin/AdminActionForms";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default async function AdminFansPage() {
   const fans = await listProfilesByRole("fan");
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-          Fans
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">{fans.length} comptes</p>
-      </header>
+      <AdminPageHeader
+        title="Fans"
+        description={`${fans.length} comptes`}
+      />
 
       <div className="overflow-hidden rounded-[28px] border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/5">
         <div className="overflow-x-auto">

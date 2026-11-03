@@ -1,9 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { SectionScroller } from "@/components/feed/SectionScroller";
-import { TrackArtistLine } from "@/components/discover/ExplicitBadge";
+import {
+  TrackArtistLine,
+  TrackTitleLine,
+} from "@/components/discover/ExplicitBadge";
+import { LazyCover } from "@/components/discover/LazyCover";
 
 export async function CatalogSection() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
@@ -12,9 +15,10 @@ export async function CatalogSection() {
   const { data: releases } = await supabase
     .from("releases")
     .select(
-      "id, public_id, title, cover_url, genre, owner_id, price_fcfa, type, created_at, artist_id, artists(id, public_id, stage_name, avatar_url, country, bio), tracks(id, title, audio_url, track_number, duration_seconds, is_explicit)",
+      "id, public_id, title, cover_url, genre, owner_id, price_fcfa, type, created_at, artist_id, artists(id, public_id, stage_name, avatar_url, country, bio, is_verified), tracks(id, title, audio_url, track_number, duration_seconds, is_explicit)",
     )
     .eq("status", "published")
+    .eq("is_hidden", false)
     .order("created_at", { ascending: false })
     .limit(16);
 
@@ -22,7 +26,7 @@ export async function CatalogSection() {
 
   return (
     <SectionScroller
-      title="Catalogue en vente"
+      title="Nouveautés du catalogue"
       seeAllHref="/discover/catalogue"
       scrollAmount={280}
     >
@@ -31,6 +35,7 @@ export async function CatalogSection() {
           id?: string;
           public_id?: string;
           stage_name?: string;
+          is_verified?: boolean;
         } | null;
         const tracks = (r.tracks as { is_explicit?: boolean }[] | null) || [];
         const explicit = tracks.some((t) => t.is_explicit);
@@ -40,40 +45,27 @@ export async function CatalogSection() {
           <Link
             key={r.id}
             href={`/discover/release/${r.public_id}`}
-            className="w-[148px] shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/80 transition hover:-translate-y-0.5 hover:border-white/20 sm:w-[168px]"
+            className="group w-[156px] shrink-0 sm:w-[176px]"
           >
-            <div className="relative aspect-square bg-zinc-900">
-              {r.cover_url ? (
-                <Image
-                  src={r.cover_url}
-                  alt={r.title}
-                  fill
-                  className="object-cover"
-                  sizes="168px"
-                />
-              ) : (
-                <Image
-                  src={FALLBACK_COVER}
-                  alt=""
-                  fill
-                  className="object-cover opacity-40"
-                  sizes="168px"
-                />
-              )}
-            </div>
-            <div className="space-y-1 px-3 py-3">
-              <p className="truncate text-sm font-semibold text-white">
-                {r.title}
-              </p>
-              <TrackArtistLine
-                artist={artistName}
-                explicit={explicit}
-                className="text-xs text-white/40"
+            <div className="overflow-hidden rounded-md">
+              <LazyCover
+                src={r.cover_url || FALLBACK_COVER}
+                alt={r.cover_url ? r.title : ""}
+                sizes="176px"
+                className="aspect-square bg-[#111]"
+                imgClassName={`transition duration-300 ${r.cover_url ? "group-hover:scale-[1.03]" : "opacity-40"}`}
               />
-              {r.genre ? (
-                <p className="truncate text-[11px] text-white/30">{r.genre}</p>
-              ) : null}
             </div>
+            <TrackTitleLine
+              title={r.title}
+              explicit={explicit}
+              className="mt-2.5 line-clamp-2 text-sm font-medium leading-snug text-white"
+            />
+            <TrackArtistLine
+              artist={artistName}
+              verified={Boolean(artist?.is_verified)}
+              className="mt-0.5 text-[13px] text-white/45"
+            />
           </Link>
         );
       })}

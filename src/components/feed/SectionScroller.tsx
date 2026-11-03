@@ -22,7 +22,7 @@ type SectionScrollerProps = {
 export function SectionScroller({
   title,
   seeAllHref,
-  seeAllLabel = "Voir tout",
+  seeAllLabel = "Tout voir",
   children,
   empty = false,
   emptyLabel = "Rien à afficher pour le moment.",
@@ -43,7 +43,7 @@ export function SectionScroller({
   return (
     <section>
       <div className="mb-4 flex items-end gap-3">
-        <h2 className="font-display min-w-0 flex-1 text-2xl font-bold text-white">
+        <h2 className="min-w-0 flex-1 text-[1.375rem] font-bold tracking-tight text-white">
           {title}
         </h2>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -61,7 +61,7 @@ export function SectionScroller({
                 type="button"
                 onClick={() => scroll(-1)}
                 aria-label="Défiler vers la gauche"
-                className="grid size-9 place-items-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-white/25 hover:bg-white/10 hover:text-white"
+                className="grid size-8 place-items-center rounded-full bg-[#1a1a1a] text-white/80 transition hover:bg-[#2a2a2a] hover:text-white"
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
               </button>
@@ -69,7 +69,7 @@ export function SectionScroller({
                 type="button"
                 onClick={() => scroll(1)}
                 aria-label="Défiler vers la droite"
-                className="grid size-9 place-items-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-white/25 hover:bg-white/10 hover:text-white"
+                className="grid size-8 place-items-center rounded-full bg-[#1a1a1a] text-white/80 transition hover:bg-[#2a2a2a] hover:text-white"
               >
                 <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
               </button>
@@ -83,7 +83,7 @@ export function SectionScroller({
       ) : (
         <div
           ref={scrollerRef}
-          className="flex gap-3 overflow-x-auto pb-2 scrollbar-none sm:gap-4"
+          className="flex gap-5 overflow-x-auto pb-1 scrollbar-none sm:gap-6"
         >
           {children}
         </div>

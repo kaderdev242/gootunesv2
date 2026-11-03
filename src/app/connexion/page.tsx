@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignInForm } from "@/components/auth/SignInForm";
+import { NOINDEX } from "@/lib/seo";
+
+export const metadata: Metadata = NOINDEX;
 
 export default async function ConnexionPage({
   searchParams,

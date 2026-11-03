@@ -35,16 +35,10 @@ export default function NotFound() {
           </p>
         </div>
 
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/discover"
-            className="inline-flex h-11 items-center rounded-full bg-white px-6 text-sm font-semibold text-black transition hover:bg-white/90"
-          >
-            Explorer Discover
-          </Link>
+        <div className="mt-9">
           <Link
             href="/"
-            className="inline-flex h-11 items-center rounded-full border border-white/15 px-6 text-sm font-medium text-white/80 transition hover:bg-white/5 hover:text-white"
+            className="inline-flex h-11 items-center rounded-full bg-white px-6 text-sm font-semibold text-black transition hover:bg-white/90"
           >
             Accueil
           </Link>

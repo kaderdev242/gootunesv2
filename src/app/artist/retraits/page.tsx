@@ -25,8 +25,7 @@ export default async function RetraitsPage() {
         Solde disponible :{" "}
         <span className="font-semibold text-white">
           {money(Number(session.profile.balance_fcfa))}
-        </span>{" "}
-        — envoi Mobile Money (payout).
+        </span>
       </p>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-2">

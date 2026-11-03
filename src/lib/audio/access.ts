@@ -31,7 +31,7 @@ export async function getTrackPlaybackAccess(
     supabase
       .from("tracks")
       .select(
-        "id, title, audio_url, duration_seconds, release_id, releases!inner(id, owner_id, status)",
+        "id, title, audio_url, duration_seconds, release_id, releases!inner(id, owner_id, status, is_hidden)",
       )
       .eq("id", trackId)
       .maybeSingle(),
@@ -44,9 +44,11 @@ export async function getTrackPlaybackAccess(
     id: string;
     owner_id: string;
     status: string;
+    is_hidden: boolean;
   };
 
-  if (release.status !== "published" && release.owner_id !== user?.id) {
+  const isOwner = release.owner_id === user?.id;
+  if (release.status !== "published" && !isOwner) {
     return { status: "unavailable" };
   }
 
@@ -54,7 +56,7 @@ export async function getTrackPlaybackAccess(
 
   let owned = false;
   if (user) {
-    if (user.id === release.owner_id) {
+    if (isOwner) {
       owned = true;
     } else {
       const { data: library } = await supabase
@@ -65,6 +67,12 @@ export async function getTrackPlaybackAccess(
         .maybeSingle();
       owned = !!library;
     }
+  }
+
+  // Masqué (admin ou suspension) : pas de preview public ;
+  // propriétaire et acheteurs gardent l'accès full.
+  if (release.is_hidden && !owned) {
+    return { status: "unavailable" };
   }
 
   return {

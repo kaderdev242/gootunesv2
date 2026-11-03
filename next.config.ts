@@ -32,12 +32,12 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Fonts
       "font-src 'self' https://fonts.gstatic.com",
-      // Images : self + R2 public (covers, avatars)
-      "img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com",
-      // Audio : Worker Cloudflare (streaming) + blob (lecture locale)
-      "media-src 'self' blob: https://*.workers.dev https://*.r2.dev",
+      // Images : self + R2 public (souvent *.gootunes.app) + Cloudinary
+      "img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.gootunes.app https://*.cloudinary.com",
+      // Audio : Worker Cloudflare (streaming) + R2 custom domain .app + blob
+      "media-src 'self' blob: https://*.workers.dev https://*.r2.dev https://*.gootunes.app",
       // Connexions (fetch, WebSocket, Supabase realtime)
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.workers.dev https://*.r2.cloudflarestorage.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.workers.dev https://*.r2.cloudflarestorage.com https://*.gootunes.app https://eu.aptabase.com https://us.aptabase.com",
       // Frames : interdit totalement
       "frame-src 'none'",
       "frame-ancestors 'none'",
@@ -48,6 +48,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/discover",
+        destination: "/",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
@@ -71,6 +80,16 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "**.r2.cloudflarestorage.com",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.cloudinary.com",
+        pathname: "/**",
       },
     ],
   },

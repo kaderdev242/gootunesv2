@@ -100,12 +100,11 @@ export async function getAdminOverview() {
   };
 }
 
-/** Dashboard Vue d'ensemble — layout dense, peu de cartes */
+/** Dashboard Vue d'ensemble — finances séparées + activité */
 export async function getAdminDashboard() {
   const db = createAdminClient();
   const now = new Date();
   const todayStart = startOfDay(now);
-  const d7 = daysAgo(6);
   const d30 = daysAgo(29);
   const d60 = daysAgo(59);
 
@@ -116,10 +115,14 @@ export async function getAdminDashboard() {
     profilesCurr,
     completedSales,
     labelOrders,
+    artistOrders,
+    withdrawals,
+    withdrawalsPendingCount,
+    withdrawalsPendingAmounts,
     openReports,
     recentUsers,
     popularReleases,
-    recentReports,
+    recentPurchases,
   ] = await Promise.all([
     db.from("profiles").select("id", { count: "exact", head: true }),
     db
@@ -137,17 +140,44 @@ export async function getAdminDashboard() {
       .gte("created_at", d30.toISOString()),
     db
       .from("purchases")
-      .select("amount_fcfa, commission_fcfa, created_at, release_id, status")
+      .select(
+        "amount_fcfa, commission_fcfa, artist_net_fcfa, created_at, release_id, status",
+      )
       .eq("status", "completed")
       .gte("created_at", d60.toISOString())
-      .order("created_at", { ascending: true })
-      .limit(2000),
+      .order("created_at", { ascending: false })
+      .limit(5000),
     db
       .from("label_plan_orders")
       .select("amount_fcfa, created_at, status")
       .eq("status", "completed")
       .gte("created_at", d60.toISOString())
-      .limit(1000),
+      .order("created_at", { ascending: false })
+      .limit(2000),
+    db
+      .from("artist_plan_orders")
+      .select("amount_fcfa, created_at, status")
+      .eq("status", "completed")
+      .gte("created_at", d60.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(2000),
+    db
+      .from("withdrawals")
+      .select(
+        "id, amount_fcfa, status, created_at, phone, profiles!withdrawals_profile_id_fkey(display_name, email)",
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    db
+      .from("withdrawals")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    db
+      .from("withdrawals")
+      .select("amount_fcfa")
+      .eq("status", "pending")
+      .limit(2000),
     db
       .from("track_reports")
       .select("id", { count: "exact", head: true })
@@ -167,16 +197,18 @@ export async function getAdminDashboard() {
       .order("created_at", { ascending: false })
       .limit(5),
     db
-      .from("track_reports")
+      .from("purchases")
       .select(
-        "id, reason, details, status, created_at, profiles!track_reports_reporter_id_fkey(display_name, avatar_url), tracks(title)",
+        "id, amount_fcfa, commission_fcfa, artist_net_fcfa, status, created_at, order_id, releases(title), buyer:profiles!purchases_buyer_id_fkey(display_name)",
       )
       .order("created_at", { ascending: false })
-      .limit(5),
+      .limit(8),
   ]);
 
   const sales = completedSales.data || [];
   const labels = labelOrders.data || [];
+  const artistsAbo = artistOrders.data || [];
+  const withdrawRows = withdrawals.data || [];
 
   const inRange = (iso: string, from: Date, to?: Date) => {
     const t = new Date(iso).getTime();
@@ -187,13 +219,46 @@ export async function getAdminDashboard() {
 
   const salesCurr = sales.filter((p) => inRange(p.created_at, d30));
   const salesPrev = sales.filter((p) => inRange(p.created_at, d60, d30));
-  const gmvCurr = salesCurr.reduce((s, p) => s + (p.amount_fcfa || 0), 0);
-  const gmvPrev = salesPrev.reduce((s, p) => s + (p.amount_fcfa || 0), 0);
-  const labelGmvCurr = labels
-    .filter((o) => inRange(o.created_at, d30))
-    .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
+  const musicGmvCurr = salesCurr.reduce((s, p) => s + (p.amount_fcfa || 0), 0);
+  const musicGmvPrev = salesPrev.reduce((s, p) => s + (p.amount_fcfa || 0), 0);
+  const artistNetCurr = salesCurr.reduce(
+    (s, p) => s + (p.artist_net_fcfa || 0),
+    0,
+  );
+  const artistNetPrev = salesPrev.reduce(
+    (s, p) => s + (p.artist_net_fcfa || 0),
+    0,
+  );
   const commissionCurr = salesCurr.reduce(
     (s, p) => s + (p.commission_fcfa || 0),
+    0,
+  );
+  const commissionPrev = salesPrev.reduce(
+    (s, p) => s + (p.commission_fcfa || 0),
+    0,
+  );
+
+  const labelAboCurr = labels
+    .filter((o) => inRange(o.created_at, d30))
+    .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
+  const labelAboPrev = labels
+    .filter((o) => inRange(o.created_at, d60, d30))
+    .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
+  const artistAboCurr = artistsAbo
+    .filter((o) => inRange(o.created_at, d30))
+    .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
+  const artistAboPrev = artistsAbo
+    .filter((o) => inRange(o.created_at, d60, d30))
+    .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
+  const subscriptionsCurr = labelAboCurr + artistAboCurr;
+  const subscriptionsPrev = labelAboPrev + artistAboPrev;
+
+  const platformRevenueCurr = commissionCurr + subscriptionsCurr;
+  const platformRevenuePrev = commissionPrev + subscriptionsPrev;
+
+  const pendingWithdrawals = withdrawRows;
+  const pendingWithdrawalsFcfa = (withdrawalsPendingAmounts.data || []).reduce(
+    (s, w) => s + (w.amount_fcfa || 0),
     0,
   );
 
@@ -203,30 +268,87 @@ export async function getAdminDashboard() {
     dayKeys.push(d.toISOString().slice(0, 10));
   }
   const salesByDay = dayKeys.map((key) => {
-    const amount = sales
+    const music = sales
       .filter((p) => p.created_at.slice(0, 10) === key)
       .reduce((s, p) => s + (p.amount_fcfa || 0), 0);
-    const labelAmount = labels
-      .filter((o) => o.created_at.slice(0, 10) === key)
-      .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
+    const abo =
+      labels
+        .filter((o) => o.created_at.slice(0, 10) === key)
+        .reduce((s, o) => s + (o.amount_fcfa || 0), 0) +
+      artistsAbo
+        .filter((o) => o.created_at.slice(0, 10) === key)
+        .reduce((s, o) => s + (o.amount_fcfa || 0), 0);
     return {
       key,
       label: new Date(key).toLocaleDateString("fr-FR", {
         weekday: "short",
         day: "numeric",
       }),
-      amount: amount + labelAmount,
+      amount: music + abo,
+      music,
+      subscriptions: abo,
     };
   });
   const weekTotal = salesByDay.reduce((s, d) => s + d.amount, 0);
+
+  // Segments exclusifs : net artistes + commission + abonnements
+  const collectionTotal =
+    artistNetCurr + commissionCurr + subscriptionsCurr || 1;
+  const collectionMix = {
+    music: musicGmvCurr,
+    artistNet: artistNetCurr,
+    commission: commissionCurr,
+    subscriptions: subscriptionsCurr,
+    total: artistNetCurr + commissionCurr + subscriptionsCurr,
+    artistNetPct: Math.round((artistNetCurr / collectionTotal) * 1000) / 10,
+    commissionPct: Math.round((commissionCurr / collectionTotal) * 1000) / 10,
+    subscriptionsPct:
+      Math.round((subscriptionsCurr / collectionTotal) * 1000) / 10,
+  };
 
   return {
     usersTotal: profilesCount.count || 0,
     usersToday: newToday.count || 0,
     usersChangePct: pctChange(profilesCurr.count || 0, profilesPrev.count || 0),
-    gmv30d: gmvCurr + labelGmvCurr,
-    gmvChangePct: pctChange(gmvCurr + labelGmvCurr, gmvPrev),
+    // Finances 30j séparées
+    musicGmv30d: musicGmvCurr,
+    musicGmvChangePct: pctChange(musicGmvCurr, musicGmvPrev),
+    artistNet30d: artistNetCurr,
+    artistNetChangePct: pctChange(artistNetCurr, artistNetPrev),
     commission30d: commissionCurr,
+    commissionChangePct: pctChange(commissionCurr, commissionPrev),
+    subscriptions30d: subscriptionsCurr,
+    subscriptionsChangePct: pctChange(subscriptionsCurr, subscriptionsPrev),
+    platformRevenue30d: platformRevenueCurr,
+    platformRevenueChangePct: pctChange(
+      platformRevenueCurr,
+      platformRevenuePrev,
+    ),
+    // Compat anciennes clés
+    gmv30d: musicGmvCurr + subscriptionsCurr,
+    gmvChangePct: pctChange(
+      musicGmvCurr + subscriptionsCurr,
+      musicGmvPrev + subscriptionsPrev,
+    ),
+    pendingWithdrawalsFcfa,
+    pendingWithdrawalsCount:
+      withdrawalsPendingCount.count ?? pendingWithdrawals.length,
+    pendingWithdrawals: pendingWithdrawals.slice(0, 5).map((w) => {
+      const profile = one(
+        w.profiles as
+          | { display_name: string | null; email: string | null }
+          | { display_name: string | null; email: string | null }[]
+          | null,
+      );
+      return {
+        id: w.id,
+        amount: w.amount_fcfa || 0,
+        phone: w.phone,
+        name: profile?.display_name || profile?.email || "—",
+        createdAt: w.created_at,
+      };
+    }),
+    collectionMix,
     openReports: openReports.count || 0,
     weekTotal,
     salesByDay,
@@ -252,25 +374,26 @@ export async function getAdminDashboard() {
         artist: artist?.stage_name || "—",
       };
     }),
-    recentReports: (recentReports.data || []).map((r) => {
-      const reporter = one(
-        r.profiles as
-          | { display_name: string | null; avatar_url: string | null }
-          | { display_name: string | null; avatar_url: string | null }[]
+    recentPurchases: (recentPurchases.data || []).map((p) => {
+      const release = one(
+        p.releases as { title: string } | { title: string }[] | null,
+      );
+      const buyer = one(
+        p.buyer as
+          | { display_name: string | null }
+          | { display_name: string | null }[]
           | null,
       );
-      const track = one(
-        r.tracks as { title: string } | { title: string }[] | null,
-      );
       return {
-        id: r.id,
-        reason: r.reason,
-        details: r.details,
-        status: r.status,
-        createdAt: r.created_at,
-        reporterName: reporter?.display_name || "Anonyme",
-        reporterAvatar: reporter?.avatar_url || null,
-        trackTitle: track?.title || "Morceau",
+        id: p.id,
+        title: release?.title || "Achat",
+        buyer: buyer?.display_name || "—",
+        amount: p.amount_fcfa || 0,
+        commission: p.commission_fcfa || 0,
+        artistNet: p.artist_net_fcfa || 0,
+        status: p.status,
+        orderId: p.order_id,
+        createdAt: p.created_at,
       };
     }),
   };
@@ -520,12 +643,190 @@ export async function listProfilesByRole(role: UserRole, limit = 80) {
   const { data } = await db
     .from("profiles")
     .select(
-      "id, email, display_name, avatar_url, role, country, phone, balance_fcfa, is_admin, is_suspended, created_at, onboarding_completed, label_plan",
+      "id, email, display_name, avatar_url, role, country, phone, balance_fcfa, is_admin, is_suspended, created_at, onboarding_completed, label_plan, label_plan_expires_at, artist_plan, artist_plan_expires_at",
     )
     .eq("role", role)
     .order("created_at", { ascending: false })
     .limit(limit);
   return data || [];
+}
+
+/** Artistes catalogue (pour certification admin). */
+export async function listArtistsAdmin(limit = 120) {
+  const db = createAdminClient();
+  const { data } = await db
+    .from("artists")
+    .select(
+      "id, public_id, stage_name, avatar_url, country, is_verified, created_at, owner_id, label_id, profiles!artists_owner_id_fkey(display_name, email, role)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return data || [];
+}
+
+export type AdminArtistRelease = {
+  id: string;
+  public_id: string;
+  title: string;
+  type: string;
+  status: string;
+  price_fcfa: number;
+  genre: string | null;
+  cover_url: string | null;
+  is_hidden: boolean;
+  created_at: string;
+  tracksCount: number;
+};
+
+export type AdminArtistDetail = {
+  artist: {
+    id: string;
+    public_id: string;
+    stage_name: string;
+    avatar_url: string | null;
+    country: string | null;
+    bio: string | null;
+    is_verified: boolean;
+    created_at: string;
+    owner_id: string;
+    label_id: string | null;
+  };
+  owner: {
+    id: string;
+    email: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+    role: string;
+    country: string | null;
+    phone: string | null;
+    balance_fcfa: number;
+    is_suspended: boolean;
+    onboarding_completed: boolean;
+    artist_plan: string | null;
+    artist_plan_expires_at: string | null;
+    label_plan: string | null;
+    label_plan_expires_at: string | null;
+    created_at: string;
+  } | null;
+  releases: AdminArtistRelease[];
+  stats: {
+    releasesCount: number;
+    publishedCount: number;
+    hiddenCount: number;
+    salesCount: number;
+    salesFcfa: number;
+  };
+};
+
+/** Détail admin d’un artiste catalogue (+ compte owner + releases). */
+export async function getArtistAdminDetail(
+  artistId: string,
+): Promise<AdminArtistDetail | null> {
+  if (!artistId) return null;
+  const db = createAdminClient();
+
+  const { data: artist } = await db
+    .from("artists")
+    .select(
+      "id, public_id, stage_name, avatar_url, country, bio, is_verified, created_at, owner_id, label_id",
+    )
+    .eq("id", artistId)
+    .maybeSingle();
+
+  if (!artist) return null;
+
+  const [{ data: owner }, { data: releases }] = await Promise.all([
+    db
+      .from("profiles")
+      .select(
+        "id, email, display_name, avatar_url, role, country, phone, balance_fcfa, is_suspended, onboarding_completed, artist_plan, artist_plan_expires_at, label_plan, label_plan_expires_at, created_at",
+      )
+      .eq("id", artist.owner_id)
+      .maybeSingle(),
+    db
+      .from("releases")
+      .select(
+        "id, public_id, title, type, status, price_fcfa, genre, cover_url, is_hidden, created_at, tracks(count)",
+      )
+      .eq("artist_id", artistId)
+      .order("created_at", { ascending: false })
+      .limit(80),
+  ]);
+
+  const releaseRows: AdminArtistRelease[] = (releases || []).map((r) => {
+    const tracks = r.tracks as { count: number }[] | null;
+    return {
+      id: r.id,
+      public_id: r.public_id,
+      title: r.title,
+      type: r.type,
+      status: r.status,
+      price_fcfa: Number(r.price_fcfa) || 0,
+      genre: r.genre,
+      cover_url: r.cover_url,
+      is_hidden: Boolean(r.is_hidden),
+      created_at: r.created_at,
+      tracksCount: tracks?.[0]?.count || 0,
+    };
+  });
+
+  const releaseIds = releaseRows.map((r) => r.id);
+  let salesCount = 0;
+  let salesFcfa = 0;
+  if (releaseIds.length > 0) {
+    const { data: sales } = await db
+      .from("purchases")
+      .select("id, amount_fcfa")
+      .eq("status", "completed")
+      .in("release_id", releaseIds);
+    salesCount = sales?.length || 0;
+    salesFcfa = (sales || []).reduce(
+      (sum, s) => sum + (Number(s.amount_fcfa) || 0),
+      0,
+    );
+  }
+
+  return {
+    artist: {
+      id: artist.id,
+      public_id: artist.public_id,
+      stage_name: artist.stage_name,
+      avatar_url: artist.avatar_url,
+      country: artist.country,
+      bio: artist.bio,
+      is_verified: Boolean(artist.is_verified),
+      created_at: artist.created_at,
+      owner_id: artist.owner_id,
+      label_id: artist.label_id,
+    },
+    owner: owner
+      ? {
+          id: owner.id,
+          email: owner.email,
+          display_name: owner.display_name,
+          avatar_url: owner.avatar_url,
+          role: owner.role,
+          country: owner.country,
+          phone: owner.phone,
+          balance_fcfa: Number(owner.balance_fcfa) || 0,
+          is_suspended: Boolean(owner.is_suspended),
+          onboarding_completed: Boolean(owner.onboarding_completed),
+          artist_plan: owner.artist_plan,
+          artist_plan_expires_at: owner.artist_plan_expires_at,
+          label_plan: owner.label_plan,
+          label_plan_expires_at: owner.label_plan_expires_at,
+          created_at: owner.created_at,
+        }
+      : null,
+    releases: releaseRows,
+    stats: {
+      releasesCount: releaseRows.length,
+      publishedCount: releaseRows.filter((r) => r.status === "published").length,
+      hiddenCount: releaseRows.filter((r) => r.is_hidden).length,
+      salesCount,
+      salesFcfa,
+    },
+  };
 }
 
 export async function listReleasesAdmin(limit = 80) {
@@ -757,3 +1058,336 @@ export async function searchCatalogForHits(
 }
 
 export type PaymentRowStatus = PaymentStatus;
+
+export type LedgerKind =
+  | "purchase"
+  | "label_plan"
+  | "artist_plan"
+  | "withdrawal";
+
+export type AdminLedgerRow = {
+  id: string;
+  kind: LedgerKind;
+  status: PaymentStatus | string;
+  amountFcfa: number;
+  createdAt: string;
+  title: string;
+  party: string;
+  partyEmail: string;
+  counterparty: string;
+  method: string;
+  provider: string;
+  orderId: string | null;
+  phone: string | null;
+};
+
+function profileLabel(
+  p:
+    | { display_name: string | null; email: string | null }
+    | { display_name: string | null; email: string | null }[]
+    | null
+    | undefined,
+) {
+  const row = one(p);
+  return {
+    name: row?.display_name?.trim() || row?.email || "—",
+    email: row?.email || "",
+  };
+}
+
+export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
+  // Synchronise les pending > 5 min → failed avant lecture admin.
+  try {
+    const { expireStalePendingPayins } = await import(
+      "@/lib/purchases/expire-pending"
+    );
+    await expireStalePendingPayins();
+  } catch {
+    /* ne bloque pas la liste */
+  }
+
+  const db = createAdminClient();
+  const [purchases, labels, artists, withdrawals] = await Promise.all([
+    db
+      .from("purchases")
+      .select(
+        "id, amount_fcfa, payment_method, status, provider, order_id, payer_phone, created_at, releases(title), buyer:profiles!purchases_buyer_id_fkey(display_name, email), seller:profiles!purchases_seller_id_fkey(display_name, email)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    db
+      .from("label_plan_orders")
+      .select(
+        "id, plan, amount_fcfa, payment_method, status, provider, order_id, payer_phone, created_at, profiles(display_name, email)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    db
+      .from("artist_plan_orders")
+      .select(
+        "id, plan, amount_fcfa, payment_method, status, provider, order_id, payer_phone, created_at, profiles(display_name, email)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    db
+      .from("withdrawals")
+      .select(
+        "id, amount_fcfa, payment_method, phone, status, provider, order_id, created_at, profiles(display_name, email)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  ]);
+
+  const rows: AdminLedgerRow[] = [];
+
+  for (const p of purchases.data || []) {
+    const release = one(
+      p.releases as { title: string } | { title: string }[] | null,
+    );
+    const buyer = profileLabel(p.buyer);
+    const seller = profileLabel(p.seller);
+    rows.push({
+      id: `purchase:${p.id}`,
+      kind: "purchase",
+      status: p.status,
+      amountFcfa: p.amount_fcfa || 0,
+      createdAt: p.created_at,
+      title: release?.title || "Achat musique",
+      party: buyer.name,
+      partyEmail: buyer.email,
+      counterparty: seller.name,
+      method: p.payment_method,
+      provider: p.provider,
+      orderId: p.order_id,
+      phone: p.payer_phone,
+    });
+  }
+
+  for (const o of labels.data || []) {
+    const profile = profileLabel(o.profiles);
+    rows.push({
+      id: `label:${o.id}`,
+      kind: "label_plan",
+      status: o.status,
+      amountFcfa: o.amount_fcfa || 0,
+      createdAt: o.created_at,
+      title: `Abo label · ${o.plan}`,
+      party: profile.name,
+      partyEmail: profile.email,
+      counterparty: "Gootunes",
+      method: o.payment_method,
+      provider: o.provider,
+      orderId: o.order_id,
+      phone: o.payer_phone,
+    });
+  }
+
+  for (const o of artists.data || []) {
+    const profile = profileLabel(o.profiles);
+    rows.push({
+      id: `artist:${o.id}`,
+      kind: "artist_plan",
+      status: o.status,
+      amountFcfa: o.amount_fcfa || 0,
+      createdAt: o.created_at,
+      title: `Abo artiste · ${o.plan}`,
+      party: profile.name,
+      partyEmail: profile.email,
+      counterparty: "Gootunes",
+      method: o.payment_method,
+      provider: o.provider,
+      orderId: o.order_id,
+      phone: o.payer_phone,
+    });
+  }
+
+  for (const w of withdrawals.data || []) {
+    const profile = profileLabel(w.profiles);
+    rows.push({
+      id: `withdraw:${w.id}`,
+      kind: "withdrawal",
+      status: w.status,
+      amountFcfa: w.amount_fcfa || 0,
+      createdAt: w.created_at,
+      title: "Retrait",
+      party: profile.name,
+      partyEmail: profile.email,
+      counterparty: w.phone,
+      method: w.payment_method,
+      provider: w.provider,
+      orderId: w.order_id,
+      phone: w.phone,
+    });
+  }
+
+  rows.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  return rows;
+}
+
+export type SubscriptionKind = "artist_plan" | "label_plan";
+
+export type AdminSubscriptionRow = {
+  id: string;
+  kind: SubscriptionKind;
+  plan: string;
+  status: string;
+  amountFcfa: number;
+  createdAt: string;
+  party: string;
+  partyEmail: string;
+  method: string;
+  orderId: string | null;
+  phone: string | null;
+};
+
+export type AdminSubscriptionRevenue = {
+  rows: AdminSubscriptionRow[];
+  totals: {
+    artistCompletedFcfa: number;
+    labelCompletedFcfa: number;
+    allCompletedFcfa: number;
+    artistCount: number;
+    labelCount: number;
+  };
+};
+
+/** Revenus abonnements artistes + labels (tous statuts, totaux = completed). */
+export async function listAdminSubscriptionRevenue(
+  limit = 300,
+): Promise<AdminSubscriptionRevenue> {
+  // Synchronise les pending > 5 min → failed avant lecture admin.
+  try {
+    const { expireStalePendingPayins } = await import(
+      "@/lib/purchases/expire-pending"
+    );
+    await expireStalePendingPayins();
+  } catch {
+    /* ne bloque pas la liste */
+  }
+
+  const db = createAdminClient();
+  const [labels, artists] = await Promise.all([
+    db
+      .from("label_plan_orders")
+      .select(
+        "id, plan, amount_fcfa, payment_method, status, order_id, payer_phone, created_at, profiles(display_name, email)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    db
+      .from("artist_plan_orders")
+      .select(
+        "id, plan, amount_fcfa, payment_method, status, order_id, payer_phone, created_at, profiles(display_name, email)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  ]);
+
+  const rows: AdminSubscriptionRow[] = [];
+
+  for (const o of labels.data || []) {
+    const profile = profileLabel(o.profiles);
+    rows.push({
+      id: `label:${o.id}`,
+      kind: "label_plan",
+      plan: o.plan,
+      status: o.status,
+      amountFcfa: o.amount_fcfa || 0,
+      createdAt: o.created_at,
+      party: profile.name,
+      partyEmail: profile.email,
+      method: o.payment_method,
+      orderId: o.order_id,
+      phone: o.payer_phone,
+    });
+  }
+
+  for (const o of artists.data || []) {
+    const profile = profileLabel(o.profiles);
+    rows.push({
+      id: `artist:${o.id}`,
+      kind: "artist_plan",
+      plan: o.plan,
+      status: o.status,
+      amountFcfa: o.amount_fcfa || 0,
+      createdAt: o.created_at,
+      party: profile.name,
+      partyEmail: profile.email,
+      method: o.payment_method,
+      orderId: o.order_id,
+      phone: o.payer_phone,
+    });
+  }
+
+  rows.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  let artistCompletedFcfa = 0;
+  let labelCompletedFcfa = 0;
+  let artistCount = 0;
+  let labelCount = 0;
+  for (const row of rows) {
+    if (row.status !== "completed") continue;
+    if (row.kind === "artist_plan") {
+      artistCompletedFcfa += row.amountFcfa;
+      artistCount += 1;
+    } else {
+      labelCompletedFcfa += row.amountFcfa;
+      labelCount += 1;
+    }
+  }
+
+  return {
+    rows,
+    totals: {
+      artistCompletedFcfa,
+      labelCompletedFcfa,
+      allCompletedFcfa: artistCompletedFcfa + labelCompletedFcfa,
+      artistCount,
+      labelCount,
+    },
+  };
+}
+
+export type AdminSystemLog = {
+  id: string;
+  level: string;
+  source: string;
+  message: string;
+  stack: string | null;
+  path: string | null;
+  digest: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
+export async function listSystemLogsAdmin(limit = 200): Promise<AdminSystemLog[]> {
+  const db = createAdminClient();
+  const { data, error } = await db
+    .from("system_logs")
+    .select(
+      "id, level, source, message, stack, path, digest, user_agent, created_at",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[admin.system_logs]", error.message);
+    return [];
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    level: row.level,
+    source: row.source,
+    message: row.message,
+    stack: row.stack,
+    path: row.path,
+    digest: row.digest,
+    userAgent: row.user_agent,
+    createdAt: row.created_at,
+  }));
+}

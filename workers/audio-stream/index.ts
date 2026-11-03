@@ -1,6 +1,7 @@
 export interface Env {
   AUDIO_BUCKET: R2Bucket;
   STREAM_SECRET: string;
+  /** Origines autorisées, séparées par virgule. Ex: https://www.gootunes.com,https://gootunes.com */
   ALLOWED_ORIGIN?: string;
 }
 
@@ -10,22 +11,33 @@ interface TokenPayload {
   exp: number;
 }
 
+function resolveCorsOrigin(request: Request, env: Env): string {
+  const allowed = (env.ALLOWED_ORIGIN || "https://www.gootunes.com")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const origin = request.headers.get("Origin");
+  if (origin && allowed.includes(origin)) return origin;
+  return allowed[0] || "https://www.gootunes.com";
+}
+
 /**
- * Cloudflare Worker pour le streaming audio R2 ultra-rapide (<50ms).
- * Vérifie un token HMAC SHA-256 signé par le serveur Next.js.
+ * Worker lecture seule — streaming audio R2.
+ * Les uploads passent par gootunes-audio-upload (écriture isolée).
  */
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const corsOrigin = resolveCorsOrigin(request, env);
 
-    // OPTIONS preflight pour CORS
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": corsOrigin,
           "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
           "Access-Control-Allow-Headers": "Range, Authorization",
           "Access-Control-Max-Age": "86400",
+          Vary: "Origin",
         },
       });
     }
@@ -42,7 +54,6 @@ export default {
       });
     }
 
-    // Décodage et vérification du token HMAC
     const verifiedPayload = await verifyToken(tokenParam, env.STREAM_SECRET);
     if (!verifiedPayload) {
       return new Response(JSON.stringify({ error: "Token invalide ou expiré" }), {
@@ -59,7 +70,6 @@ export default {
       });
     }
 
-    // Gestion du header Range
     const rangeHeader = request.headers.get("range");
     let start = 0;
     let requestedEnd: number | null = null;
@@ -82,7 +92,8 @@ export default {
         status: 416,
         headers: {
           "Content-Range": `bytes */${maxBytes}`,
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": corsOrigin,
+          Vary: "Origin",
         },
       });
     }
@@ -92,7 +103,6 @@ export default {
         ? Math.max(1, Math.min(requestedEnd, maxBytes - 1) - start + 1)
         : Math.max(1, maxBytes - start);
 
-    // Lecture R2 native dans l'Edge Cloudflare
     const object = await env.AUDIO_BUCKET.get(key, {
       range: { offset: start, length },
     });
@@ -104,8 +114,6 @@ export default {
       });
     }
 
-    // maxBytes est un plafond (aperçu / token), pas la taille du fichier.
-    // Annoncer 1 Go fait estimer ~741 min à Chrome au lieu de 4:30.
     const fileSize = object.size;
     const totalSize = Math.min(maxBytes, fileSize);
     if (start >= totalSize) {
@@ -113,7 +121,8 @@ export default {
         status: 416,
         headers: {
           "Content-Range": `bytes */${totalSize}`,
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": corsOrigin,
+          Vary: "Origin",
         },
       });
     }
@@ -132,7 +141,8 @@ export default {
     );
     headers.set("Content-Disposition", "inline");
     headers.set("Accept-Ranges", "bytes");
-    headers.set("Access-Control-Allow-Origin", "*");
+    headers.set("Access-Control-Allow-Origin", corsOrigin);
+    headers.set("Vary", "Origin");
     headers.set("Cache-Control", "private, no-cache, no-store");
     headers.set("X-Content-Type-Options", "nosniff");
     headers.set("Content-Length", String(contentLength));
@@ -154,10 +164,10 @@ export default {
   },
 };
 
-/**
- * Format du token : base64url(JSON_payload).hex_hmac_signature
- */
-async function verifyToken(token: string, secret: string): Promise<TokenPayload | null> {
+async function verifyToken(
+  token: string,
+  secret: string,
+): Promise<TokenPayload | null> {
   try {
     const parts = token.split(".");
     if (parts.length !== 2) return null;
@@ -171,7 +181,11 @@ async function verifyToken(token: string, secret: string): Promise<TokenPayload 
     }
 
     const payload = JSON.parse(payloadStr) as TokenPayload;
-    if (!payload.key || typeof payload.maxBytes !== "number" || typeof payload.exp !== "number") {
+    if (
+      !payload.key ||
+      typeof payload.maxBytes !== "number" ||
+      typeof payload.exp !== "number"
+    ) {
       return null;
     }
 
@@ -189,9 +203,13 @@ async function hmacSha256(secret: string, data: string): Promise<string> {
     keyData,
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
-  const signature = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(data));
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    encoder.encode(data),
+  );
   return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

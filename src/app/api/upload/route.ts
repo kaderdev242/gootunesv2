@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request-client";
 import { logServerError, mapUploadError, USER_ERRORS } from "@/lib/errors";
 import { uploadObjectToR2 } from "@/lib/r2";
 
@@ -34,7 +34,7 @@ function isValidAudioBuffer(buf: Buffer): boolean {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createRequestClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { Button, Input, Label } from "@heroui/react";
 import { updateProfile, type ActionState } from "@/lib/actions/profile";
 import { getCountryLabel } from "@/lib/constants";
@@ -40,7 +40,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <div className="relative size-24 overflow-hidden rounded-full border border-white/15 bg-white/5">
           {avatarUrl ? (
-            <Image
+            <AppImage
               src={avatarUrl}
               alt="Photo de profil"
               fill

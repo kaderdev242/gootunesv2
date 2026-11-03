@@ -1,5 +1,6 @@
 import { listReportsAdmin } from "@/lib/admin/queries";
 import { ReportReviewForm } from "@/components/admin/AdminActionForms";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const REASON_LABELS: Record<string, string> = {
   copyright: "Droit d'auteur",
@@ -32,15 +33,11 @@ export default async function AdminSignalementsPage({
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-            Signalements
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {reports.length} signalement(s)
-          </p>
-        </div>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <AdminPageHeader
+          title="Signalements"
+          description={`${reports.length} signalement(s)`}
+        />
         <div className="inline-flex flex-wrap gap-1 rounded-2xl bg-zinc-200/70 p-1 text-xs">
           {[
             ["all", "Tous"],
@@ -66,7 +63,7 @@ export default async function AdminSignalementsPage({
             </a>
           ))}
         </div>
-      </header>
+      </div>
 
       <div className="space-y-4">
         {reports.length === 0 ? (

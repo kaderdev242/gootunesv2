@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
+import { reportClientError } from "@/lib/system-log-client";
 
 export default function AppError({
   error,
@@ -13,6 +14,13 @@ export default function AppError({
 }) {
   useEffect(() => {
     console.error("[app.error]", error);
+    reportClientError({
+      source: "boundary",
+      message: error.message || "Erreur React",
+      stack: error.stack || null,
+      digest: error.digest || null,
+      path: typeof window !== "undefined" ? window.location.pathname : null,
+    });
   }, [error]);
 
   return (

@@ -17,8 +17,7 @@ export async function POST(request: Request) {
     const secret =
       request.headers.get("x-admin-secret") ||
       request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    const expected =
-      process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const expected = process.env.CRON_SECRET?.trim();
     if (!expected || secret !== expected) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }

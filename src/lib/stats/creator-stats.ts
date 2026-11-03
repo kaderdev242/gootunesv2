@@ -1,5 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getCountryLabel } from "@/lib/constants";
+import type { Database } from "@/lib/supabase/database.types";
 
 export type TopSaleRow = {
   releaseId: string;
@@ -48,9 +50,9 @@ export type CreatorStats = {
 
 export async function getCreatorStats(
   sellerId: string,
-  options?: { artistId?: string },
+  options?: { artistId?: string; client?: SupabaseClient<Database> },
 ): Promise<CreatorStats> {
-  const supabase = await createClient();
+  const supabase = options?.client ?? (await createClient());
   const artistId = options?.artistId;
 
   let scopedReleaseIds: string[] | null = null;

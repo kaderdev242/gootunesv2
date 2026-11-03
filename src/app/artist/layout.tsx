@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { requireCreatorProfile } from "@/lib/auth/get-profile";
+import { NOINDEX } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = NOINDEX;
 
 export default async function ArtistLayout({
   children,

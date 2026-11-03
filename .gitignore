@@ -33,8 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# App Flutter — dépôt séparé
+# Apps Flutter — dépôts séparés (hors GitHub de ce repo)
 /mobile
+/creator
 
 # vercel
 .vercel
@@ -42,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Vidéos motion design (contenus TikTok) — hors repo
+/motion
+/.claude/skills/gootunes-motion

@@ -1,12 +1,13 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   DeleteReleaseButton,
   HideReleaseButton,
 } from "@/components/admin/AdminActionForms";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export type AdminReleaseRow = {
   id: string;
@@ -56,15 +57,11 @@ export function AdminMorceauxView({ releases }: { releases: AdminReleaseRow[] })
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-            Morceaux
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {releases.length} publications · masque ou supprime si besoin
-          </p>
-        </div>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <AdminPageHeader
+          title="Morceaux"
+          description={`${releases.length} publications · masque ou supprime si besoin`}
+        />
         <div className="inline-flex rounded-2xl bg-zinc-200/70 p-1">
           <button
             type="button"
@@ -95,7 +92,7 @@ export function AdminMorceauxView({ releases }: { releases: AdminReleaseRow[] })
             </span>
           </button>
         </div>
-      </header>
+      </div>
 
       <div className="overflow-hidden rounded-[28px] border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/5">
         <div className="overflow-x-auto">
@@ -127,7 +124,7 @@ export function AdminMorceauxView({ releases }: { releases: AdminReleaseRow[] })
                       <div className="flex items-center gap-3">
                         <div className="relative size-11 overflow-hidden rounded-xl bg-zinc-100">
                           {r.cover_url ? (
-                            <Image
+                            <AppImage
                               src={r.cover_url}
                               alt=""
                               fill

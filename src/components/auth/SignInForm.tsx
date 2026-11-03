@@ -19,10 +19,10 @@ export function SignInForm({
   useActionToast(state);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-3.5 sm:gap-4">
       <input type="hidden" name="next" value={next} />
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email" className="text-white/70">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <Label htmlFor="email" className="text-sm text-white/70">
           Email
         </Label>
         <Input
@@ -31,12 +31,15 @@ export function SignInForm({
           type="email"
           required
           autoComplete="email"
+          inputMode="email"
+          enterKeyHint="next"
           placeholder="toi@email.com"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04]"
+          // text-base = 16px → évite le zoom iOS au focus
+          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password" className="text-white/70">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <Label htmlFor="password" className="text-sm text-white/70">
           Mot de passe
         </Label>
         <Input
@@ -45,15 +48,16 @@ export function SignInForm({
           type="password"
           required
           autoComplete="current-password"
+          enterKeyHint="go"
           placeholder="••••••••"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04]"
+          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
         />
       </div>
 
       <Button
         type="submit"
         isPending={pending}
-        className="mt-1 h-12 rounded-full bg-white font-semibold text-black"
+        className="mt-1 h-12 rounded-full bg-white text-base font-semibold text-black"
       >
         Se connecter
       </Button>
@@ -62,7 +66,7 @@ export function SignInForm({
         <p className="text-center text-sm text-white/45">
           Fan ?{" "}
           <Link
-            href="/discover"
+            href="/"
             className="text-white underline-offset-2 hover:underline"
           >
             Inscription dans Discover

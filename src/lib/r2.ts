@@ -35,6 +35,9 @@ function getR2Client() {
   _r2Client = new S3Client({
     region: "auto",
     endpoint,
+    // Path-style : https://{account}.r2.cloudflarestorage.com/{bucket}/key
+    // Évite gootunes-media.{account}.r2... qui casse sur certains DNS mobiles (ENOTFOUND).
+    forcePathStyle: true,
     credentials: { accessKeyId, secretAccessKey },
     // Évite les checksums CRC32 qui cassent les PUT présignés R2
     requestChecksumCalculation: "WHEN_REQUIRED",
@@ -170,9 +173,13 @@ export async function createPresignedUpload(params: {
 
   const uploadUrl = await getSignedUrl(client, command, {
     expiresIn: params.expiresIn ?? 600,
-    // Ne pas signer les headers de checksum AWS SDK v3
+    // Uniquement Content-Type : évite les checksums AWS qui cassent le PUT navigateur → R2
+    signableHeaders: new Set(["content-type"]),
     unhoistableHeaders: new Set([
       "x-amz-checksum-crc32",
+      "x-amz-checksum-crc32c",
+      "x-amz-checksum-sha1",
+      "x-amz-checksum-sha256",
       "x-amz-sdk-checksum-algorithm",
     ]),
   });

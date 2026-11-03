@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { createPlaylist, updatePlaylist } from "@/lib/actions/playlists";
@@ -20,12 +20,14 @@ export function PlaylistForm({
   initialTitle = "",
   initialDescription = "",
   initialCover = "",
+  initialIsPublic = false,
 }: {
   mode?: "create" | "edit";
   playlistId?: string;
   initialTitle?: string;
   initialDescription?: string;
   initialCover?: string;
+  initialIsPublic?: boolean;
 }) {
   const router = useRouter();
   const action = mode === "edit" ? updatePlaylist : createPlaylist;
@@ -33,6 +35,7 @@ export function PlaylistForm({
   useActionToast(state);
 
   const [coverUrl, setCoverUrl] = useState(initialCover);
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export function PlaylistForm({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <label className="relative mx-auto aspect-square w-full max-w-[180px] shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-white/15 bg-zinc-900 sm:mx-0">
-          <Image
+          <AppImage
             src={coverUrl || FALLBACK_COVER}
             alt=""
             fill
@@ -109,6 +112,25 @@ export function PlaylistForm({
           </div>
         </div>
       </div>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+        <input
+          type="checkbox"
+          name="is_public"
+          value="true"
+          checked={isPublic}
+          onChange={(e) => setIsPublic(e.target.checked)}
+          className="mt-1 size-4 rounded border-white/30 bg-black/40 accent-white"
+        />
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-white">
+            Rendre publique
+          </span>
+          <span className="mt-0.5 block text-xs text-white/45">
+            Visible dans Discover et partageable via un lien.
+          </span>
+        </span>
+      </label>
 
       <Button
         type="submit"

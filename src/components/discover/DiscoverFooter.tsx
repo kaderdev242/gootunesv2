@@ -4,7 +4,7 @@ import { Logo } from "@/components/landing/Logo";
 /** Footer Discover — liens légaux + copyright. */
 export function DiscoverFooter() {
   return (
-    <footer className="mt-16 border-t border-white/10 pt-8 pb-4">
+    <footer className="mt-16 border-t border-white/[0.08] pt-8 pb-4">
       <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
         <div>
           <Logo size="sm" />
@@ -15,7 +15,7 @@ export function DiscoverFooter() {
         </div>
         <div className="flex flex-col gap-3 sm:items-end">
           <nav className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/45">
-            <Link href="/discover" className="transition hover:text-white">
+            <Link href="/" className="transition hover:text-white">
               Accueil
             </Link>
             <Link

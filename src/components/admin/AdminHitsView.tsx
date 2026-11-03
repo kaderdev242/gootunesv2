@@ -1,6 +1,7 @@
 "use client";
 
-import Image from "next/image";
+import { AppImage } from "@/components/media/AppImage";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useActionState, useMemo, useState, useTransition } from "react";
 import {
   addEditorialHit,
@@ -247,22 +248,16 @@ export function AdminHitsView({
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-            Les Hits
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Curate la section Discover · {hits.length} hit
-            {hits.length > 1 ? "s" : ""} · {publishedCount} publié
-            {publishedCount > 1 ? "s" : ""}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <AdminPageHeader
+          title="Les Hits"
+          description={`Curate la section Discover · ${hits.length} hit${hits.length > 1 ? "s" : ""} · ${publishedCount} publié${publishedCount > 1 ? "s" : ""}`}
+        />
         <PublishButtons
           hitCount={hits.length}
           hasPublished={publishedCount > 0}
         />
-      </header>
+      </div>
 
       <section className="overflow-hidden rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5">
         <h2 className="text-lg font-semibold text-zinc-900">Ajouter un hit</h2>
@@ -306,7 +301,7 @@ export function AdminHitsView({
                 }`}
               >
                 <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-zinc-200">
-                  <Image
+                  <AppImage
                     src={c.coverUrl || FALLBACK_COVER}
                     alt=""
                     fill
@@ -339,7 +334,7 @@ export function AdminHitsView({
             <input type="hidden" name="cover_url" value={coverUrl} />
             <div className="flex flex-wrap items-start gap-4">
               <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-200 ring-1 ring-zinc-200">
-                <Image
+                <AppImage
                   src={coverUrl || selected.coverUrl || FALLBACK_COVER}
                   alt=""
                   fill
@@ -430,7 +425,7 @@ export function AdminHitsView({
                   {i + 1}
                 </span>
                 <div className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-zinc-200">
-                  <Image
+                  <AppImage
                     src={hit.coverUrl || hit.releaseCover || FALLBACK_COVER}
                     alt=""
                     fill

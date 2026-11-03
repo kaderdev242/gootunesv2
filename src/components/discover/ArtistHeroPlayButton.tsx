@@ -21,7 +21,7 @@ export function ArtistHeroPlayButton({ tracks }: { tracks: Track[] }) {
       aria-label={playingHere ? "Pause" : "Lecture"}
       onPress={() => {
         if (playingHere) togglePlay();
-        else playTrack(first);
+        else playTrack(first, tracks);
       }}
       className="size-14 rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 hover:bg-white"
     >

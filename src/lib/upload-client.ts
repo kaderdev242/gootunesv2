@@ -48,31 +48,102 @@ function assertClientFile(file: File, kind: UploadKind) {
   }
 }
 
-/**
- * Upload navigateur → R2 via URL présignée.
- * Images (avatar / cover) : compression JPEG avant envoi.
- * Audio : durée serveur renvoyée après PUT (probe R2).
- */
-export async function uploadViaApi(
+/** Images : POST same-origin (évite CORS R2). Limite Vercel OK (< 5 Mo). */
+async function uploadImageViaServer(
   file: File,
-  kind: UploadKind,
-): Promise<{ fileUrl: string; durationSeconds: number | null }> {
-  let payload = file;
+  kind: "cover" | "avatar",
+): Promise<{ fileUrl: string; durationSeconds: null }> {
+  const form = new FormData();
+  form.set("file", file);
+  form.set("kind", kind);
 
-  if (kind === "avatar" || kind === "cover") {
-    payload = await compressImageFile(file, kind);
+  let res: Response;
+  try {
+    res = await fetch("/api/upload", { method: "POST", body: form });
+  } catch {
+    throw new Error(USER_ERRORS.network);
   }
 
-  assertClientFile(payload, kind);
-  const contentType = resolveContentType(payload, kind);
-  const filename = payload.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const raw = await res.text();
+  let data: { fileUrl?: string; error?: string } = {};
+  try {
+    data = JSON.parse(raw) as typeof data;
+  } catch {
+    throw new Error(USER_ERRORS.upload);
+  }
+
+  if (!res.ok || !data.fileUrl) {
+    throw new Error(mapUploadError(data.error || USER_ERRORS.upload));
+  }
+
+  return { fileUrl: data.fileUrl, durationSeconds: null };
+}
+
+export type UploadProgress = (percent: number) => void;
+
+/** PUT avec progression (fetch n’expose pas upload.progress). */
+function putWithProgress(
+  url: string,
+  file: File,
+  contentType: string,
+  onProgress?: UploadProgress,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.upload.onprogress = (ev) => {
+      if (!onProgress || !ev.lengthComputable || ev.total <= 0) return;
+      onProgress(Math.min(100, Math.round((ev.loaded / ev.total) * 100)));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress?.(100);
+        resolve();
+        return;
+      }
+      console.error("[upload.worker]", xhr.status, xhr.responseText.slice(0, 300));
+      reject(
+        new Error(
+          xhr.status === 403
+            ? "Envoi du fichier audio refusé. Réessaie dans un instant, ou contacte le support si ça continue."
+            : USER_ERRORS.upload,
+        ),
+      );
+    };
+    xhr.onerror = () =>
+      reject(
+        new Error(
+          "Impossible d’envoyer le fichier audio. Vérifie ta connexion internet, puis réessaie.",
+        ),
+      );
+    xhr.onabort = () => reject(new Error(USER_ERRORS.upload));
+    xhr.send(file);
+  });
+}
+
+/**
+ * Audio : PUT via Worker Cloudflare (binding R2).
+ * Évite le hostname S3 R2, souvent irrésolvable sur certains réseaux mobiles.
+ */
+async function uploadAudioViaPresign(
+  file: File,
+  onProgress?: UploadProgress,
+): Promise<{ fileUrl: string; durationSeconds: number | null }> {
+  const contentType = resolveContentType(file, "audio");
+  const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
   let presignRes: Response;
   try {
     presignRes = await fetch("/api/upload/presign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename, contentType, kind }),
+      body: JSON.stringify({
+        filename,
+        contentType,
+        kind: "audio",
+        size: file.size,
+      }),
     });
   } catch {
     throw new Error(USER_ERRORS.network);
@@ -95,33 +166,11 @@ export async function uploadViaApi(
     throw new Error(mapUploadError(presign.error || USER_ERRORS.upload));
   }
 
-  let putRes: Response;
-  try {
-    putRes = await fetch(presign.uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": contentType,
-      },
-      body: payload,
-    });
-  } catch {
-    throw new Error(
-      "Upload bloqué (réseau ou CORS R2). Vérifie la config du bucket.",
-    );
-  }
-
-  if (!putRes.ok) {
-    const detail = await putRes.text().catch(() => "");
-    console.error("[upload.r2]", putRes.status, detail.slice(0, 300));
-    throw new Error(
-      putRes.status === 403
-        ? "Accès stockage refusé. Vérifie les clés R2 et le CORS du bucket."
-        : USER_ERRORS.upload,
-    );
-  }
+  onProgress?.(0);
+  await putWithProgress(presign.uploadUrl, file, contentType, onProgress);
 
   let durationSeconds: number | null = null;
-  if (kind === "audio" && presign.key) {
+  if (presign.key) {
     try {
       const metaRes = await fetch("/api/upload/audio-duration", {
         method: "POST",
@@ -140,9 +189,34 @@ export async function uploadViaApi(
         }
       }
     } catch {
-      // Durée optionnelle — le navigateur / createRelease peut rattraper.
+      // Durée optionnelle
     }
   }
 
   return { fileUrl: presign.fileUrl, durationSeconds };
+}
+
+/**
+ * Upload navigateur.
+ * - avatar / cover → `/api/upload` (same-origin)
+ * - audio → Worker Cloudflare (gros fichiers, sans DNS R2 côté client)
+ */
+export async function uploadViaApi(
+  file: File,
+  kind: UploadKind,
+  onProgress?: UploadProgress,
+): Promise<{ fileUrl: string; durationSeconds: number | null }> {
+  let payload = file;
+
+  if (kind === "avatar" || kind === "cover") {
+    payload = await compressImageFile(file, kind);
+  }
+
+  assertClientFile(payload, kind);
+
+  if (kind === "avatar" || kind === "cover") {
+    return uploadImageViaServer(payload, kind);
+  }
+
+  return uploadAudioViaPresign(payload, onProgress);
 }

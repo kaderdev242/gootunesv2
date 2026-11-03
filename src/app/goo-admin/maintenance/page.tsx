@@ -1,20 +1,16 @@
 import { getSiteSettings } from "@/lib/admin/queries";
 import { MaintenanceForm } from "@/components/admin/AdminActionForms";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default async function AdminMaintenancePage() {
   const settings = await getSiteSettings();
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-          Maintenance
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Bloque l&apos;accès public pendant une opération. Seul `/goo-admin`
-          reste accessible.
-        </p>
-      </header>
+      <AdminPageHeader
+        title="Maintenance"
+        description="Bloque l'accès public pendant une opération. Seul /goo-admin reste accessible."
+      />
 
       <div className="max-w-xl space-y-4 rounded-[28px] border border-zinc-200/80 bg-white p-6 shadow-sm shadow-zinc-900/5">
         <div className="flex items-center gap-3">

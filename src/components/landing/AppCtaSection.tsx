@@ -41,8 +41,8 @@ export function AppCtaSection() {
               africains.
             </p>
             <p>
-              Vous créez ? Publiez gratuitement, touchez vos fans, et gardez
-              80&nbsp;% de chaque vente.
+              Vous créez ? Pour 990&nbsp;FCFA/an, publiez sans limite, touchez
+              vos fans, et gardez 80&nbsp;% de chaque vente.
             </p>
           </div>
           <div className="relative mt-8 flex flex-wrap gap-3">
