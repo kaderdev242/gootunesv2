@@ -4,6 +4,8 @@ export const COUNTRIES = [
   { code: "CI", label: "Côte d'Ivoire" },
   { code: "CM", label: "Cameroun" },
   { code: "SN", label: "Sénégal" },
+  { code: "BF", label: "Burkina Faso" },
+  { code: "BJ", label: "Bénin" },
 ] as const;
 
 export type CountryCode = (typeof COUNTRIES)[number]["code"];
@@ -19,6 +21,9 @@ export const MOBILE_MONEY_METHODS = [
   { id: "moov", label: "Moov Money" },
   { id: "africell", label: "Africell Money" },
   { id: "mpesa", label: "M-Pesa" },
+  { id: "free", label: "Free Money" },
+  { id: "coris", label: "Coris Money" },
+  { id: "celtiis", label: "Celtiis Cash" },
 ] as const;
 
 export type MobileMoneyMethodId = (typeof MOBILE_MONEY_METHODS)[number]["id"];
@@ -35,7 +40,9 @@ export const OPERATORS_BY_COUNTRY: Record<
   CD: ["vodacom", "airtel", "orange", "africell"],
   CI: ["orange", "mtn", "wave", "moov"],
   CM: ["mtn", "orange"],
-  SN: ["orange", "wave"],
+  SN: ["orange", "free", "wave"],
+  BF: ["orange", "moov", "coris"],
+  BJ: ["mtn", "moov", "celtiis"],
 };
 
 export function getCountryLabel(code: string | null | undefined): string {

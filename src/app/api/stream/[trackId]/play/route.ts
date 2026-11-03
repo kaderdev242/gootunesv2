@@ -21,7 +21,11 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { trackId } = await params;
     const supabase = await createRequestClient(request);
-    const access = await getTrackPlaybackAccess(trackId, supabase);
+    const access = await getTrackPlaybackAccess(
+      trackId,
+      supabase,
+      request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || null,
+    );
 
     if (access.status === "not_found") {
       return NextResponse.json({ error: "Introuvable" }, { status: 404 });

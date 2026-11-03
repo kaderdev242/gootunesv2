@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -46,6 +47,7 @@ export async function initiateLabelPlan(
     formData.get("payment_method") || "",
   ) as PaymentMethod;
   const phoneRaw = String(formData.get("phone") || "").trim();
+  const omOtp = String(formData.get("om_otp") || "").replace(/\D/g, "").slice(0, 8);
 
   if (plan !== "starter" && plan !== "unlimited") {
     return { error: "Plan invalide." };
@@ -97,7 +99,7 @@ export async function initiateLabelPlan(
   if (!mbiyoConfigured()) {
     const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 1);
-    const { error } = await supabase
+    const { error } = await createAdminClient()
       .from("profiles")
       .update({
         label_plan: plan,
@@ -115,7 +117,7 @@ export async function initiateLabelPlan(
     };
   }
 
-  const { data: order, error: insertError } = await supabase
+  const { data: order, error: insertError } = await createAdminClient()
     .from("label_plan_orders")
     .insert({
       user_id: user.id,
@@ -149,11 +151,12 @@ export async function initiateLabelPlan(
         network: payment_method,
         phone_number: toMbiyoPhoneE164(phone),
         country_code: country,
+        ...(omOtp ? { om_otp: omOtp } : {}),
       },
     });
 
     const tx = res.data;
-    await supabase
+    await createAdminClient()
       .from("label_plan_orders")
       .update({
         provider_transaction_id: tx.transaction_id,

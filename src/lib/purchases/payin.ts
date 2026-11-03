@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -83,9 +84,13 @@ export async function runInitiatePurchase(
     releaseId: string;
     paymentMethod: PaymentMethod;
     phoneRaw: string;
+    omOtp?: string;
   },
 ): Promise<ActionState> {
-  const parsed = payinFormSchema.safeParse(input);
+  const parsed = payinFormSchema.safeParse({
+    ...input,
+    omOtp: input.omOtp?.trim() ? input.omOtp.trim() : undefined,
+  });
   if (!parsed.success) {
     return {
       error:
@@ -97,6 +102,7 @@ export async function runInitiatePurchase(
     releaseId,
     paymentMethod: payment_method,
     phoneRaw,
+    omOtp,
   } = parsed.data;
 
   // ── Gardes de sécurité production ──────────────────────────────────────────
@@ -188,7 +194,7 @@ export async function runInitiatePurchase(
     const demoMode = purchaseDevBypass()
       ? "dev_bypass"
       : "demo_no_mbiyo_key";
-    const { data: demoPurchase, error } = await supabase
+    const { data: demoPurchase, error } = await createAdminClient()
       .from("purchases")
       .insert({
         buyer_id: user.id,
@@ -222,7 +228,7 @@ export async function runInitiatePurchase(
     };
   }
 
-  const { data: purchase, error: insertError } = await supabase
+  const { data: purchase, error: insertError } = await createAdminClient()
     .from("purchases")
     .insert({
       buyer_id: user.id,
@@ -264,11 +270,12 @@ export async function runInitiatePurchase(
         network: payment_method,
         phone_number: toMbiyoPhoneE164(phone),
         country_code: country,
+        ...(omOtp ? { om_otp: omOtp } : {}),
       },
     });
 
     const tx = res.data;
-    await supabase
+    await createAdminClient()
       .from("purchases")
       .update({
         provider_transaction_id: tx.transaction_id,

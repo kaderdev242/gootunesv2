@@ -222,14 +222,14 @@ export function AlbumPublishWizard({
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-white/35 uppercase">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-zinc-400 uppercase">
             Album
           </p>
-          <h1 className="font-display text-3xl font-bold">Publier un album</h1>
+          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Publier un album</h1>
         </div>
         <Link
           href={`${basePath}/publications`}
-          className="text-sm text-white/45 underline-offset-2 hover:text-white hover:underline"
+          className="text-sm text-zinc-500 underline-offset-2 hover:text-zinc-950 hover:underline"
         >
           Retour
         </Link>
@@ -238,7 +238,7 @@ export function AlbumPublishWizard({
       <form
         ref={formRef}
         action={action}
-        className="rounded-[28px] border border-white/10 bg-white/[0.03] p-5 sm:p-7"
+        className="studio-card p-5 sm:p-7"
         onKeyDown={(e) => {
           if (e.key === "Enter") e.preventDefault();
         }}
@@ -282,7 +282,7 @@ export function AlbumPublishWizard({
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="h-12 rounded-2xl bg-white/[0.04]"
+                  className="h-12 rounded-2xl bg-white"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -290,10 +290,10 @@ export function AlbumPublishWizard({
                 <select
                   value={artistId}
                   onChange={(e) => setArtistId(e.target.value)}
-                  className="h-12 rounded-2xl border border-white/12 bg-white/[0.04] px-3 text-sm text-white"
+                  className="h-12 rounded-2xl border border-black/10 bg-white px-3 text-sm text-zinc-950"
                 >
                   {artists.map((a) => (
-                    <option key={a.id} value={a.id} className="bg-zinc-900">
+                    <option key={a.id} value={a.id} className="bg-white text-zinc-900">
                       {a.stage_name}
                     </option>
                   ))}
@@ -327,7 +327,7 @@ export function AlbumPublishWizard({
             />
             <div className="flex flex-col items-center gap-4">
               <div
-                className="relative size-48 overflow-hidden rounded-2xl border border-white/15 bg-black/40"
+                className="relative size-48 overflow-hidden rounded-2xl border border-black/10 bg-zinc-50"
                 aria-busy={uploading}
               >
                 {coverPreview || coverUrl ? (
@@ -339,7 +339,7 @@ export function AlbumPublishWizard({
                     unoptimized
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-white/35">
+                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-zinc-400">
                     {COVER_SIZE}×{COVER_SIZE}
                   </div>
                 )}
@@ -348,7 +348,7 @@ export function AlbumPublishWizard({
                 ) : null}
               </div>
               <label
-                className={`inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black ${
+                className={`inline-flex rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white ${
                   uploading ? "pointer-events-none opacity-60" : "cursor-pointer"
                 }`}
               >
@@ -379,7 +379,7 @@ export function AlbumPublishWizard({
             />
 
             <label
-              className={`mb-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-white/15 px-4 py-8 ${
+              className={`mb-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-black/10 px-4 py-8 ${
                 uploading ? "pointer-events-none opacity-90" : "cursor-pointer"
               }`}
               aria-busy={uploading}
@@ -395,10 +395,10 @@ export function AlbumPublishWizard({
                 />
               ) : (
                 <>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-zinc-950">
                     Ajouter des MP3
                   </span>
-                  <span className="text-xs text-white/40">
+                  <span className="text-xs text-zinc-500">
                     Plusieurs fichiers · .mp3
                   </span>
                 </>
@@ -417,10 +417,10 @@ export function AlbumPublishWizard({
               {tracks.map((track, index) => (
                 <div
                   key={track.id}
-                  className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/30 p-3"
+                  className="flex flex-col gap-2 rounded-2xl border border-black/[0.07] bg-zinc-50 p-3"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-7 text-center text-xs text-white/40">
+                    <span className="w-7 text-center text-xs text-zinc-500">
                       {index + 1}
                     </span>
                     <Input
@@ -435,7 +435,7 @@ export function AlbumPublishWizard({
                         isIconOnly
                         size="sm"
                         variant="ghost"
-                        className="text-white/60"
+                        className="text-zinc-600"
                         onPress={() => moveTrack(index, -1)}
                         aria-label="Monter"
                       >
@@ -446,7 +446,7 @@ export function AlbumPublishWizard({
                         isIconOnly
                         size="sm"
                         variant="ghost"
-                        className="text-white/60"
+                        className="text-zinc-600"
                         onPress={() => moveTrack(index, 1)}
                         aria-label="Descendre"
                       >
@@ -457,7 +457,7 @@ export function AlbumPublishWizard({
                         isIconOnly
                         size="sm"
                         variant="ghost"
-                        className="text-red-300"
+                        className="text-red-600"
                         onPress={() => removeTrack(index)}
                         aria-label="Supprimer"
                       >
@@ -465,21 +465,21 @@ export function AlbumPublishWizard({
                       </Button>
                     </div>
                   </div>
-                  <label className="flex cursor-pointer items-center gap-2 pl-9 text-xs text-white/55">
+                  <label className="flex cursor-pointer items-center gap-2 pl-9 text-xs text-zinc-600">
                     <input
                       type="checkbox"
                       checked={track.is_explicit}
                       onChange={(e) =>
                         toggleExplicit(index, e.target.checked)
                       }
-                      className="size-3.5 rounded border-white/30 bg-transparent"
+                      className="size-3.5 rounded border-black/20 bg-transparent"
                     />
                     Explicite (paroles sensibles) — badge E
                   </label>
                 </div>
               ))}
               {!tracks.length ? (
-                <p className="text-center text-sm text-white/35">
+                <p className="text-center text-sm text-zinc-400">
                   Aucun titre pour l&apos;instant.
                 </p>
               ) : null}
@@ -501,7 +501,7 @@ export function AlbumPublishWizard({
                 <Input
                   value={auteur}
                   onChange={(e) => setAuteur(e.target.value)}
-                  className="bg-white/[0.04]"
+                  className="bg-white"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -509,7 +509,7 @@ export function AlbumPublishWizard({
                 <Input
                   value={compositeur}
                   onChange={(e) => setCompositeur(e.target.value)}
-                  className="bg-white/[0.04]"
+                  className="bg-white"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -517,7 +517,7 @@ export function AlbumPublishWizard({
                 <Input
                   value={producteur}
                   onChange={(e) => setProducteur(e.target.value)}
-                  className="bg-white/[0.04]"
+                  className="bg-white"
                 />
               </div>
             </div>
@@ -526,7 +526,7 @@ export function AlbumPublishWizard({
               <Input
                 value={featuring}
                 onChange={(e) => setFeaturing(e.target.value)}
-                className="bg-white/[0.04]"
+                className="bg-white"
               />
             </div>
           </>
@@ -540,9 +540,9 @@ export function AlbumPublishWizard({
               title="Récapitulatif"
               subtitle="Vérifie les infos puis certifie ta propriété."
             />
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm">
+            <div className="space-y-3 rounded-2xl border border-black/[0.07] bg-zinc-50 p-4 text-sm">
               <div className="flex gap-4">
-                <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-white/5">
+                <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-white">
                   {coverUrl ? (
                     <AppImage
                       src={coverUrl}
@@ -554,17 +554,17 @@ export function AlbumPublishWizard({
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="font-semibold text-white">{title || "—"}</p>
-                  <p className="text-white/45">
+                  <p className="font-semibold text-zinc-950">{title || "—"}</p>
+                  <p className="text-zinc-500">
                     {artists.find((a) => a.id === artistId)?.stage_name || "—"}
                     {genre ? ` · ${genre}` : ""}
                   </p>
-                  <p className="text-white/45">
+                  <p className="text-zinc-500">
                     Album · {tracks.length} titres · {formatMoney(priceFcfa, country)}
                   </p>
                 </div>
               </div>
-              <ul className="max-h-36 space-y-1 overflow-y-auto border-t border-white/8 pt-3 text-xs text-white/50">
+              <ul className="max-h-36 space-y-1 overflow-y-auto border-t border-black/[0.07] pt-3 text-xs text-zinc-500">
                 {tracks.map((t, i) => (
                   <li key={t.id} className="truncate">
                     {i + 1}. {t.title || t.fileName}
@@ -572,7 +572,7 @@ export function AlbumPublishWizard({
                 ))}
               </ul>
               {(auteur || compositeur || producteur || featuring) && (
-                <p className="border-t border-white/8 pt-3 text-xs text-white/40">
+                <p className="border-t border-black/[0.07] pt-3 text-xs text-zinc-500">
                   {[
                     auteur && `Auteur : ${auteur}`,
                     compositeur && `Compositeur : ${compositeur}`,
@@ -584,14 +584,14 @@ export function AlbumPublishWizard({
                 </p>
               )}
             </div>
-            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-black/[0.07] bg-white p-4">
               <input
                 type="checkbox"
                 checked={ownershipCertified}
                 onChange={(e) => setOwnershipCertified(e.target.checked)}
-                className="mt-1 size-4 rounded border-white/30 bg-transparent"
+                className="mt-1 size-4 rounded border-black/20 bg-transparent"
               />
-              <span className="text-sm leading-relaxed text-white/75">
+              <span className="text-sm leading-relaxed text-zinc-800">
                 Je certifie être l&apos;auteur et le propriétaire des droits des
                 morceaux que je souhaite publier, et que leur mise en ligne ne
                 porte atteinte à aucun droit de tiers.
@@ -601,7 +601,7 @@ export function AlbumPublishWizard({
         ) : null}
 
         {(localError || state.error) && (
-          <p className="mt-4 rounded-2xl bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          <p className="mt-4 rounded-2xl bg-red-500/10 px-3 py-2 text-sm text-red-600">
             {localError || state.error}
           </p>
         )}
@@ -611,7 +611,7 @@ export function AlbumPublishWizard({
             <Button
               type="button"
               variant="outline"
-              className="h-12 flex-1 rounded-full border-white/20 bg-transparent text-white"
+              className="h-12 flex-1 rounded-full border-black/10 bg-transparent text-zinc-950"
               isDisabled={uploading}
               onPress={() => {
                 setLocalError(null);
@@ -624,7 +624,7 @@ export function AlbumPublishWizard({
           {step < TOTAL - 1 ? (
             <Button
               type="button"
-              className="h-12 flex-1 rounded-full bg-white font-semibold text-black"
+              className="h-12 flex-1 rounded-full bg-zinc-950 font-semibold text-white"
               onPress={next}
               isDisabled={uploading}
             >
@@ -635,7 +635,7 @@ export function AlbumPublishWizard({
               type="button"
               isPending={pending || uploading}
               isDisabled={!coverUrl || tracks.length < 2 || !ownershipCertified}
-              className="h-12 flex-1 rounded-full bg-white font-semibold text-black"
+              className="h-12 flex-1 rounded-full bg-zinc-950 font-semibold text-white"
               onPress={() => {
                 if (!ownershipCertified) {
                   setLocalError(

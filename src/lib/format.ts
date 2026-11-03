@@ -12,7 +12,7 @@ export function formatFcfa(amount: number) {
     maximumFractionDigits: 0,
   })
     .format(amount)
-    .replace("FCFA", "FCFA")
+    .replace(/\u202f/g, "\u00a0") // espace fine absente de la police Outfit
     .replace("XAF", "FCFA");
 }
 
@@ -33,6 +33,7 @@ export function formatMoney(
       minimumFractionDigits: 0,
     })
       .format(local)
+      .replace(/\u202f/g, "\u00a0")
       .replace("CDF", "FC");
   }
   return formatFcfa(amountFcfa);

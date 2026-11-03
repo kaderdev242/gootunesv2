@@ -26,11 +26,11 @@ export function UploadBusy({
       aria-busy="true"
     >
       <span
-        className="size-5 shrink-0 animate-spin rounded-full border-2 border-white/25 border-t-white"
+        className="size-5 shrink-0 animate-spin rounded-full border-2 border-black/20 border-t-white"
         aria-hidden
       />
       {label || pct != null ? (
-        <span className="text-center text-xs text-white/70">
+        <span className="text-center text-xs text-zinc-600">
           {label}
           {label && pct != null ? " · " : null}
           {pct != null ? `${pct} %` : null}
@@ -42,7 +42,7 @@ export function UploadBusy({
   if (!overlay) return body;
 
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/55">
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-950/55">
       {body}
     </div>
   );

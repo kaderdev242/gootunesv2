@@ -75,7 +75,7 @@ export function GenrePicker(props: GenrePickerProps) {
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {label ? (
-        <p className="text-sm font-medium text-white/70">{label}</p>
+        <p className="text-sm font-medium text-white/70 in-[.studio]:text-zinc-700">{label}</p>
       ) : null}
 
       {name ? <input type="hidden" name={name} value={hiddenValue} /> : null}
@@ -86,7 +86,7 @@ export function GenrePicker(props: GenrePickerProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un genre…"
-          className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-3.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
+          className="h-11 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-3.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30 in-[.studio]:border-black/10 in-[.studio]:bg-white in-[.studio]:text-zinc-900 in-[.studio]:placeholder:text-zinc-400 in-[.studio]:focus:border-black/25"
         />
       ) : null}
 
@@ -100,8 +100,8 @@ export function GenrePicker(props: GenrePickerProps) {
               onClick={() => toggle(genre)}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
                 active
-                  ? "bg-white text-black"
-                  : "border border-white/12 bg-white/[0.04] text-white/70 hover:border-white/25 hover:text-white"
+                  ? "bg-white text-black in-[.studio]:bg-zinc-950 in-[.studio]:text-white"
+                  : "border border-white/12 bg-white/[0.04] text-white/70 hover:border-white/25 hover:text-white in-[.studio]:border-black/10 in-[.studio]:bg-white in-[.studio]:text-zinc-600 in-[.studio]:hover:border-black/25 in-[.studio]:hover:text-zinc-950"
               }`}
             >
               {genre}
@@ -109,12 +109,12 @@ export function GenrePicker(props: GenrePickerProps) {
           );
         })}
         {filtered.length === 0 ? (
-          <p className="text-sm text-white/40">Aucun genre trouvé.</p>
+          <p className="text-sm text-white/40 in-[.studio]:text-zinc-500">Aucun genre trouvé.</p>
         ) : null}
       </div>
 
       {mode === "multi" ? (
-        <p className="text-xs text-white/35">
+        <p className="text-xs text-white/35 in-[.studio]:text-zinc-500">
           {(props as MultiProps).value.length} sélectionné
           {(props as MultiProps).value.length > 1 ? "s" : ""}
           {(props as MultiProps).max
@@ -139,7 +139,7 @@ export function GenreChips({
       {genres.map((g) => (
         <span
           key={g}
-          className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/70"
+          className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/70 in-[.studio]:border-black/10 in-[.studio]:bg-white in-[.studio]:text-zinc-600"
         >
           {g}
         </span>

@@ -46,6 +46,12 @@ export const payinFormSchema = z.object({
   releaseId: z.string().min(1),
   paymentMethod: z.string().min(1),
   phoneRaw: z.string().trim().min(6).max(32),
+  /** Code OTP Orange (Burkina Faso) obtenu via *144*4*6*MONTANT#. */
+  omOtp: z
+    .string()
+    .trim()
+    .regex(/^\d{4,8}$/, "Code OTP invalide (4 à 8 chiffres).")
+    .optional(),
 });
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;

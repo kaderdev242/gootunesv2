@@ -13,7 +13,10 @@ export type PaymentMethod =
   | "moov"
   | "africell"
   | "mpesa"
-  | "apple";
+  | "apple"
+  | "free"
+  | "coris"
+  | "celtiis";
 export type ReportReason =
   | "copyright"
   | "illegal"

@@ -16,10 +16,10 @@ export function PriceTierPicker({
     <select
       value={valueFcfa}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="h-12 rounded-2xl border border-white/12 bg-white/[0.04] px-3 text-sm text-white"
+      className="h-12 rounded-2xl border border-black/10 bg-white px-3 text-sm text-zinc-950"
     >
       {RELEASE_PRICE_TIERS.map((tier) => (
-        <option key={tier.sku} value={tier.priceFcfa} className="bg-zinc-900">
+        <option key={tier.sku} value={tier.priceFcfa} className="bg-white text-zinc-900">
           {formatMoney(tier.priceFcfa, country)}
         </option>
       ))}

@@ -1,203 +1,315 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Avatar, Button } from "@heroui/react";
+import { Avatar } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Alert02Icon,
   AnalyticsUpIcon,
+  ArrowUpRight01Icon,
   Cancel01Icon,
+  ChartHistogramIcon,
+  CreditCardIcon,
   File01Icon,
   Folder01Icon,
   Logout01Icon,
   Menu01Icon,
   Money01Icon,
   MusicNote01Icon,
-  Notification03Icon,
   Search01Icon,
   Settings01Icon,
+  UserIcon,
   UserMultipleIcon,
-  ChartHistogramIcon,
-  CreditCardIcon,
 } from "@hugeicons/core-free-icons";
 import { Logo } from "@/components/landing/Logo";
 import { signOut } from "@/lib/actions/auth";
 import type { Profile } from "@/lib/supabase/database.types";
 
+type IconType = typeof ChartHistogramIcon;
+
 type NavItem = {
   href: string;
   label: string;
-  icon: typeof ChartHistogramIcon;
+  icon: IconType;
   exact?: boolean;
-  badge?: number;
+  keywords?: string;
+  badge?: { value: number; tone: "red" | "amber" };
 };
 
-type NavSection = {
-  title: string;
+type NavSection = { title: string; items: NavItem[] };
+
+export type AdminCounts = {
+  openReports: number;
+  pendingWithdrawals: number;
+  maintenance: boolean;
+};
+
+function buildNav(counts: AdminCounts): NavSection[] {
+  return [
+    {
+      title: "Pilotage",
+      items: [
+        { href: "/goo-admin", label: "Vue d'ensemble", icon: ChartHistogramIcon, exact: true, keywords: "dashboard accueil" },
+        { href: "/goo-admin/stats", label: "Statistiques", icon: AnalyticsUpIcon, keywords: "analytics audience" },
+        {
+          href: "/goo-admin/signalements",
+          label: "Signalements",
+          icon: Alert02Icon,
+          keywords: "reports modération",
+          badge: counts.openReports ? { value: counts.openReports, tone: "red" } : undefined,
+        },
+      ],
+    },
+    {
+      title: "Communauté",
+      items: [
+        { href: "/goo-admin/artistes", label: "Artistes & labels", icon: UserMultipleIcon, keywords: "créateurs certification" },
+        { href: "/goo-admin/fans", label: "Fans", icon: UserIcon, keywords: "utilisateurs comptes" },
+      ],
+    },
+    {
+      title: "Catalogue",
+      items: [
+        { href: "/goo-admin/morceaux", label: "Morceaux", icon: Folder01Icon, keywords: "releases sorties albums singles" },
+        { href: "/goo-admin/hits", label: "Les Hits", icon: MusicNote01Icon, keywords: "éditorial tendances" },
+      ],
+    },
+    {
+      title: "Finances",
+      items: [
+        {
+          href: "/goo-admin/transactions",
+          label: "Transactions",
+          icon: Money01Icon,
+          keywords: "paiements retraits achats",
+          badge: counts.pendingWithdrawals ? { value: counts.pendingWithdrawals, tone: "amber" } : undefined,
+        },
+        { href: "/goo-admin/abonnements", label: "Abonnements", icon: CreditCardIcon, keywords: "plans pro label" },
+      ],
+    },
+    {
+      title: "Système",
+      items: [
+        { href: "/goo-admin/logs", label: "Logs", icon: File01Icon, keywords: "erreurs système" },
+        { href: "/goo-admin/maintenance", label: "Maintenance", icon: Settings01Icon, keywords: "mode maintenance" },
+      ],
+    },
+  ];
+}
+
+function isActive(pathname: string, item: NavItem) {
+  return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+}
+
+/* ─────────── Palette de commandes (⌘K) ─────────── */
+
+function CommandPalette({
+  items,
+  open,
+  onClose,
+}: {
   items: NavItem[];
-};
+  open: boolean;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [index, setIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-const NAV_SECTIONS: NavSection[] = [
-  {
-    title: "Plateforme",
-    items: [
-      {
-        href: "/goo-admin",
-        label: "Vue d'ensemble",
-        icon: ChartHistogramIcon,
-        exact: true,
-      },
-      { href: "/goo-admin/stats", label: "Statistiques", icon: AnalyticsUpIcon },
-      {
-        href: "/goo-admin/signalements",
-        label: "Signalements",
-        icon: Alert02Icon,
-      },
-    ],
-  },
-  {
-    title: "Catalogue",
-    items: [
-      { href: "/goo-admin/artistes", label: "Artistes", icon: UserMultipleIcon },
-      { href: "/goo-admin/fans", label: "Fans", icon: UserMultipleIcon },
-      { href: "/goo-admin/morceaux", label: "Morceaux", icon: Folder01Icon },
-      { href: "/goo-admin/hits", label: "Les Hits", icon: MusicNote01Icon },
-    ],
-  },
-  {
-    title: "Finances",
-    items: [
-      {
-        href: "/goo-admin/transactions",
-        label: "Transactions",
-        icon: Money01Icon,
-      },
-      {
-        href: "/goo-admin/abonnements",
-        label: "Abonnements",
-        icon: CreditCardIcon,
-      },
-    ],
-  },
-  {
-    title: "Système",
-    items: [
-      { href: "/goo-admin/logs", label: "Logs", icon: File01Icon },
-      {
-        href: "/goo-admin/maintenance",
-        label: "Maintenance",
-        icon: Settings01Icon,
-      },
-    ],
-  },
-];
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((i) => `${i.label} ${i.keywords ?? ""}`.toLowerCase().includes(q));
+  }, [items, query]);
 
-const SEARCH_TARGETS: { href: string; label: string; keywords: string }[] = [
-  { href: "/goo-admin", label: "Vue d'ensemble", keywords: "dashboard overview" },
-  { href: "/goo-admin/artistes", label: "Artistes", keywords: "créateurs labels" },
-  { href: "/goo-admin/fans", label: "Fans", keywords: "utilisateurs" },
-  { href: "/goo-admin/morceaux", label: "Morceaux", keywords: "releases catalogue" },
-  { href: "/goo-admin/hits", label: "Les Hits", keywords: "tendances" },
-  {
-    href: "/goo-admin/transactions",
-    label: "Transactions",
-    keywords: "paiements retraits achats",
-  },
-  {
-    href: "/goo-admin/abonnements",
-    label: "Abonnements",
-    keywords: "plans pro label revenus",
-  },
-  {
-    href: "/goo-admin/signalements",
-    label: "Signalements",
-    keywords: "reports modération",
-  },
-  { href: "/goo-admin/stats", label: "Statistiques", keywords: "analytics" },
-  { href: "/goo-admin/logs", label: "Logs système", keywords: "erreurs" },
-  {
-    href: "/goo-admin/maintenance",
-    label: "Maintenance",
-    keywords: "mode maintenance",
-  },
-];
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  if (!open) return null;
+
+  const go = (item: NavItem | undefined) => {
+    if (!item) return;
+    router.push(item.href);
+    setQuery("");
+    setIndex(0);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-[14vh] backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-[#121214] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4">
+          <HugeiconsIcon icon={Search01Icon} size={16} className="text-zinc-500" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIndex(0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setIndex((i) => Math.min(i + 1, results.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setIndex((i) => Math.max(i - 1, 0));
+              } else if (e.key === "Enter") {
+                go(results[index]);
+              } else if (e.key === "Escape") {
+                onClose();
+              }
+            }}
+            placeholder="Aller à une page…"
+            className="h-12 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-500"
+          />
+          <kbd className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-500">Échap</kbd>
+        </div>
+        <ul className="max-h-80 overflow-y-auto p-1.5">
+          {results.length === 0 ? (
+            <li className="px-3 py-6 text-center text-sm text-zinc-500">Aucun résultat</li>
+          ) : (
+            results.map((item, i) => (
+              <li key={item.href}>
+                <button
+                  type="button"
+                  onMouseEnter={() => setIndex(i)}
+                  onClick={() => go(item)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
+                    i === index ? "bg-violet-500/15 text-white" : "text-zinc-300"
+                  }`}
+                >
+                  <HugeiconsIcon icon={item.icon} size={16} className={i === index ? "text-violet-300" : "text-zinc-500"} />
+                  {item.label}
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Coquille ─────────── */
 
 export function AdminShell({
   profile,
+  counts = { openReports: 0, pendingWithdrawals: 0, maintenance: false },
   children,
 }: {
   profile: Profile;
+  counts?: AdminCounts;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [palette, setPalette] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
+  const sections = useMemo(() => buildNav(counts), [counts]);
+  const allItems = useMemo(() => sections.flatMap((s) => s.items), [sections]);
+  const current = allItems.find((i) => isActive(pathname, i));
 
-  const searchHits = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return SEARCH_TARGETS.filter((t) =>
-      `${t.label} ${t.keywords}`.toLowerCase().includes(q),
-    ).slice(0, 6);
-  }, [query]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPalette((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const pageTitle =
-    SEARCH_TARGETS.find((t) =>
-      t.href === "/goo-admin" ? pathname === t.href : pathname.startsWith(t.href),
-    )?.label || "Admin";
+  const today = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   return (
     <div
-      className="light flex h-dvh overflow-hidden bg-[#f4f5f7] text-zinc-900"
-      data-theme="light"
-      style={{ colorScheme: "light" }}
+      className="dark flex h-dvh overflow-hidden bg-[#09090b] text-zinc-200"
+      data-theme="dark"
+      style={{ colorScheme: "dark" }}
     >
+      <CommandPalette items={allItems} open={palette} onClose={() => setPalette(false)} />
+
+      {open ? (
+        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setOpen(false)} />
+      ) : null}
+
+      {/* ── Barre latérale ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[248px] flex-col border-r border-zinc-200/70 bg-white transition lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[252px] flex-col border-r border-white/[0.06] bg-[#0c0c0e] transition-transform duration-300 lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-2.5 px-5 py-5">
-          <Logo size="sm" variant="dark" />
-          <span className="rounded-md bg-[#5b8def]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#3b6fd4]">
-            Admin
+        <div className="flex items-center justify-between px-4 pb-3 pt-5">
+          <Link href="/goo-admin" className="flex items-center" onClick={() => setOpen(false)}>
+            <Logo size="sm" variant="light" />
+          </Link>
+          <span className="rounded-md bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-200 ring-1 ring-violet-400/25">
+            Console
           </span>
         </div>
 
-        <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-          {NAV_SECTIONS.map((section) => (
+        <div className="px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setPalette(true)}
+            className="flex h-9 w-full items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 text-[13px] text-zinc-500 transition hover:border-white/15 hover:text-zinc-300"
+          >
+            <HugeiconsIcon icon={Search01Icon} size={14} />
+            <span className="flex-1 text-left">Rechercher…</span>
+            <kbd className="rounded border border-white/10 px-1 text-[10px]">⌘K</kbd>
+          </button>
+        </div>
+
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2 [scrollbar-width:none]">
+          {sections.map((section) => (
             <div key={section.title}>
-              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+              <p className="mb-1 px-2.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-600">
                 {section.title}
               </p>
-              <div className="space-y-0.5">
+              <div className="space-y-px">
                 {section.items.map((item) => {
-                  const active = item.exact
-                    ? pathname === item.href
-                    : pathname.startsWith(item.href);
+                  const active = isActive(pathname, item);
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setOpen(false)}
-                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] transition ${
+                      className={`group relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition ${
                         active
-                          ? "bg-[#eef3ff] font-semibold text-[#3b6fd4]"
-                          : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                          ? "bg-white/[0.06] font-medium text-white"
+                          : "text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-100"
                       }`}
                     >
+                      {active ? (
+                        <span className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.9)]" />
+                      ) : null}
                       <HugeiconsIcon
                         icon={item.icon}
                         size={16}
-                        className={active ? "text-[#5b8def]" : "text-zinc-400"}
+                        className={active ? "text-violet-300" : "text-zinc-500 group-hover:text-zinc-300"}
                       />
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1 truncate">{item.label}</span>
                       {item.badge ? (
-                        <span className="rounded-full bg-[#5b8def] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                          {item.badge}
+                        <span
+                          className={`min-w-5 rounded-md px-1.5 text-center text-[10px] font-semibold tabular-nums leading-5 ${
+                            item.badge.tone === "red"
+                              ? "bg-red-500/15 text-red-300"
+                              : "bg-amber-500/15 text-amber-300"
+                          }`}
+                        >
+                          {item.badge.value}
                         </span>
                       ) : null}
                     </Link>
@@ -208,113 +320,86 @@ export function AdminShell({
           ))}
         </nav>
 
-        <div className="border-t border-zinc-100 p-3">
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] text-zinc-500 transition hover:bg-red-50 hover:text-red-600"
-            >
-              <HugeiconsIcon icon={Logout01Icon} size={16} />
-              Déconnexion
-            </button>
-          </form>
+        <div className="space-y-2 border-t border-white/[0.06] p-3">
+          <Link
+            href="/goo-admin/maintenance"
+            className="flex items-center gap-2.5 rounded-lg bg-white/[0.03] px-3 py-2 text-[12px] transition hover:bg-white/[0.06]"
+          >
+            <span className="relative flex size-2">
+              <span
+                className={`absolute inline-flex size-full animate-ping rounded-full opacity-60 ${
+                  counts.maintenance ? "bg-amber-400" : "bg-emerald-400"
+                }`}
+              />
+              <span className={`relative inline-flex size-2 rounded-full ${counts.maintenance ? "bg-amber-400" : "bg-emerald-400"}`} />
+            </span>
+            <span className="flex-1 text-zinc-300">
+              {counts.maintenance ? "Maintenance active" : "Site en ligne"}
+            </span>
+          </Link>
+          <div className="flex items-center gap-2.5 px-1">
+            <Avatar className="size-8 shrink-0">
+              {profile.avatar_url ? <Avatar.Image alt="" src={profile.avatar_url} /> : null}
+              <Avatar.Fallback>{(profile.display_name || "A").slice(0, 1).toUpperCase()}</Avatar.Fallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-medium text-zinc-100">{profile.display_name || "Admin"}</p>
+              <p className="truncate text-[11px] text-zinc-500">Super admin</p>
+            </div>
+            <form action={signOut}>
+              <button
+                type="submit"
+                aria-label="Se déconnecter"
+                title="Se déconnecter"
+                className="flex size-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-red-500/10 hover:text-red-300"
+              >
+                <HugeiconsIcon icon={Logout01Icon} size={15} />
+              </button>
+            </form>
+          </div>
         </div>
       </aside>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-40 bg-black/25 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      ) : null}
-
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-zinc-200/70 bg-white/80 px-4 py-3 backdrop-blur-md sm:px-6 lg:px-8">
-          <Button
-            isIconOnly
-            variant="ghost"
-            className="text-zinc-700 lg:hidden"
+      {/* ── Contenu ── */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#09090b]/80 px-4 backdrop-blur sm:px-6">
+          <button
+            type="button"
+            className="flex size-9 items-center justify-center rounded-lg border border-white/[0.07] text-zinc-300 lg:hidden"
             aria-label="Menu"
-            onPress={() => setOpen((v) => !v)}
+            onClick={() => setOpen((v) => !v)}
           >
-            <HugeiconsIcon icon={open ? Cancel01Icon : Menu01Icon} size={20} />
-          </Button>
-
-          <div className="relative hidden min-w-0 flex-1 md:block">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              size={16}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && searchHits[0]) {
-                  router.push(searchHits[0].href);
-                  setQuery("");
-                }
-              }}
-              placeholder="Rechercher une page…"
-              className="w-full max-w-xl rounded-2xl border border-zinc-200/80 bg-[#f4f5f7] py-2.5 pl-10 pr-4 text-sm text-zinc-800 outline-none transition placeholder:text-zinc-400 focus:border-[#5b8def]/40 focus:bg-white focus:ring-2 focus:ring-[#5b8def]/15"
-            />
-            {searchHits.length > 0 ? (
-              <div className="absolute left-0 top-full z-30 mt-1.5 w-full max-w-xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg shadow-zinc-900/10">
-                {searchHits.map((hit) => (
-                  <button
-                    key={hit.href}
-                    type="button"
-                    onClick={() => {
-                      router.push(hit.href);
-                      setQuery("");
-                    }}
-                    className="flex w-full items-center px-4 py-2.5 text-left text-sm text-zinc-700 transition hover:bg-[#eef3ff] hover:text-[#3b6fd4]"
-                  >
-                    {hit.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-800 md:hidden">
-            {pageTitle}
+            <HugeiconsIcon icon={open ? Cancel01Icon : Menu01Icon} size={17} />
+          </button>
+          <p className="min-w-0 truncate text-[13px] text-zinc-500">
+            <span className="hidden sm:inline">Console / </span>
+            <span className="font-medium text-zinc-100">{current?.label ?? "Admin"}</span>
           </p>
-
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/goo-admin/signalements"
-              className="hidden size-10 items-center justify-center rounded-full border border-zinc-200/80 text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800 sm:flex"
-              aria-label="Signalements"
+          <div className="ml-auto flex items-center gap-2">
+            <span className="hidden rounded-md border border-white/[0.06] px-2.5 py-1 text-[12px] capitalize text-zinc-400 md:inline">
+              {today}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPalette(true)}
+              className="flex size-9 items-center justify-center rounded-lg border border-white/[0.07] text-zinc-400 transition hover:text-white md:hidden"
+              aria-label="Rechercher"
             >
-              <HugeiconsIcon icon={Notification03Icon} size={18} />
+              <HugeiconsIcon icon={Search01Icon} size={16} />
+            </button>
+            <Link
+              href="/"
+              target="_blank"
+              className="hidden h-9 items-center gap-1.5 rounded-lg border border-white/[0.07] px-3 text-[12px] font-medium text-zinc-300 transition hover:text-white sm:flex"
+            >
+              Voir le site
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
             </Link>
-            <div className="flex items-center gap-2.5 rounded-full border border-zinc-200/80 bg-white py-1 pl-1 pr-3">
-              <Avatar className="size-8">
-                {profile.avatar_url ? (
-                  <Avatar.Image
-                    alt={profile.display_name || "Admin"}
-                    src={profile.avatar_url}
-                  />
-                ) : null}
-                <Avatar.Fallback>
-                  {(profile.display_name || profile.email || "A")
-                    .slice(0, 1)
-                    .toUpperCase()}
-                </Avatar.Fallback>
-              </Avatar>
-              <div className="hidden min-w-0 sm:block">
-                <p className="truncate text-xs font-semibold text-zinc-800">
-                  {profile.display_name || "Admin"}
-                </p>
-                <p className="truncate text-[10px] text-zinc-400">Super Admin</p>
-              </div>
-            </div>
           </div>
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">{children}</div>
+          <div className="mx-auto max-w-[1320px]">{children}</div>
         </main>
       </div>
     </div>

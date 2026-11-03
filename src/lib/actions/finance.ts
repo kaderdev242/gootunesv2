@@ -24,12 +24,14 @@ export async function initiatePurchase(
     formData.get("payment_method") || "",
   ) as PaymentMethod;
   const phoneRaw = String(formData.get("phone") || "").trim();
+  const omOtp = String(formData.get("om_otp") || "").trim();
 
   const supabase = await createClient();
   return runInitiatePurchase(supabase, {
     releaseId,
     paymentMethod: payment_method,
     phoneRaw,
+    omOtp,
   });
 }
 

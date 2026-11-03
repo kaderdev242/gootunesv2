@@ -182,6 +182,27 @@ export function BuyReleaseForm({
             ton téléphone, puis valide ici.
           </p>
         ) : null}
+        {country === "BF" && method === "orange" ? (
+          <div className="mt-3">
+            <p className="text-[11px] text-amber-100/70">
+              Orange Burkina : compose{" "}
+              <span className="font-medium text-amber-100">
+                *144*4*6*{priceLabel.replace(/\D/g, "")}#
+              </span>{" "}
+              pour recevoir ton code, puis saisis-le ici.
+            </p>
+            <input
+              name="om_otp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{4,8}"
+              required
+              disabled={waiting}
+              placeholder="Code OTP Orange"
+              className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm tracking-[0.3em] text-white outline-none focus:border-white/25"
+            />
+          </div>
+        ) : null}
         {country === "CI" && method === "orange" ? (
           <p className="mt-1.5 text-[11px] text-amber-100/70">
             Orange CI : compose{" "}

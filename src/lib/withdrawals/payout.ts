@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -83,6 +84,19 @@ export async function runInitiateWithdrawal(
     return { error: "Solde insuffisant." };
   }
 
+  // Un seul retrait en cours à la fois : le solde n'est débité qu'à la
+  // confirmation Mbiyo, donc deux retraits simultanés pourraient dépasser le solde.
+  const { count: pendingCount } = await createAdminClient()
+    .from("withdrawals")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", user.id)
+    .eq("status", "pending");
+  if ((pendingCount ?? 0) > 0) {
+    return {
+      error: "Un retrait est déjà en cours. Attends sa confirmation avant d'en lancer un autre.",
+    };
+  }
+
   if (!isOperatorForCountry(paymentMethod, country)) {
     return { error: "Cet opérateur n'est pas disponible dans ton pays." };
   }
@@ -116,7 +130,7 @@ export async function runInitiateWithdrawal(
   }
 
   if (!mbiyoConfigured()) {
-    const { error } = await supabase.from("withdrawals").insert({
+    const { error } = await createAdminClient().from("withdrawals").insert({
       profile_id: user.id,
       amount_fcfa: amount,
       payment_method: paymentMethod,
@@ -135,7 +149,7 @@ export async function runInitiateWithdrawal(
     return { success: "Retrait démo effectué." };
   }
 
-  const { data: withdrawal, error: insertError } = await supabase
+  const { data: withdrawal, error: insertError } = await createAdminClient()
     .from("withdrawals")
     .insert({
       profile_id: user.id,
@@ -174,7 +188,7 @@ export async function runInitiateWithdrawal(
     });
 
     const tx = res.data;
-    await supabase
+    await createAdminClient()
       .from("withdrawals")
       .update({
         provider_transaction_id: tx.transaction_id,

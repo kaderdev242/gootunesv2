@@ -1391,3 +1391,28 @@ export async function listSystemLogsAdmin(limit = 200): Promise<AdminSystemLog[]
     createdAt: row.created_at,
   }));
 }
+
+/** Compteurs affichés dans la barre latérale de la console admin. */
+export async function getAdminSidebarCounts() {
+  const db = createAdminClient();
+  const [reports, withdrawals, settings] = await Promise.all([
+    db
+      .from("track_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "open"),
+    db
+      .from("withdrawals")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    db
+      .from("site_settings")
+      .select("maintenance_enabled")
+      .eq("id", 1)
+      .maybeSingle(),
+  ]);
+  return {
+    openReports: reports.count ?? 0,
+    pendingWithdrawals: withdrawals.count ?? 0,
+    maintenance: Boolean(settings.data?.maintenance_enabled),
+  };
+}

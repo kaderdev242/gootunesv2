@@ -7,6 +7,8 @@ const TIMEZONE_TO_COUNTRY: Record<string, CountryCode> = {
   "Africa/Abidjan": "CI",
   "Africa/Douala": "CM",
   "Africa/Dakar": "SN",
+  "Africa/Ouagadougou": "BF",
+  "Africa/Porto-Novo": "BJ",
 };
 
 const LANG_TO_COUNTRY: Record<string, CountryCode> = {
@@ -15,6 +17,8 @@ const LANG_TO_COUNTRY: Record<string, CountryCode> = {
   CI: "CI",
   CM: "CM",
   SN: "SN",
+  BF: "BF",
+  BJ: "BJ",
 };
 
 export function isCountryCode(value: string): value is CountryCode {

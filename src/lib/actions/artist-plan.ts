@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -44,6 +45,7 @@ export async function initiateArtistPlan(
     formData.get("payment_method") || "",
   ) as PaymentMethod;
   const phoneRaw = String(formData.get("phone") || "").trim();
+  const omOtp = String(formData.get("om_otp") || "").replace(/\D/g, "").slice(0, 8);
 
   if (!payment_method || !phoneRaw) {
     return { error: "Opérateur et numéro Mobile Money requis." };
@@ -92,7 +94,7 @@ export async function initiateArtistPlan(
   if (!mbiyoConfigured()) {
     const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 1);
-    const { error } = await supabase
+    const { error } = await createAdminClient()
       .from("profiles")
       .update({
         artist_plan: "annual",
@@ -111,7 +113,7 @@ export async function initiateArtistPlan(
     };
   }
 
-  const { data: order, error: insertError } = await supabase
+  const { data: order, error: insertError } = await createAdminClient()
     .from("artist_plan_orders")
     .insert({
       user_id: user.id,
@@ -145,11 +147,12 @@ export async function initiateArtistPlan(
         network: payment_method,
         phone_number: toMbiyoPhoneE164(phone),
         country_code: country,
+        ...(omOtp ? { om_otp: omOtp } : {}),
       },
     });
 
     const tx = res.data;
-    await supabase
+    await createAdminClient()
       .from("artist_plan_orders")
       .update({
         provider_transaction_id: tx.transaction_id,

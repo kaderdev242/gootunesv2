@@ -1,4 +1,5 @@
 import type { PaymentStatus } from "@/lib/supabase/database.types";
+import { Pill, type PillTone } from "@/components/admin/console/ui";
 
 const LABELS: Record<PaymentStatus, string> = {
   completed: "Succès",
@@ -7,24 +8,18 @@ const LABELS: Record<PaymentStatus, string> = {
   cancelled: "Annulé",
 };
 
+const TONES: Record<PaymentStatus, PillTone> = {
+  completed: "ok",
+  pending: "warn",
+  failed: "danger",
+  cancelled: "neutral",
+};
+
 export function PaymentStatusBadge({ status }: { status: PaymentStatus | string }) {
   const key = status as PaymentStatus;
-  const label = LABELS[key] || status;
-
-  const tone =
-    key === "completed"
-      ? "bg-emerald-50 text-emerald-700"
-      : key === "pending"
-        ? "bg-amber-50 text-amber-800"
-        : key === "failed" || key === "cancelled"
-          ? "bg-red-50 text-red-700"
-          : "bg-zinc-100 text-zinc-600";
-
   return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}
-    >
-      {label}
-    </span>
+    <Pill tone={TONES[key] ?? "neutral"} dot>
+      {LABELS[key] || status}
+    </Pill>
   );
 }

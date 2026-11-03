@@ -3,6 +3,8 @@ import CD from "country-flag-icons/react/3x2/CD";
 import CI from "country-flag-icons/react/3x2/CI";
 import CM from "country-flag-icons/react/3x2/CM";
 import SN from "country-flag-icons/react/3x2/SN";
+import BF from "country-flag-icons/react/3x2/BF";
+import BJ from "country-flag-icons/react/3x2/BJ";
 import type { CountryCode } from "@/lib/constants";
 
 const FLAGS = {
@@ -11,6 +13,8 @@ const FLAGS = {
   CI,
   CM,
   SN,
+  BF,
+  BJ,
 } as const;
 
 export function CountryFlag({

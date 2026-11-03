@@ -13,8 +13,8 @@ export default async function ArtistAbonnementPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="font-display text-3xl font-bold">Abonnement Artiste</h1>
-      <p className="mt-1 text-sm text-white/45">
+      <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Abonnement Artiste</h1>
+      <p className="mt-1 text-sm text-zinc-500">
         {active ? (
           <>
             Actif
@@ -28,7 +28,7 @@ export default async function ArtistAbonnementPage() {
       </p>
 
       {!active ? (
-        <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-50/90">
+        <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-900">
           Active ton abonnement annuel pour publier des singles et albums en
           illimité.{" "}
           <Link href="/artist/publications" className="underline">

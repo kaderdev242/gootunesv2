@@ -1,7 +1,16 @@
 "use client";
 
 import { AppImage } from "@/components/media/AppImage";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { CheckmarkCircle02Icon, Edit02Icon, StarIcon } from "@hugeicons/core-free-icons";
+import {
+  ConsoleEmpty,
+  ConsoleHeader,
+  Kpi,
+  KpiGrid,
+  Panel,
+  Pill,
+  consoleButtonClass,
+} from "@/components/admin/console/ui";
 import { useActionState, useMemo, useState, useTransition } from "react";
 import {
   addEditorialHit,
@@ -52,7 +61,7 @@ function PublishButtons({
               ? "Ajoute d'abord un hit avec « Publier ce hit »"
               : undefined
           }
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          className={consoleButtonClass("primary")}
         >
           {pubPending ? "Publication…" : "Publier toute la file"}
         </button>
@@ -62,7 +71,7 @@ function PublishButtons({
           <button
             type="submit"
             disabled={unpubPending}
-            className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-200 disabled:opacity-50"
+            className={consoleButtonClass("ghost")}
           >
             {unpubPending ? "…" : "Dépublier"}
           </button>
@@ -122,13 +131,13 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
             value={titleValue}
             onChange={(e) => setTitleValue(e.target.value)}
             maxLength={120}
-            className="w-40 rounded-lg border border-zinc-200 px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-zinc-900/10"
+            className="w-40 rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 py-1 text-xs text-zinc-100 outline-none focus:ring-2 focus:ring-violet-500/15"
             placeholder={hit.trackTitle}
           />
           <button
             type="submit"
             disabled={editPending}
-            className="rounded-lg bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-50"
+            className={consoleButtonClass("primary", "sm")}
           >
             OK
           </button>
@@ -138,7 +147,7 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
               setTitleValue(hit.title);
               setEditingTitle(false);
             }}
-            className="rounded-lg bg-zinc-100 px-2 py-1 text-xs text-zinc-600"
+            className={consoleButtonClass("subtle", "sm")}
           >
             ✕
           </button>
@@ -147,7 +156,7 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
         <button
           type="button"
           onClick={() => setEditingTitle(true)}
-          className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-200"
+          className={consoleButtonClass("subtle", "sm")}
         >
           Titre
         </button>
@@ -158,7 +167,7 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
         <button
           type="submit"
           disabled={movePending}
-          className="rounded-lg bg-zinc-100 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-200 disabled:opacity-50"
+          className={consoleButtonClass("subtle", "sm")}
           title="Monter"
         >
           ↑
@@ -170,13 +179,13 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
         <button
           type="submit"
           disabled={movePending}
-          className="rounded-lg bg-zinc-100 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-200 disabled:opacity-50"
+          className={consoleButtonClass("subtle", "sm")}
           title="Descendre"
         >
           ↓
         </button>
       </form>
-      <label className="cursor-pointer rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-200">
+      <label className={`cursor-pointer ${consoleButtonClass("subtle", "sm")}`}>
         {uploading || editPending ? "…" : "Cover"}
         <input
           type="file"
@@ -190,7 +199,7 @@ function HitRowActions({ hit }: { hit: AdminHitRow }) {
         <button
           type="submit"
           disabled={removePending}
-          className="rounded-lg bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+          className={consoleButtonClass("danger", "sm")}
         >
           Retirer
         </button>
@@ -247,24 +256,25 @@ export function AdminHitsView({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <AdminPageHeader
-          title="Les Hits"
-          description={`Curate la section Discover · ${hits.length} hit${hits.length > 1 ? "s" : ""} · ${publishedCount} publié${publishedCount > 1 ? "s" : ""}`}
-        />
-        <PublishButtons
-          hitCount={hits.length}
-          hasPublished={publishedCount > 0}
-        />
-      </div>
+    <div className="space-y-5">
+      <ConsoleHeader
+        kicker="Éditorial"
+        title="Les Hits"
+        description="La sélection mise en avant dans Discover. Choisis les morceaux, l'ordre et la pochette."
+        actions={<PublishButtons hitCount={hits.length} hasPublished={publishedCount > 0} />}
+      />
 
-      <section className="overflow-hidden rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5">
-        <h2 className="text-lg font-semibold text-zinc-900">Ajouter un hit</h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          1. Sélectionne un morceau · 2. Ajuste le titre / cover · 3. Clique{" "}
-          <span className="font-medium text-zinc-700">Publier ce hit</span>
-        </p>
+      <KpiGrid cols={3}>
+        <Kpi highlight label="Hits dans la file" value={hits.length} icon={StarIcon} />
+        <Kpi label="Publiés" value={publishedCount} icon={CheckmarkCircle02Icon} />
+        <Kpi label="Brouillons" value={hits.length - publishedCount} icon={Edit02Icon} />
+      </KpiGrid>
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_1.15fr]">
+      <Panel
+        title="Ajouter un hit"
+        subtitle="1. Choisis un morceau · 2. Ajuste titre et pochette · 3. Publie"
+      >
 
         <div className="mt-4">
           <input
@@ -272,15 +282,15 @@ export function AdminHitsView({
             value={query}
             onChange={(e) => runSearch(e.target.value)}
             placeholder="Titre, artiste, genre…"
-            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm outline-none ring-zinc-900/10 focus:bg-white focus:ring-2"
+            className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 px-4 py-2.5 text-sm outline-none ring-violet-500/15 focus:bg-white/[0.05] focus:ring-2"
           />
         </div>
 
-        <div className="mt-3 max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/60 p-2">
+        <div className="mt-3 max-h-64 space-y-1 overflow-y-auto rounded-2xl border border-white/[0.05] bg-black/20 p-2">
           {searching ? (
-            <p className="px-2 py-3 text-sm text-zinc-400">Recherche…</p>
+            <p className="px-2 py-3 text-sm text-zinc-500">Recherche…</p>
           ) : candidates.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-zinc-400">Aucun résultat.</p>
+            <p className="px-2 py-3 text-sm text-zinc-500">Aucun résultat.</p>
           ) : (
             candidates.map((c) => (
               <button
@@ -294,13 +304,13 @@ export function AdminHitsView({
                 }}
                 className={`flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition ${
                   selected?.trackId === c.trackId
-                    ? "bg-zinc-900 text-white"
+                    ? "bg-violet-500/20 text-white ring-1 ring-violet-400/30"
                     : c.alreadyInHits
                       ? "cursor-not-allowed opacity-40"
-                      : "hover:bg-white"
+                      : "hover:bg-white/[0.04]"
                 }`}
               >
-                <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-zinc-200">
+                <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-white/[0.05]">
                   <AppImage
                     src={c.coverUrl || FALLBACK_COVER}
                     alt=""
@@ -314,7 +324,7 @@ export function AdminHitsView({
                   <p
                     className={`truncate text-xs ${
                       selected?.trackId === c.trackId
-                        ? "text-white/60"
+                        ? "text-violet-200/70"
                         : "text-zinc-500"
                     }`}
                   >
@@ -329,11 +339,11 @@ export function AdminHitsView({
         </div>
 
         {selected ? (
-          <form action={addAction} className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
+          <form action={addAction} className="mt-4 space-y-3 border-t border-white/[0.05] pt-4">
             <input type="hidden" name="track_id" value={selected.trackId} />
             <input type="hidden" name="cover_url" value={coverUrl} />
             <div className="flex flex-wrap items-start gap-4">
-              <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-200 ring-1 ring-zinc-200">
+              <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-white/[0.05] ring-1 ring-white/10">
                 <AppImage
                   src={coverUrl || selected.coverUrl || FALLBACK_COVER}
                   alt=""
@@ -354,13 +364,13 @@ export function AdminHitsView({
                     maxLength={120}
                     required
                     placeholder={selected.title}
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-zinc-900/10"
+                    className="mt-1 w-full rounded-2xl border border-white/[0.08] bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 px-3 py-2 text-sm outline-none focus:bg-white/[0.05] focus:ring-2 focus:ring-violet-500/15"
                   />
-                  <p className="mt-1 text-[11px] text-zinc-400">
+                  <p className="mt-1 text-[11px] text-zinc-500">
                     Morceau catalogue : {selected.title} · {selected.artistName}
                   </p>
                 </div>
-                <label className="inline-flex cursor-pointer rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200">
+                <label className={`cursor-pointer ${consoleButtonClass("subtle", "sm")}`}>
                   {uploading
                     ? "Envoi…"
                     : coverUrl
@@ -382,7 +392,7 @@ export function AdminHitsView({
                   name="publish_now"
                   value="true"
                   disabled={addPending || uploading || !hitTitle.trim()}
-                  className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                  className={consoleButtonClass("primary")}
                 >
                   {addPending ? "Publication…" : "Publier ce hit"}
                 </button>
@@ -391,7 +401,7 @@ export function AdminHitsView({
                   name="publish_now"
                   value="false"
                   disabled={addPending || uploading || !hitTitle.trim()}
-                  className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 disabled:opacity-50"
+                  className={consoleButtonClass("ghost")}
                 >
                   Brouillon seulement
                 </button>
@@ -399,32 +409,26 @@ export function AdminHitsView({
             </div>
           </form>
         ) : null}
-      </section>
+      </Panel>
 
-      <section className="overflow-hidden rounded-[28px] border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/5">
-        <div className="border-b border-zinc-100 px-5 py-4">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            File d&apos;attente
-          </h2>
-          <p className="text-sm text-zinc-500">
-            Hits déjà ajoutés — réordonne ou publie toute la file d&apos;un coup.
-          </p>
-        </div>
+      <Panel
+        flush
+        title="File d'attente"
+        subtitle="Réordonne, change la pochette ou publie toute la file d'un coup."
+      >
         {hits.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-zinc-400">
-            Aucun hit pour l&apos;instant. Utilise « Publier ce hit » plus haut.
-          </p>
+          <ConsoleEmpty title="Aucun hit pour l'instant" hint="Ajoute un morceau avec « Publier ce hit »." />
         ) : (
-          <ul className="divide-y divide-zinc-100">
+          <ul className="divide-y divide-white/[0.05]">
             {hits.map((hit, i) => (
               <li
                 key={hit.id}
                 className="flex flex-wrap items-center gap-3 px-5 py-3"
               >
-                <span className="w-6 text-center text-xs font-medium text-zinc-400">
+                <span className="w-6 text-center text-xs font-medium text-zinc-500">
                   {i + 1}
                 </span>
-                <div className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-zinc-200">
+                <div className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-white/[0.05]">
                   <AppImage
                     src={hit.coverUrl || hit.releaseCover || FALLBACK_COVER}
                     alt=""
@@ -434,10 +438,10 @@ export function AdminHitsView({
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-900">
+                  <p className="truncate text-sm font-medium text-zinc-100">
                     {hit.title}
                   </p>
-                  <p className="truncate text-xs text-zinc-500">
+                  <p className="truncate text-xs text-zinc-400">
                     {hit.title !== hit.trackTitle
                       ? `${hit.trackTitle} · `
                       : ""}
@@ -447,21 +451,14 @@ export function AdminHitsView({
                       : ""}
                   </p>
                 </div>
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
-                    hit.isPublished
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-amber-50 text-amber-800"
-                  }`}
-                >
-                  {hit.isPublished ? "Publié" : "Brouillon"}
-                </span>
+                {hit.isPublished ? <Pill tone="ok" dot>Publié</Pill> : <Pill tone="warn" dot>Brouillon</Pill>}
                 <HitRowActions hit={hit} />
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </Panel>
+      </div>
     </div>
   );
 }

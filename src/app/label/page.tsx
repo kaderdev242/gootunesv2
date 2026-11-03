@@ -49,6 +49,7 @@ export default async function LabelHomePage() {
   return (
     <OverviewStats
       title={session.profile.display_name || "Ton label"}
+      basePath="/label"
       balance={Number(session.profile.balance_fcfa)}
       totalGross={totalGross}
       totalNet={totalNet}

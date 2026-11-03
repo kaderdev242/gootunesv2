@@ -28,19 +28,19 @@ export default async function ArtistesPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="font-display text-3xl font-bold">Artistes</h1>
-      <p className="mt-1 text-sm text-white/45">
+      <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Artistes</h1>
+      <p className="mt-1 text-sm text-zinc-500">
         Plan {plan} · {artists?.length ?? 0}/{max} artistes
       </p>
 
       {plan === "none" ? (
         <div className="mt-6 flex flex-col gap-3 rounded-3xl border border-amber-400/25 bg-amber-400/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-amber-50/90">
+          <p className="text-sm text-amber-900">
             Active un abonnement label pour ajouter des artistes.
           </p>
           <Link
             href="/label/abonnement"
-            className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-sm font-semibold text-black"
+            className="inline-flex h-10 items-center justify-center rounded-full bg-zinc-950 px-4 text-sm font-semibold text-white"
           >
             Abonnement Label
           </Link>
@@ -51,15 +51,15 @@ export default async function ArtistesPage() {
         <LabelArtistForm />
         <div className="flex flex-col gap-2">
           {(artists ?? []).length === 0 ? (
-            <p className="text-sm text-white/40">Aucun artiste rattaché.</p>
+            <p className="text-sm text-zinc-500">Aucun artiste rattaché.</p>
           ) : (
             artists!.map((a) => (
               <Link
                 key={a.id}
                 href={`/label/artistes/${a.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-white/20 hover:bg-white/[0.08]"
+                className="flex items-center gap-3 rounded-2xl border border-black/[0.07] bg-white px-4 py-3 transition hover:border-black/10 hover:bg-zinc-100"
               >
-                <div className="relative size-12 shrink-0 overflow-hidden rounded-full border border-white/10 bg-zinc-900">
+                <div className="relative size-12 shrink-0 overflow-hidden rounded-full border border-black/[0.07] bg-zinc-100">
                   {a.avatar_url ? (
                     <AppImage
                       src={a.avatar_url}
@@ -70,18 +70,18 @@ export default async function ArtistesPage() {
                       unoptimized
                     />
                   ) : (
-                    <div className="flex size-full items-center justify-center text-sm text-white/40">
+                    <div className="flex size-full items-center justify-center text-sm text-zinc-500">
                       {a.stage_name.slice(0, 1).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-white">{a.stage_name}</p>
-                  <p className="truncate text-xs text-white/40">
+                  <p className="font-semibold text-zinc-950">{a.stage_name}</p>
+                  <p className="truncate text-xs text-zinc-500">
                     {a.country || "—"} · {a.bio || "Pas de bio"}
                   </p>
                 </div>
-                <span className="shrink-0 text-xs text-white/35">Stats →</span>
+                <span className="shrink-0 text-xs text-zinc-400">Stats →</span>
               </Link>
             ))
           )}

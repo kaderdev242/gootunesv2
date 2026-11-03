@@ -1,45 +1,30 @@
+import { Calendar03Icon, Money01Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatFcfa } from "@/lib/format";
 import { isCountryCode } from "@/lib/geo";
 import { CountryFlag } from "@/components/auth/CountryFlag";
+import {
+  ConsoleEmpty,
+  ConsoleHeader,
+  ConsoleLink,
+  Kpi,
+  KpiGrid,
+  Panel,
+  Pill,
+} from "@/components/admin/console/ui";
 import type { getAdminAnalytics } from "@/lib/admin/queries";
 
 type Analytics = Awaited<ReturnType<typeof getAdminAnalytics>>;
 
-function PeriodCard({
-  title,
-  data,
-}: {
-  title: string;
-  data: Analytics["periods"]["day"];
-}) {
+function PeriodKpi({ title, data, highlight }: { title: string; data: Analytics["periods"]["day"]; highlight?: boolean }) {
   return (
-    <div className="rounded-[24px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-        {title}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
-        {formatFcfa(data.totalAmount)}
-      </p>
-      <p className="mt-1 text-xs text-zinc-500">
-        {data.totalCount} vente{data.totalCount > 1 ? "s" : ""}
-      </p>
-      <div className="mt-4 space-y-2 border-t border-zinc-100 pt-3 text-xs">
-        <div className="flex justify-between text-zinc-600">
-          <span>Morceaux</span>
-          <span className="font-medium">
-            {data.musicCount} · {formatFcfa(data.musicAmount)}
-          </span>
-        </div>
-        <div className="flex justify-between text-zinc-600">
-          <span>Abonnements label</span>
-          <span className="font-medium">
-            {data.labelCount} · {formatFcfa(data.labelAmount)}
-          </span>
-        </div>
-      </div>
-    </div>
+    <Kpi
+      highlight={highlight}
+      label={title}
+      value={formatFcfa(data.totalAmount)}
+      icon={Calendar03Icon}
+      sub={`${data.totalCount} vente${data.totalCount > 1 ? "s" : ""} · morceaux ${formatFcfa(data.musicAmount)} · abos ${formatFcfa(data.labelAmount)}`}
+    />
   );
 }
 
@@ -50,272 +35,192 @@ function CountryBars({
   rows: { country: string; label: string; count: number; amount?: number }[];
   mode: "users" | "buyers";
 }) {
-  const max = Math.max(
-    ...rows.map((r) => (mode === "buyers" ? r.amount || 0 : r.count)),
-    1,
-  );
-
-  if (!rows.length) {
-    return <p className="text-sm text-zinc-400">Pas encore de données.</p>;
-  }
+  const max = Math.max(...rows.map((r) => (mode === "buyers" ? r.amount || 0 : r.count)), 1);
+  if (!rows.length) return <ConsoleEmpty title="Pas encore de données" />;
 
   return (
-    <div className="space-y-3">
-      {rows.slice(0, 6).map((row) => {
+    <ol className="space-y-3">
+      {rows.slice(0, 7).map((row, i) => {
         const value = mode === "buyers" ? row.amount || 0 : row.count;
         return (
-          <div key={row.country}>
-            <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2 font-medium text-zinc-800">
-                {row.country !== "—" && isCountryCode(row.country) ? (
-                  <CountryFlag code={row.country} className="h-3.5 w-5" />
-                ) : null}
-                {row.label}
-              </span>
-              <span className="text-xs text-zinc-500">
-                {mode === "buyers"
-                  ? `${row.count} · ${formatFcfa(row.amount || 0)}`
-                  : `${row.count} comptes`}
-              </span>
+          <li key={row.country} className="grid grid-cols-[18px_1fr] items-center gap-3">
+            <span className="text-[11px] tabular-nums text-zinc-600">{i + 1}</span>
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
+                <span className="flex items-center gap-2 text-zinc-100">
+                  {row.country !== "—" && isCountryCode(row.country) ? (
+                    <CountryFlag code={row.country} className="h-3 w-[18px] rounded-[2px]" />
+                  ) : null}
+                  {row.label}
+                </span>
+                <span className="text-[12px] tabular-nums text-zinc-400">
+                  {mode === "buyers" ? `${row.count} · ${formatFcfa(row.amount || 0)}` : `${row.count} comptes`}
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                <div
+                  className={`h-full rounded-full ${mode === "buyers" ? "bg-gradient-to-r from-violet-600 to-violet-300" : "bg-zinc-400"}`}
+                  style={{ width: `${Math.max(4, (value / max) * 100)}%` }}
+                />
+              </div>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
-              <div
-                className="h-full rounded-full bg-emerald-500"
-                style={{ width: `${Math.max(6, (value / max) * 100)}%` }}
-              />
-            </div>
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }
 
 export function AdminStatsView({ data }: { data: Analytics }) {
   const maxDay = Math.max(...data.dailySales.map((d) => d.total), 1);
-  const musicShare =
-    data.productMix.musicAmount + data.productMix.labelAmount > 0
-      ? Math.round(
-          (data.productMix.musicAmount /
-            (data.productMix.musicAmount + data.productMix.labelAmount)) *
-            100,
-        )
-      : 0;
+  const totalMix = data.productMix.musicAmount + data.productMix.labelAmount;
+  const musicShare = totalMix > 0 ? Math.round((data.productMix.musicAmount / totalMix) * 100) : 0;
 
   return (
-    <div className="space-y-6">
-      <AdminPageHeader
+    <div className="space-y-5">
+      <ConsoleHeader
+        kicker="Pilotage"
         title="Statistiques"
-        description="Origine des utilisateurs, pays d'achat, ventes et mix produits"
-        action={{ href: "/goo-admin", label: "Vue d'ensemble" }}
+        description="D'où viennent les utilisateurs, qui achète, et quoi."
+        actions={<ConsoleLink href="/goo-admin">Vue d&apos;ensemble</ConsoleLink>}
       />
 
-      {/* Periods */}
-      <section className="grid gap-3 md:grid-cols-3">
-        <PeriodCard title="Aujourd'hui" data={data.periods.day} />
-        <PeriodCard title="7 derniers jours" data={data.periods.week} />
-        <PeriodCard title="30 derniers jours" data={data.periods.month} />
-      </section>
+      <KpiGrid cols={4}>
+        <PeriodKpi title="Aujourd'hui" data={data.periods.day} highlight />
+        <PeriodKpi title="7 derniers jours" data={data.periods.week} />
+        <PeriodKpi title="30 derniers jours" data={data.periods.month} />
+        <Kpi label="Commission (30 j)" value={formatFcfa(data.totals.commissionMonth)} icon={Money01Icon} sub="part Gootunes" />
+      </KpiGrid>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        {/* Countries users */}
-        <section className="rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 sm:p-6">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            Où viennent les utilisateurs ?
-          </h2>
-          <p className="mt-1 text-xs text-zinc-400">
-            Répartition par pays de profil · {data.totals.users} comptes
-            analysés
-          </p>
-          <div className="mt-5">
-            <CountryBars rows={data.usersByCountry} mode="users" />
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-zinc-100 pt-4 text-xs text-zinc-500">
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1">
-              {data.totals.fans} fans
+      <Panel
+        title="Ventes journalières"
+        subtitle="Morceaux et abonnements, empilés"
+        actions={
+          <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-2 rounded-sm bg-violet-500" /> Morceaux
             </span>
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1">
-              {data.totals.artists} artistes
-            </span>
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1">
-              {data.totals.labels} labels
-            </span>
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1">
-              {data.totals.plays.toLocaleString("fr-FR")} écoutes
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-2 rounded-sm bg-zinc-500" /> Abonnements
             </span>
           </div>
-        </section>
-
-        {/* Countries buyers */}
-        <section className="rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 sm:p-6">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            Quels pays achètent le plus ?
-          </h2>
-          <p className="mt-1 text-xs text-zinc-400">
-            Volume d&apos;achats complétés par pays de l&apos;acheteur
-          </p>
-          <div className="mt-5">
-            <CountryBars rows={data.buyersByCountry} mode="buyers" />
+        }
+      >
+        <div className="relative h-56">
+          <div className="pointer-events-none absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between">
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} className="border-t border-dashed border-white/[0.05]" />
+            ))}
           </div>
-        </section>
-      </div>
-
-      {/* Daily chart + product mix */}
-      <div className="grid gap-4 xl:grid-cols-[1.3fr_0.9fr]">
-        <section className="rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-zinc-900">
-              Ventes journalières
-            </h2>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-emerald-500" /> Morceaux
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-zinc-400" /> Abonnements
-              </span>
-            </div>
-          </div>
-          <div className="mt-6 flex h-48 items-end gap-1.5 sm:gap-2">
+          <div className="relative flex h-full items-end gap-1 sm:gap-1.5">
             {data.dailySales.map((d) => {
-              const hPx = Math.max(d.total > 0 ? 12 : 4, (d.total / maxDay) * 160);
+              const pct = d.total > 0 ? Math.max(6, (d.total / maxDay) * 100) : 2;
               return (
                 <div
                   key={d.key}
-                  className="flex flex-1 flex-col items-center gap-2"
-                  title={`${d.dayLabel}: ${formatFcfa(d.total)} (morceaux ${formatFcfa(d.music)} · abo ${formatFcfa(d.subscriptions)})`}
+                  className="group flex h-full flex-1 flex-col items-center justify-end gap-2"
+                  title={`${d.dayLabel} : ${formatFcfa(d.total)} (morceaux ${formatFcfa(d.music)} · abos ${formatFcfa(d.subscriptions)})`}
                 >
-                  <div
-                    className="flex w-full max-w-[28px] flex-col justify-end overflow-hidden rounded-t-lg"
-                    style={{ height: hPx }}
-                  >
-                    {d.subscriptions > 0 ? (
-                      <div
-                        className="w-full bg-zinc-400"
-                        style={{ flex: d.subscriptions }}
-                      />
-                    ) : null}
-                    {d.music > 0 ? (
-                      <div
-                        className="w-full bg-emerald-500"
-                        style={{ flex: d.music }}
-                      />
-                    ) : null}
-                    {d.total === 0 ? (
-                      <div className="h-1 w-full bg-zinc-100" />
-                    ) : null}
+                  <div className="flex w-full flex-1 items-end justify-center">
+                    <div
+                      className="flex w-full max-w-[22px] flex-col justify-end overflow-hidden rounded-t-[4px] transition group-hover:brightness-125"
+                      style={{ height: `${pct}%` }}
+                    >
+                      {d.subscriptions > 0 ? <div className="w-full bg-zinc-500" style={{ flex: d.subscriptions }} /> : null}
+                      {d.music > 0 ? <div className="w-full bg-violet-500" style={{ flex: d.music }} /> : null}
+                      {d.total === 0 ? <div className="h-full w-full bg-white/[0.06]" /> : null}
+                    </div>
                   </div>
-                  <span className="text-[9px] text-zinc-400 sm:text-[10px]">
-                    {d.dayLabel}
-                  </span>
+                  <span className="text-[9px] text-zinc-500 sm:text-[10px]">{d.dayLabel}</span>
                 </div>
               );
             })}
           </div>
-        </section>
+        </div>
+      </Panel>
 
-        <section className="rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 sm:p-6">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            Qu&apos;achètent-ils ?
-          </h2>
-          <p className="mt-1 text-xs text-zinc-400">
-            Mix morceaux vs abonnements label (historiques complétés)
-          </p>
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Panel
+          title="Origine des utilisateurs"
+          subtitle={`Pays du profil · ${data.totals.users} comptes`}
+        >
+          <CountryBars rows={data.usersByCountry} mode="users" />
+          <div className="mt-5 flex flex-wrap gap-1.5 border-t border-white/[0.05] pt-4">
+            <Pill>{data.totals.fans} fans</Pill>
+            <Pill>{data.totals.artists} artistes</Pill>
+            <Pill>{data.totals.labels} labels</Pill>
+            <Pill tone="violet">{data.totals.plays.toLocaleString("fr-FR")} écoutes</Pill>
+          </div>
+        </Panel>
 
-          <div className="mt-5 space-y-4">
+        <Panel title="Pays qui achètent" subtitle="Achats réglés, par pays de l'acheteur">
+          <CountryBars rows={data.buyersByCountry} mode="buyers" />
+        </Panel>
+
+        <Panel title="Ce qui se vend" subtitle="Morceaux vs abonnements label (historique)">
+          <div className="space-y-5">
             <div>
-              <div className="mb-1.5 flex justify-between text-sm">
-                <span className="font-medium text-zinc-800">Morceaux</span>
-                <span className="text-zinc-500">
-                  {data.productMix.musicCount} ·{" "}
-                  {formatFcfa(data.productMix.musicAmount)}
+              <div className="mb-1.5 flex justify-between text-[13px]">
+                <span className="text-zinc-100">Morceaux</span>
+                <span className="tabular-nums text-zinc-400">
+                  {data.productMix.musicCount} · {formatFcfa(data.productMix.musicAmount)}
                 </span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-zinc-100">
-                <div
-                  className="h-full rounded-full bg-emerald-500"
-                  style={{ width: `${musicShare}%` }}
-                />
+              <div className="h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                <div className="h-full rounded-full bg-violet-500" style={{ width: `${musicShare}%` }} />
               </div>
             </div>
             <div>
-              <div className="mb-1.5 flex justify-between text-sm">
-                <span className="font-medium text-zinc-800">
-                  Abonnements label
-                </span>
-                <span className="text-zinc-500">
-                  {data.productMix.labelCount} ·{" "}
-                  {formatFcfa(data.productMix.labelAmount)}
+              <div className="mb-1.5 flex justify-between text-[13px]">
+                <span className="text-zinc-100">Abonnements label</span>
+                <span className="tabular-nums text-zinc-400">
+                  {data.productMix.labelCount} · {formatFcfa(data.productMix.labelAmount)}
                 </span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-zinc-100">
-                <div
-                  className="h-full rounded-full bg-zinc-400"
-                  style={{ width: `${100 - musicShare}%` }}
-                />
+              <div className="h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                <div className="h-full rounded-full bg-zinc-500" style={{ width: `${100 - musicShare}%` }} />
               </div>
-              <div className="mt-2 flex gap-2 text-[11px] text-zinc-500">
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5">
-                  Starter {data.productMix.labelPlans.starter}
-                </span>
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5">
-                  Unlimited {data.productMix.labelPlans.unlimited}
-                </span>
+              <div className="mt-2.5 flex gap-1.5">
+                <Pill>Starter {data.productMix.labelPlans.starter}</Pill>
+                <Pill>Unlimited {data.productMix.labelPlans.unlimited}</Pill>
               </div>
             </div>
+            <div className="flex items-center justify-between rounded-xl bg-violet-500/[0.08] px-4 py-3 ring-1 ring-violet-400/15">
+              <span className="text-[12px] text-violet-200/80">Part des morceaux</span>
+              <span className="text-[22px] font-semibold tabular-nums text-white">{musicShare}%</span>
+            </div>
           </div>
-
-          <div className="mt-6 rounded-2xl bg-zinc-50 px-4 py-3">
-            <p className="text-xs text-zinc-400">Commission (30 j)</p>
-            <p className="mt-1 text-xl font-semibold text-zinc-900">
-              {formatFcfa(data.totals.commissionMonth)}
-            </p>
-          </div>
-        </section>
+        </Panel>
       </div>
 
-      {/* Top releases */}
-      <section className="rounded-[28px] border border-zinc-200/80 bg-white p-5 shadow-sm shadow-zinc-900/5 sm:p-6">
-        <h2 className="text-lg font-semibold text-zinc-900">
-          Morceaux les plus vendus
-        </h2>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {data.topReleases.length === 0 ? (
-            <p className="text-sm text-zinc-400">Aucune vente pour le moment.</p>
-          ) : (
-            data.topReleases.map((r, i) => (
-              <div
+      <Panel title="Meilleures ventes" subtitle="Classement des sorties" actions={<Pill tone="violet">Top {data.topReleases.length}</Pill>}>
+        {data.topReleases.length === 0 ? (
+          <ConsoleEmpty title="Aucune vente pour le moment" />
+        ) : (
+          <ol className="grid gap-2 md:grid-cols-2">
+            {data.topReleases.map((r, i) => (
+              <li
                 key={r.id}
-                className="flex items-center gap-3 rounded-2xl border border-zinc-100 px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2.5"
               >
-                <span className="w-5 text-sm text-zinc-300">{i + 1}</span>
-                <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
-                  {r.cover ? (
-                    <AppImage
-                      src={r.cover}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      sizes="44px"
-                    />
-                  ) : null}
+                <span className={`w-6 text-center text-[13px] font-semibold tabular-nums ${i < 3 ? "text-violet-300" : "text-zinc-600"}`}>
+                  {i + 1}
+                </span>
+                <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-white/[0.05]">
+                  {r.cover ? <AppImage src={r.cover} alt="" fill className="object-cover" sizes="40px" /> : null}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-900">
-                    {r.title}
-                  </p>
-                  <p className="text-xs text-zinc-400">
+                  <p className="truncate text-[13px] font-medium text-zinc-100">{r.title}</p>
+                  <p className="text-[11px] capitalize text-zinc-500">
                     {r.type} · {r.count} vente{r.count > 1 ? "s" : ""}
                   </p>
                 </div>
-                <p className="text-xs font-semibold text-emerald-700">
-                  {formatFcfa(r.amount)}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+                <p className="text-[13px] font-semibold tabular-nums text-violet-200">{formatFcfa(r.amount)}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Panel>
     </div>
   );
 }

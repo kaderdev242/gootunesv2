@@ -40,6 +40,7 @@ export function SubscriptionPlans({
   const [method, setMethod] = useState<MobileMoneyMethodId>(
     operators[0]?.id ?? "mtn",
   );
+  const [omOtp, setOmOtp] = useState("");
   const [phone, setPhone] = useState(defaultPhone || "");
   const [waiting, setWaiting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -100,27 +101,27 @@ export function SubscriptionPlans({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <p className="text-xs text-white/45">Paiement Mobile Money</p>
+      <div className="rounded-2xl border border-black/[0.07] bg-white p-4">
+        <p className="text-xs text-zinc-500">Paiement Mobile Money</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs text-white/45">Opérateur</label>
+            <label className="mb-1.5 block text-xs text-zinc-500">Opérateur</label>
             <select
               name="payment_method_shared"
               value={method}
               onChange={(e) => setMethod(e.target.value as MobileMoneyMethodId)}
               disabled={waiting}
-              className="h-10 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm text-white"
+              className="h-10 w-full rounded-xl border border-black/[0.07] bg-zinc-50 px-3 text-sm text-zinc-950"
             >
               {operators.map((m) => (
-                <option key={m.id} value={m.id} className="bg-zinc-900">
+                <option key={m.id} value={m.id} className="bg-white text-zinc-900">
                   {m.label}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs text-white/45">
+            <label className="mb-1.5 block text-xs text-zinc-500">
               Numéro Mobile Money
             </label>
             <input
@@ -129,12 +130,30 @@ export function SubscriptionPlans({
               onChange={(e) => setPhone(e.target.value)}
               disabled={waiting}
               placeholder={phonePlaceholder(country)}
-              className="h-10 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm text-white outline-none focus:border-white/25"
+              className="h-10 w-full rounded-xl border border-black/[0.07] bg-zinc-50 px-3 text-sm text-zinc-950 outline-none focus:border-black/20"
             />
           </div>
         </div>
+        {country === "BF" && method === "orange" ? (
+          <div className="mt-3">
+            <p className="text-[11px] text-amber-900">
+              Orange Burkina : compose{" "}
+              <span className="font-semibold">*144*4*6*MONTANT#</span> (MONTANT = prix du plan choisi){" "}
+              pour recevoir ton code, puis saisis-le ici.
+            </p>
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={omOtp}
+              onChange={(e) => setOmOtp(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              disabled={waiting}
+              placeholder="Code OTP Orange"
+              className="mt-1.5 h-10 w-full rounded-xl border border-black/[0.07] bg-zinc-50 px-3 text-sm tracking-[0.3em] text-zinc-950 outline-none focus:border-black/20"
+            />
+          </div>
+        ) : null}
         {waiting ? (
-          <p className="mt-3 text-xs text-amber-100/80">
+          <p className="mt-3 text-xs text-amber-900">
             En attente de confirmation… {orderId ? `Réf. ${orderId}` : ""}
           </p>
         ) : null}
@@ -149,24 +168,25 @@ export function SubscriptionPlans({
             action={action}
             className={`rounded-3xl border p-6 ${
               current === plan.id
-                ? "border-white/40 bg-white/10"
-                : "border-white/10 bg-white/5"
+                ? "border-black/20 bg-zinc-100"
+                : "border-black/[0.07] bg-white"
             }`}
           >
             <input type="hidden" name="plan" value={plan.id} />
             <input type="hidden" name="payment_method" value={method} />
             <input type="hidden" name="phone" value={phone} />
-            <p className="text-lg font-bold text-white">{plan.name}</p>
-            <p className="mt-1 text-sm text-white/45">{plan.description}</p>
-            <p className="font-display mt-4 text-3xl font-bold text-white">
+        <input type="hidden" name="om_otp" value={omOtp} />
+            <p className="text-lg font-bold text-zinc-950">{plan.name}</p>
+            <p className="mt-1 text-sm text-zinc-500">{plan.description}</p>
+            <p className="studio-num mt-4 text-3xl font-bold text-zinc-950">
               {formatMoney(plan.price, country)}
-              <span className="text-sm font-normal text-white/40"> / an</span>
+              <span className="text-sm font-normal text-zinc-500"> / an</span>
             </p>
             <Button
               type="submit"
               isPending={pending || waiting}
               isDisabled={waiting || !phone.trim()}
-              className="mt-5 w-full rounded-full bg-white font-semibold text-black"
+              className="mt-5 w-full rounded-full bg-zinc-950 font-semibold text-white"
             >
               {waiting
                 ? "Paiement en cours…"

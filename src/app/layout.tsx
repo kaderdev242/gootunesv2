@@ -76,11 +76,27 @@ export const metadata: Metadata = {
   },
 };
 
+function workerOrigin(): string | null {
+  const raw =
+    process.env.NEXT_PUBLIC_STREAM_WORKER_URL ||
+    process.env.STREAM_WORKER_URL ||
+    "https://gootunes-audio-stream.gootunes.workers.dev";
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Lecture audio : ouvre la connexion HTTPS vers le Worker dès le chargement,
+  // pour que le premier « play » ne paie pas la négociation TLS.
+  const audioOrigin = workerOrigin();
+
   return (
     <html
       lang="fr"
@@ -89,6 +105,14 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
+      <head>
+        {audioOrigin ? (
+          <>
+            <link rel="preconnect" href={audioOrigin} />
+            <link rel="dns-prefetch" href={audioOrigin} />
+          </>
+        ) : null}
+      </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         {process.env.NODE_ENV === "production" ? (

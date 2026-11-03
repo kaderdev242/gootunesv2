@@ -7,6 +7,8 @@ export const MBIYO_CURRENCY_BY_COUNTRY: Record<CountryCode, string> = {
   CI: "XOF",
   CM: "XAF",
   SN: "XOF",
+  BF: "XOF",
+  BJ: "XOF",
 };
 
 export const MBIYO_DIAL_BY_COUNTRY: Record<CountryCode, string> = {
@@ -15,6 +17,8 @@ export const MBIYO_DIAL_BY_COUNTRY: Record<CountryCode, string> = {
   CI: "225",
   CM: "237",
   SN: "221",
+  BF: "226",
+  BJ: "229",
 };
 
 /** Minimums documentés MBIYOPAY (unités majeures). */
@@ -25,6 +29,8 @@ export const MBIYO_MIN_AMOUNT_BY_COUNTRY: Partial<Record<CountryCode, number>> =
     CM: 50,
     SN: 500,
     CD: 40,
+    BF: 500,
+    BJ: 50,
   };
 
 /** Réseau MBIYOPAY (metadata.network) */
@@ -36,7 +42,10 @@ export type MbiyoNetwork =
   | "vodacom"
   | "moov"
   | "africell"
-  | "mpesa";
+  | "mpesa"
+  | "free"
+  | "coris"
+  | "celtiis";
 
 export function getMbiyoCurrency(country: string | null | undefined): string {
   if (country && country in MBIYO_CURRENCY_BY_COUNTRY) {
@@ -103,6 +112,11 @@ export function isValidMbiyoPhone(
       return /^225\d{8,10}$/.test(digits);
     case "SN":
       return /^221\d{9}$/.test(digits);
+    case "BF":
+      return /^226\d{8}$/.test(digits);
+    case "BJ":
+      // Numérotation à 10 chiffres (01…) depuis fin 2024 ; ancien format à 8 accepté.
+      return /^229(01\d{8}|\d{8})$/.test(digits);
     default:
       return digits.length >= 10 && digits.length <= 15;
   }
@@ -125,6 +139,10 @@ export function phonePlaceholder(country: string | null | undefined): string {
       return "Ex. 07 00 00 00 00";
     case "SN":
       return "Ex. 77 000 00 00";
+    case "BF":
+      return "Ex. 70 12 34 56";
+    case "BJ":
+      return "Ex. 01 97 00 00 00";
     default:
       return "Numéro Mobile Money";
   }

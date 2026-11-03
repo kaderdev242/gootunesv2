@@ -15,16 +15,25 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
   const path = request.nextUrl.pathname;
 
-  // Les webhooks restent acceptés sur l’ancien host (Mbiyo ne suit pas toujours les redirects).
-  const isWebhook = path.startsWith("/api/webhooks");
+  // Les routes API répondent sur tous les domaines, sans redirection :
+  // Mbiyo (webhooks) et les applis mobiles ne suivent pas une redirection
+  // 308 sur un POST (ex. ancienne URL www.gootunes.app dans l'appli fan).
+  const isApi = path.startsWith("/api/");
 
-  if (host && REDIRECT_HOSTS.has(host) && !isWebhook) {
+  if (host && REDIRECT_HOSTS.has(host) && !isApi) {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
     url.host = PRIMARY_HOST;
     // Derrière un reverse proxy (Traefik), nextUrl garde le port interne (3000).
     url.port = "";
     return NextResponse.redirect(url, 308);
+  }
+
+  // Lecture audio : la route vérifie elle-même l'accès (JWT vérifié localement).
+  // Inutile de rafraîchir la session ici — un aller-retour Supabase de moins
+  // pour chaque démarrage de morceau et chaque bloc audio.
+  if (path.startsWith("/api/stream/")) {
+    return NextResponse.next();
   }
 
   return updateSession(request);

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { StatCard, StudioPageHeader } from "@/components/studio/ui";
 import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { Avatar } from "@heroui/react";
@@ -27,48 +28,33 @@ export function StatsView({
   const money = (n: number) => formatMoney(n, country);
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {headerSlot ?? (
-        <header>
-          <h1 className="font-display text-3xl font-bold">{title}</h1>
-          <p className="mt-1 text-sm text-white/45">{subtitle}</p>
-        </header>
+        <StudioPageHeader eyebrow="Audience" title={title} description={subtitle} />
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {[
-          { label: "Ventes", value: String(stats.totalSales) },
-          { label: "CA brut", value: money(stats.totalGross) },
-          { label: "Net artiste", value: money(stats.totalNet) },
-          { label: "Écoutes", value: String(stats.totalPlays) },
-          { label: "Auditeurs uniques", value: String(stats.uniqueListeners) },
-        ].map((card) => (
-          <div
-            key={card.label}
-            className="rounded-3xl border border-white/10 bg-white/[0.03] p-5"
-          >
-            <p className="text-xs text-white/45">{card.label}</p>
-            <p className="font-display mt-2 text-xl font-bold text-white sm:text-2xl">
-              {card.value}
-            </p>
-          </div>
-        ))}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard label="Écoutes" value={stats.totalPlays.toLocaleString("fr-FR")} hint="toutes plateformes" tone="ink" />
+        <StatCard label="Auditeurs uniques" value={stats.uniqueListeners.toLocaleString("fr-FR")} />
+        <StatCard label="Ventes" value={stats.totalSales.toLocaleString("fr-FR")} />
+        <StatCard label="CA brut" value={money(stats.totalGross)} />
+        <StatCard label="Net artiste" value={money(stats.totalNet)} tone="accent" />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-lg font-semibold">Morceaux / publications les plus vendus</h2>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="studio-card p-5 sm:p-6">
+          <h2 className="text-[15px] font-semibold text-zinc-950">Morceaux / publications les plus vendus</h2>
           <div className="mt-4 flex flex-col gap-2">
             {stats.topSales.length === 0 ? (
-              <p className="text-sm text-white/40">Aucune vente pour le moment.</p>
+              <p className="text-sm text-zinc-500">Aucune vente pour le moment.</p>
             ) : (
               stats.topSales.map((row, i) => (
                 <div
                   key={row.releaseId}
-                  className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-2xl border border-black/[0.07] bg-white px-3 py-2.5"
                 >
-                  <span className="w-6 text-sm text-white/35">{i + 1}</span>
-                  <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-zinc-900">
+                  <span className="w-6 text-sm text-zinc-400">{i + 1}</span>
+                  <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
                     {row.coverUrl ? (
                       <AppImage
                         src={row.coverUrl}
@@ -80,15 +66,15 @@ export function StatsView({
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
+                    <p className="truncate text-sm font-medium text-zinc-950">
                       {row.title}
                     </p>
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-zinc-500">
                       {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} ·{" "}
                       {money(row.grossFcfa)}
                     </p>
                   </div>
-                  <p className="text-xs font-medium text-emerald-300">
+                  <p className="text-xs font-medium text-emerald-700">
                     {money(row.netFcfa)}
                   </p>
                 </div>
@@ -97,28 +83,28 @@ export function StatsView({
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-lg font-semibold">Pays des achats</h2>
+        <section className="studio-card p-5 sm:p-6">
+          <h2 className="text-[15px] font-semibold text-zinc-950">Pays des achats</h2>
           <div className="mt-4 flex flex-col gap-3">
             {stats.byCountry.length === 0 ? (
-              <p className="text-sm text-white/40">Aucun pays enregistré.</p>
+              <p className="text-sm text-zinc-500">Aucun pays enregistré.</p>
             ) : (
               stats.byCountry.map((row) => (
                 <div key={row.country}>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-white">
+                    <span className="flex items-center gap-2 text-zinc-950">
                       {isCountryCode(row.country) ? (
                         <CountryFlag code={row.country} title={row.label} />
                       ) : null}
                       {row.label}
                     </span>
-                    <span className="text-white/45">
+                    <span className="text-zinc-500">
                       {row.purchases} · {money(row.amountFcfa)}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/8">
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
                     <div
-                      className="h-full rounded-full bg-white/45"
+                      className="h-full rounded-full bg-zinc-300"
                       style={{
                         width: `${Math.max(6, (row.purchases / maxCountry) * 100)}%`,
                       }}
@@ -132,14 +118,14 @@ export function StatsView({
       </div>
 
       {showByArtist ? (
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-          <h2 className="text-lg font-semibold">Revenus par artiste</h2>
-          <p className="mt-1 text-xs text-white/40">
+        <section className="studio-card p-5 sm:p-6">
+          <h2 className="text-[15px] font-semibold text-zinc-950">Revenus par artiste</h2>
+          <p className="mt-1 text-xs text-zinc-500">
             Répartition des ventes nettes sur les artistes du label.
           </p>
           <div className="mt-4 flex flex-col gap-3">
             {stats.byArtist.length === 0 ? (
-              <p className="text-sm text-white/40">
+              <p className="text-sm text-zinc-500">
                 Aucun revenu artiste pour le moment.
               </p>
             ) : (
@@ -147,10 +133,10 @@ export function StatsView({
                 <Link
                   key={row.artistId}
                   href={`/label/artistes/${row.artistId}`}
-                  className="block rounded-2xl transition hover:bg-white/[0.03]"
+                  className="block rounded-2xl transition hover:bg-zinc-100"
                 >
                   <div className="mb-1.5 flex items-center gap-3">
-                    <Avatar className="size-9 shrink-0 ring-1 ring-white/10">
+                    <Avatar className="size-9 shrink-0 ring-1 ring-black/10">
                       {row.avatarUrl ? (
                         <Avatar.Image src={row.avatarUrl} alt={row.stageName} />
                       ) : null}
@@ -160,22 +146,22 @@ export function StatsView({
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="truncate font-medium text-white">
+                        <span className="truncate font-medium text-zinc-950">
                           {row.stageName}
                         </span>
-                        <span className="shrink-0 text-emerald-300">
+                        <span className="shrink-0 text-emerald-700">
                           {money(row.netFcfa)}
                         </span>
                       </div>
-                      <p className="text-xs text-white/40">
+                      <p className="text-xs text-zinc-500">
                         {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} ·{" "}
                         {money(row.grossFcfa)} brut
                       </p>
                     </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/8">
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
                     <div
-                      className="h-full rounded-full bg-white/45"
+                      className="h-full rounded-full bg-zinc-300"
                       style={{
                         width: `${Math.max(6, (row.netFcfa / maxArtistNet) * 100)}%`,
                       }}
@@ -188,19 +174,19 @@ export function StatsView({
         </section>
       ) : null}
 
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.02] p-5 sm:p-6">
-        <h2 className="text-lg font-semibold">Écoutes par morceau</h2>
-        <p className="mt-1 text-xs text-white/40">
+      <section className="studio-card p-5 sm:p-6">
+        <h2 className="text-[15px] font-semibold text-zinc-950">Écoutes par morceau</h2>
+        <p className="mt-1 text-xs text-zinc-500">
           Nombre de lectures et auditeurs uniques sur tes titres.
         </p>
         <div className="mt-4 overflow-x-auto">
           {stats.topTracks.length === 0 ? (
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-zinc-500">
               Aucune écoute enregistrée pour l&apos;instant.
             </p>
           ) : (
             <table className="w-full min-w-[480px] text-left text-sm">
-              <thead className="text-xs text-white/40">
+              <thead className="text-xs text-zinc-500">
                 <tr>
                   <th className="pb-2 font-medium">Morceau</th>
                   <th className="pb-2 font-medium">Publication</th>
@@ -212,12 +198,12 @@ export function StatsView({
                 {stats.topTracks.map((row) => (
                   <tr
                     key={row.trackId}
-                    className="border-t border-white/8 text-white/80"
+                    className="border-t border-black/[0.07] text-zinc-800"
                   >
-                    <td className="py-3 pr-3 font-medium text-white">
+                    <td className="py-3 pr-3 font-medium text-zinc-950">
                       {row.title}
                     </td>
-                    <td className="py-3 pr-3 text-white/50">{row.releaseTitle}</td>
+                    <td className="py-3 pr-3 text-zinc-500">{row.releaseTitle}</td>
                     <td className="py-3 pr-3">{row.plays}</td>
                     <td className="py-3">{row.uniqueListeners}</td>
                   </tr>

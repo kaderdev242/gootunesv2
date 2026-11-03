@@ -77,5 +77,5 @@ export function minReleasePriceLocal(
 export function isCountryCodeCurrency(
   code: string | null | undefined,
 ): code is CountryCode {
-  return Boolean(code && ["CG", "CD", "CI", "CM", "SN"].includes(code));
+  return Boolean(code && ["CG", "CD", "CI", "CM", "SN", "BF", "BJ"].includes(code));
 }

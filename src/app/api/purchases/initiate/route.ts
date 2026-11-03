@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       release_id?: string;
       payment_method?: string;
       phone?: string;
+      om_otp?: string;
     } = {};
     try {
       body = (await request.json()) as typeof body;
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
       releaseId: String(body.release_id || ""),
       paymentMethod: String(body.payment_method || "") as PaymentMethod,
       phoneRaw: String(body.phone || "").trim(),
+      omOtp: String(body.om_otp || "").trim(),
     });
 
     if (result.error) {

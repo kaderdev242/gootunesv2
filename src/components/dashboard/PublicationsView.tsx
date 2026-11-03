@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { AppImage } from "@/components/media/AppImage";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -55,7 +55,16 @@ export function PublicationsView({
   country?: string | null;
 }) {
   const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const [modalOpen, setModalOpen] = useState(searchParams.get("nouveau") === "1");
+  // Le bouton « Publier » de l'en-tête ouvre le choix single / album,
+  // y compris quand on est déjà sur cette page.
+  const query = searchParams.toString();
+  const [lastQuery, setLastQuery] = useState(query);
+  if (query !== lastQuery) {
+    setLastQuery(query);
+    if (searchParams.get("nouveau") === "1") setModalOpen(true);
+  }
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
@@ -190,13 +199,13 @@ export function PublicationsView({
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold">Publications</h1>
-          <p className="mt-1 text-sm text-white/45">
+          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Publications</h1>
+          <p className="mt-1 text-sm text-zinc-500">
             Écoute, gère et supprime tes singles & albums.
           </p>
         </div>
         <Button
-          className="h-10 rounded-full bg-white px-5 text-sm font-semibold text-black"
+          className="h-10 rounded-full bg-zinc-950 px-5 text-sm font-semibold text-white"
           onPress={() => setModalOpen(true)}
         >
           Nouvelle publication
@@ -204,7 +213,7 @@ export function PublicationsView({
       </div>
 
       {!releases.length ? (
-        <div className="flex flex-col items-center rounded-[28px] border border-dashed border-white/15 px-6 py-16 text-center">
+        <div className="flex flex-col items-center rounded-[28px] border border-dashed border-black/10 px-6 py-16 text-center">
           <AppImage
             src="/music-upload.png"
             alt=""
@@ -213,12 +222,12 @@ export function PublicationsView({
             className="mb-5 size-[140px] object-contain"
             priority
           />
-          <p className="text-base font-semibold text-white">Aucune publication</p>
-          <p className="mt-2 max-w-sm text-sm text-white/45">
+          <p className="text-base font-semibold text-zinc-950">Aucune publication</p>
+          <p className="mt-2 max-w-sm text-sm text-zinc-500">
             Publie ton premier single ou album pour le rendre disponible aux fans.
           </p>
           <Button
-            className="mt-6 h-11 rounded-full bg-white px-6 font-semibold text-black"
+            className="mt-6 h-11 rounded-full bg-zinc-950 px-6 font-semibold text-white"
             onPress={() => setModalOpen(true)}
           >
             Publier maintenant
@@ -243,12 +252,12 @@ export function PublicationsView({
                 key={release.id}
                 className={`overflow-hidden rounded-[28px] border transition ${
                   playingThis
-                    ? "border-white/25 bg-white/[0.06]"
-                    : "border-white/10 bg-white/[0.03]"
+                    ? "border-black/20 bg-white"
+                    : "border-black/[0.07] bg-white"
                 }`}
               >
                 <div className="flex items-center gap-4 p-4">
-                  <div className="relative size-[72px] shrink-0 overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10">
+                  <div className="relative size-[72px] shrink-0 overflow-hidden rounded-2xl bg-zinc-100 ring-1 ring-black/10">
                     {release.cover_url ? (
                       <AppImage
                         src={release.cover_url}
@@ -261,16 +270,16 @@ export function PublicationsView({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-lg font-bold text-white">
+                    <p className="truncate studio-num text-lg font-semibold text-zinc-950">
                       {release.title}
                     </p>
-                    <p className="mt-0.5 text-xs text-white/40">
+                    <p className="mt-0.5 text-xs text-zinc-500">
                       {isSingle ? "Single" : "Album"} ·{" "}
                       {release.artists?.stage_name} ·{" "}
                       {formatDate(release.created_at)}
                       {!isSingle ? ` · ${tracks.length} titres` : null}
                     </p>
-                    <p className="mt-1 text-sm font-medium text-white/80">
+                    <p className="mt-1 text-sm font-medium text-zinc-800">
                       {formatMoney(Number(release.price_fcfa), country)}
                     </p>
                   </div>
@@ -280,7 +289,7 @@ export function PublicationsView({
                       <button
                         type="button"
                         onClick={() => playTrack(firstPlayable)}
-                        className="flex size-11 items-center justify-center rounded-full bg-white text-black transition hover:scale-105"
+                        className="flex size-11 items-center justify-center rounded-full bg-zinc-950 text-white transition hover:scale-105"
                         aria-label={playingThis ? "Pause" : "Écouter"}
                       >
                         <HugeiconsIcon
@@ -300,7 +309,7 @@ export function PublicationsView({
                         onClick={() =>
                           setExpandedId(open ? null : release.id)
                         }
-                        className="flex size-11 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:bg-white/10 hover:text-white"
+                        className="flex size-11 items-center justify-center rounded-full border border-black/10 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-950"
                         aria-label={
                           open ? "Masquer les titres" : "Voir les titres"
                         }
@@ -317,7 +326,7 @@ export function PublicationsView({
                       type="button"
                       disabled={pending}
                       onClick={() => setConfirm({ kind: "release", release })}
-                      className="flex size-11 items-center justify-center rounded-full border border-red-400/20 text-red-300 transition hover:bg-red-500/10"
+                      className="flex size-11 items-center justify-center rounded-full border border-red-400/20 text-red-600 transition hover:bg-red-500/10"
                       aria-label="Supprimer"
                     >
                       <HugeiconsIcon icon={Delete02Icon} size={16} />
@@ -326,7 +335,7 @@ export function PublicationsView({
                 </div>
 
                 {open ? (
-                  <ul className="space-y-1 border-t border-white/8 px-3 py-3">
+                  <ul className="space-y-1 border-t border-black/[0.07] px-3 py-3">
                     {tracks.map((track) => {
                       const playing =
                         isPlaying && activeTrackId === track.id;
@@ -334,15 +343,15 @@ export function PublicationsView({
                         <li
                           key={track.id}
                           className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 transition ${
-                            playing ? "bg-white/12" : "hover:bg-white/[0.04]"
+                            playing ? "bg-zinc-100" : "hover:bg-zinc-100"
                           }`}
                         >
-                          <span className="w-6 text-center text-xs tabular-nums text-white/35">
+                          <span className="w-6 text-center text-xs tabular-nums text-zinc-400">
                             {String(track.track_number).padStart(2, "0")}
                           </span>
                           <button
                             type="button"
-                            className="min-w-0 flex-1 truncate text-left text-sm font-medium text-white"
+                            className="min-w-0 flex-1 truncate text-left text-sm font-medium text-zinc-950"
                             onClick={() => playTrack(track)}
                           >
                             {track.title}
@@ -350,7 +359,7 @@ export function PublicationsView({
                           <button
                             type="button"
                             onClick={() => playTrack(track)}
-                            className="flex size-8 items-center justify-center rounded-full text-white/80 hover:bg-white/10"
+                            className="flex size-8 items-center justify-center rounded-full text-zinc-800 hover:bg-zinc-100"
                             aria-label={playing ? "Pause" : "Play"}
                           >
                             <HugeiconsIcon
@@ -368,7 +377,7 @@ export function PublicationsView({
                                 title: track.title,
                               })
                             }
-                            className="flex size-8 items-center justify-center rounded-full text-red-300/80 hover:bg-red-500/10"
+                            className="flex size-8 items-center justify-center rounded-full text-red-600 hover:bg-red-500/10"
                             aria-label="Supprimer le titre"
                           >
                             <HugeiconsIcon icon={Delete02Icon} size={14} />

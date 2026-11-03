@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { FALLBACK_COVER, trackStreamUrl, type Track } from "@/lib/types/music";
 import { formatDuration } from "@/lib/format";
 
@@ -85,7 +86,9 @@ export async function getPublicPlaylists(
 ): Promise<PlaylistSummary[]> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
 
-  const supabase = await createClient();
+  // Clé de service : le nom de l'auteur vient de « profiles », lisible
+  // uniquement par son propriétaire. Filtré sur les playlists publiques.
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("playlists")
     .select(

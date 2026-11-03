@@ -14,9 +14,29 @@ export type PlaybackAccess = {
   durationSeconds: number | null;
 };
 
+/**
+ * Identité de l'auditeur sans appel réseau : le JWT est vérifié localement
+ * (clés ES256 du projet, JWKS mis en cache). `bearer` = jeton de l'app mobile.
+ */
+async function readUserId(
+  supabase: SupabaseClient<Database>,
+  bearer?: string | null,
+): Promise<string | null> {
+  try {
+    const { data } = bearer
+      ? await supabase.auth.getClaims(bearer)
+      : await supabase.auth.getClaims();
+    const sub = data?.claims?.sub;
+    return typeof sub === "string" && sub ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getTrackPlaybackAccess(
   trackId: string,
   client?: SupabaseClient<Database>,
+  bearer?: string | null,
 ): Promise<
   | (PlaybackAccess & {
       audioUrl: string;
@@ -26,8 +46,10 @@ export async function getTrackPlaybackAccess(
   | { status: "unavailable" }
 > {
   const supabase = client ?? (await createClient());
-  const [{ data: authData }, { data: track }] = await Promise.all([
-    supabase.auth.getUser(),
+  const userId = await readUserId(supabase, bearer);
+
+  // Morceau et achat éventuel en parallèle (un seul aller-retour base).
+  const [{ data: track }, libraryRes] = await Promise.all([
     supabase
       .from("tracks")
       .select(
@@ -35,8 +57,15 @@ export async function getTrackPlaybackAccess(
       )
       .eq("id", trackId)
       .maybeSingle(),
+    userId
+      ? supabase
+          .from("library_items")
+          .select("id, releases!inner(tracks!inner(id))")
+          .eq("user_id", userId)
+          .eq("releases.tracks.id", trackId)
+          .limit(1)
+      : Promise.resolve({ data: [] as unknown[] }),
   ]);
-  const user = authData?.user ?? null;
 
   if (!track) return { status: "not_found" };
 
@@ -47,27 +76,15 @@ export async function getTrackPlaybackAccess(
     is_hidden: boolean;
   };
 
-  const isOwner = release.owner_id === user?.id;
+  const isOwner = !!userId && release.owner_id === userId;
   if (release.status !== "published" && !isOwner) {
     return { status: "unavailable" };
   }
 
   if (!track.audio_url) return { status: "unavailable" };
 
-  let owned = false;
-  if (user) {
-    if (isOwner) {
-      owned = true;
-    } else {
-      const { data: library } = await supabase
-        .from("library_items")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("release_id", release.id)
-        .maybeSingle();
-      owned = !!library;
-    }
-  }
+  const owned =
+    isOwner || ((libraryRes.data as unknown[] | null)?.length ?? 0) > 0;
 
   // Masqué (admin ou suspension) : pas de preview public ;
   // propriétaire et acheteurs gardent l'accès full.

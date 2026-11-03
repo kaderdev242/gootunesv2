@@ -15,6 +15,7 @@ import type { ArtistPlan, LabelPlan } from "@/lib/supabase/database.types";
 import type { ActionState } from "@/lib/actions/profile";
 import { useActionToast } from "@/hooks/useActionToast";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { consoleButtonClass } from "@/components/admin/console/ui";
 
 const initial: ActionState = {};
 
@@ -35,11 +36,7 @@ export function SuspendUserButton({
       <button
         type="submit"
         disabled={pending}
-        className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
-          suspended
-            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-            : "bg-red-50 text-red-700 hover:bg-red-100"
-        }`}
+        className={consoleButtonClass(suspended ? "success" : "danger", "sm")}
       >
         {pending ? "…" : suspended ? "Réactiver" : "Suspendre"}
       </button>
@@ -64,11 +61,7 @@ export function HideReleaseButton({
       <button
         type="submit"
         disabled={pending}
-        className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
-          hidden
-            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-            : "bg-amber-50 text-amber-800 hover:bg-amber-100"
-        }`}
+        className={consoleButtonClass(hidden ? "success" : "warning", "sm")}
       >
         {pending ? "…" : hidden ? "Remettre en ligne" : "Masquer"}
       </button>
@@ -99,7 +92,7 @@ export function DeleteReleaseButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={pending || isPending}
-        className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+        className={consoleButtonClass("danger", "sm")}
       >
         Supprimer
       </button>
@@ -107,7 +100,7 @@ export function DeleteReleaseButton({
         <input type="hidden" name="release_id" value={releaseId} />
       </form>
       <ConfirmDialog
-        theme="light"
+        theme="dark"
         isOpen={open}
         onOpenChange={setOpen}
         title="Supprimer ce morceau ?"
@@ -138,15 +131,15 @@ export function ReportReviewForm({
   return (
     <form
       action={action}
-      className="space-y-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-3"
+      className="space-y-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
     >
       <input type="hidden" name="report_id" value={reportId} />
       <label className="block space-y-1">
-        <span className="text-[11px] text-zinc-400">Statut</span>
+        <span className="text-[11px] text-zinc-500">Statut</span>
         <select
           name="status"
           defaultValue={currentStatus}
-          className="w-full rounded-xl border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-800"
+          className="w-full rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-violet-400/40"
         >
           <option value="open">Ouvert</option>
           <option value="reviewing">En revue</option>
@@ -155,21 +148,22 @@ export function ReportReviewForm({
         </select>
       </label>
       <label className="block space-y-1">
-        <span className="text-[11px] text-zinc-400">Note admin</span>
+        <span className="text-[11px] text-zinc-500">Note admin</span>
         <textarea
           name="admin_note"
           rows={2}
-          className="w-full resize-none rounded-xl border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-800"
+          className="w-full resize-none rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-violet-400/40"
         />
       </label>
-      <label className="flex items-center gap-2 text-xs text-zinc-500">
-        <input type="checkbox" name="hide_release" value="true" />
+      <label className="flex items-center gap-2 text-xs text-zinc-400">
+
+        <input type="checkbox" name="hide_release" value="true" className="accent-violet-500" />
         Masquer la release associée
       </label>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+        className={consoleButtonClass("primary", "sm")}
       >
         {pending ? "…" : "Enregistrer"}
       </button>
@@ -208,10 +202,10 @@ export function CreatorPlanControls({
     return (
       <div className="flex flex-col items-start gap-1.5">
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+          className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
             active
-              ? "bg-violet-50 text-violet-700"
-              : "bg-zinc-100 text-zinc-500"
+              ? "bg-violet-500/15 text-violet-200 ring-1 ring-violet-400/25"
+              : "bg-white/[0.05] text-zinc-400 ring-1 ring-white/10"
           }`}
         >
           {active
@@ -227,7 +221,7 @@ export function CreatorPlanControls({
               name="action"
               value="revoke"
               disabled={pending}
-              className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-200 disabled:opacity-50"
+              className={consoleButtonClass("subtle", "sm")}
             >
               {pending ? "…" : "Révoquer"}
             </button>
@@ -237,7 +231,7 @@ export function CreatorPlanControls({
               name="action"
               value="activate"
               disabled={pending}
-              className="rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-violet-500 disabled:opacity-50"
+              className={consoleButtonClass("primary", "sm")}
             >
               {pending ? "…" : "Activer 1 an"}
             </button>
@@ -252,10 +246,10 @@ export function CreatorPlanControls({
   return (
     <div className="flex flex-col items-start gap-1.5">
       <span
-        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+        className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
           active
-            ? "bg-sky-50 text-sky-700"
-            : "bg-zinc-100 text-zinc-500"
+            ? "bg-sky-500/10 text-sky-300 ring-1 ring-sky-500/20"
+            : "bg-white/[0.05] text-zinc-400 ring-1 ring-white/10"
         }`}
       >
         {active
@@ -271,7 +265,7 @@ export function CreatorPlanControls({
             name="action"
             value="revoke"
             disabled={pending}
-            className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-700 transition hover:bg-zinc-200 disabled:opacity-50"
+            className={consoleButtonClass("subtle", "sm")}
           >
             {pending ? "…" : "Révoquer"}
           </button>
@@ -280,7 +274,7 @@ export function CreatorPlanControls({
             <select
               name="label_plan"
               defaultValue="unlimited"
-              className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[11px] text-zinc-700"
+              className="h-7 rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 text-[11px] text-zinc-200"
             >
               <option value="starter">Starter</option>
               <option value="unlimited">Unlimited</option>
@@ -290,7 +284,7 @@ export function CreatorPlanControls({
               name="action"
               value="activate"
               disabled={pending}
-              className="rounded-full bg-sky-600 px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-sky-500 disabled:opacity-50"
+              className={consoleButtonClass("primary", "sm")}
             >
               {pending ? "…" : "Activer 1 an"}
             </button>
@@ -322,11 +316,7 @@ export function VerifyArtistButton({
       <button
         type="submit"
         disabled={pending}
-        className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
-          verified
-            ? "bg-sky-50 text-sky-700 hover:bg-sky-100"
-            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-        }`}
+        className={consoleButtonClass(verified ? "subtle" : "primary", "sm")}
       >
         {pending ? "…" : verified ? "Retirer badge" : "Certifier"}
       </button>
@@ -346,30 +336,30 @@ export function MaintenanceForm({
 
   return (
     <form action={action} className="space-y-4">
-      <label className="flex items-center gap-2 text-sm text-zinc-700">
+      <label className="flex items-center gap-2.5 text-sm text-zinc-200">
         <input
           type="checkbox"
           name="enabled"
           value="true"
           defaultChecked={enabled}
-          className="size-4 rounded border-zinc-300"
+          className="size-4 accent-violet-500"
         />
         Activer le mode maintenance
       </label>
       <label className="block space-y-1">
-        <span className="text-xs text-zinc-400">Message affiché</span>
+        <span className="text-xs text-zinc-500">Message affiché</span>
         <textarea
           name="message"
           defaultValue={message}
           rows={3}
           maxLength={500}
-          className="w-full resize-none rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 outline-none focus:border-zinc-400"
+          className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#0c0c0e] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-violet-400/40 focus:ring-2 focus:ring-violet-500/15"
         />
       </label>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
+        className={consoleButtonClass("primary")}
       >
         {pending ? "…" : "Enregistrer"}
       </button>

@@ -1,8 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Alert02Icon,
+  ArrowDown01Icon,
+  Clock01Icon,
+  CodeIcon,
+  File01Icon,
+} from "@hugeicons/core-free-icons";
 import type { AdminSystemLog } from "@/lib/admin/queries";
+import {
+  ConsoleEmpty,
+  ConsoleHeader,
+  ConsoleSearch,
+  Kpi,
+  KpiGrid,
+  Panel,
+  Pill,
+  Segmented,
+  Toolbar,
+} from "@/components/admin/console/ui";
 
 export function AdminSystemLogsView({ logs }: { logs: AdminSystemLog[] }) {
   const [query, setQuery] = useState("");
@@ -11,7 +29,15 @@ export function AdminSystemLogsView({ logs }: { logs: AdminSystemLog[] }) {
 
   const sources = useMemo(() => {
     const set = new Set(logs.map((l) => l.source).filter(Boolean));
-    return ["all", ...[...set].sort()];
+    return [...set].sort();
+  }, [logs]);
+
+  const [now] = useState(() => Date.now());
+  const last24h = logs.filter((l) => now - new Date(l.createdAt).getTime() < 86400000).length;
+  const topPath = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of logs) if (l.path) m.set(l.path, (m.get(l.path) || 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
   }, [logs]);
 
   const filtered = useMemo(() => {
@@ -19,126 +45,108 @@ export function AdminSystemLogsView({ logs }: { logs: AdminSystemLog[] }) {
     return logs.filter((log) => {
       if (source !== "all" && log.source !== source) return false;
       if (!q) return true;
-      const hay = [
-        log.message,
-        log.path,
-        log.source,
-        log.digest,
-        log.stack,
-        log.userAgent,
-      ]
+      return [log.message, log.path, log.source, log.digest, log.stack, log.userAgent]
         .filter(Boolean)
         .join(" ")
-        .toLowerCase();
-      return hay.includes(q);
+        .toLowerCase()
+        .includes(q);
     });
   }, [logs, query, source]);
 
   return (
-    <div className="space-y-6">
-      <AdminPageHeader
-        title="Logs système"
-        description="Erreurs client et serveur : message, page, et pile d'appel."
+    <div className="space-y-5">
+      <ConsoleHeader
+        kicker="Système"
+        title="Logs"
+        description="Erreurs côté navigateur et serveur, avec la page concernée et la pile d'appel."
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher un bug, une page, un digest…"
-          className="h-11 flex-1 rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none ring-zinc-900/10 placeholder:text-zinc-400 focus:ring-2"
-        />
-        <select
+      <KpiGrid cols={4}>
+        <Kpi highlight label="Erreurs (24 h)" value={last24h} icon={Alert02Icon} />
+        <Kpi label="Total enregistré" value={logs.length} icon={File01Icon} />
+        <Kpi label="Sources" value={sources.length} icon={CodeIcon} />
+        <Kpi label="Page la plus touchée" value={<span className="block truncate text-[15px] font-mono">{topPath}</span>} icon={Clock01Icon} />
+      </KpiGrid>
+
+      <Toolbar>
+        <Segmented<string>
           value={source}
-          onChange={(e) => setSource(e.target.value)}
-          className="h-11 rounded-2xl border border-zinc-200 bg-white px-3 text-sm text-zinc-800"
-        >
-          {sources.map((s) => (
-            <option key={s} value={s}>
-              {s === "all" ? "Toutes les sources" : s}
-            </option>
-          ))}
-        </select>
-      </div>
+          onChange={setSource}
+          options={[
+            { value: "all", label: "Toutes", count: logs.length },
+            ...sources.map((s) => ({ value: s, label: s, count: logs.filter((l) => l.source === s).length })),
+          ]}
+        />
+        <ConsoleSearch value={query} onChange={setQuery} placeholder="Rechercher un message, une page, un digest…" />
+      </Toolbar>
 
-      <p className="text-xs text-zinc-400">
-        {filtered.length} log{filtered.length > 1 ? "s" : ""}
-        {logs.length === 0
-          ? " — applique la migration 020_system_logs si la table n’existe pas encore."
-          : ""}
-      </p>
-
-      <div className="space-y-3">
+      <Panel flush title="Journal" subtitle={`${filtered.length} entrée${filtered.length > 1 ? "s" : ""}`}>
         {filtered.length === 0 ? (
-          <div className="rounded-[28px] border border-zinc-200/80 bg-white px-6 py-12 text-center text-sm text-zinc-400">
-            Aucune erreur enregistrée pour ces filtres.
-          </div>
+          <ConsoleEmpty
+            title="Aucune erreur pour ces filtres"
+            hint={logs.length === 0 ? "Applique la migration 020_system_logs si la table n'existe pas encore." : undefined}
+          />
         ) : (
-          filtered.map((log) => {
-            const open = openId === log.id;
-            return (
-              <article
-                key={log.id}
-                className="rounded-[24px] border border-zinc-200/80 bg-white p-4 shadow-sm shadow-zinc-900/5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">
-                        {log.level}
-                      </span>
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                        {log.source}
-                      </span>
-                      <span className="text-[11px] text-zinc-400">
-                        {new Date(log.createdAt).toLocaleString("fr-FR")}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm font-medium text-zinc-900">
-                      {log.message}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Où :{" "}
-                      <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-700">
-                        {log.path || "chemin inconnu"}
-                      </code>
+          <ul className="font-mono text-[12px]">
+            {filtered.map((log) => {
+              const open = openId === log.id;
+              return (
+                <li key={log.id} className="border-t border-white/[0.05]">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(open ? null : log.id)}
+                    className="flex w-full items-start gap-3 px-5 py-2.5 text-left transition hover:bg-white/[0.025]"
+                  >
+                    <span className="mt-0.5 w-[118px] shrink-0 tabular-nums text-zinc-500">
+                      {new Date(log.createdAt).toLocaleString("fr-FR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </span>
+                    <span className="shrink-0">
+                      <Pill tone={log.level === "error" ? "danger" : "warn"}>{log.level}</Pill>
+                    </span>
+                    <span className="shrink-0">
+                      <Pill tone="violet">{log.source}</Pill>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-zinc-100">{log.message}</span>
+                      <span className="block truncate text-[11px] text-zinc-500">{log.path || "chemin inconnu"}</span>
+                    </span>
+                    <HugeiconsIcon
+                      icon={ArrowDown01Icon}
+                      size={14}
+                      className={`mt-1 shrink-0 text-zinc-500 transition ${open ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {open ? (
+                    <div className="space-y-2 px-5 pb-4">
                       {log.digest ? (
-                        <>
-                          {" "}
-                          · digest{" "}
-                          <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px]">
-                            {log.digest}
-                          </code>
-                        </>
+                        <p className="text-[11px] text-zinc-500">
+                          digest <span className="text-zinc-300">{log.digest}</span>
+                        </p>
                       ) : null}
-                    </p>
-                  </div>
-                  {log.stack ? (
-                    <button
-                      type="button"
-                      onClick={() => setOpenId(open ? null : log.id)}
-                      className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200"
-                    >
-                      {open ? "Masquer la pile" : "Voir où ça casse"}
-                    </button>
+                      {log.stack ? (
+                        <pre className="max-h-80 overflow-auto rounded-xl border border-white/[0.06] bg-black/60 p-3 text-[11px] leading-relaxed text-violet-100/90">
+                          {log.stack}
+                        </pre>
+                      ) : (
+                        <p className="text-[11px] text-zinc-500">Pas de pile d&apos;appel.</p>
+                      )}
+                      {log.userAgent ? (
+                        <p className="truncate text-[11px] text-zinc-600">{log.userAgent}</p>
+                      ) : null}
+                    </div>
                   ) : null}
-                </div>
-                {open && log.stack ? (
-                  <pre className="mt-3 max-h-72 overflow-auto rounded-2xl bg-zinc-950 p-3 text-[11px] leading-relaxed text-zinc-200">
-                    {log.stack}
-                  </pre>
-                ) : null}
-                {log.userAgent ? (
-                  <p className="mt-2 truncate text-[11px] text-zinc-400">
-                    {log.userAgent}
-                  </p>
-                ) : null}
-              </article>
-            );
-          })
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

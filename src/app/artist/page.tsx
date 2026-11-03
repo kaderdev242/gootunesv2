@@ -49,6 +49,7 @@ export default async function ArtistHomePage() {
   return (
     <OverviewStats
       title={`Salut, ${session.profile.display_name || "artiste"}`}
+      basePath="/artist"
       balance={Number(session.profile.balance_fcfa)}
       totalGross={totalGross}
       totalNet={totalNet}

@@ -336,3 +336,30 @@ export async function failByOrderId(
   }
   return failPurchaseByOrderId(orderId, providerTransactionId, meta);
 }
+
+/** Montant et devise attendus pour une commande (contrôle anti-fraude webhook). */
+export async function getExpectedPayment(orderId: string): Promise<{
+  found: boolean;
+  amount: number | null;
+  currency: string | null;
+}> {
+  const table = orderId.startsWith("LAB-")
+    ? "label_plan_orders"
+    : orderId.startsWith("ART-")
+      ? "artist_plan_orders"
+      : orderId.startsWith("WD-")
+        ? "withdrawals"
+        : "purchases";
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from(table)
+    .select("provider_meta")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  if (!data) return { found: false, amount: null, currency: null };
+  const meta = (data.provider_meta ?? {}) as Record<string, unknown>;
+  const raw = meta.amount_charged ?? meta.amount_paid;
+  const amount = typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+  const currency = typeof meta.currency === "string" ? meta.currency : null;
+  return { found: true, amount, currency };
+}

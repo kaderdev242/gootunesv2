@@ -16,16 +16,16 @@ export function StepHeader({
           <div
             key={i}
             className={`h-1.5 flex-1 rounded-full ${
-              i <= step ? "bg-white" : "bg-white/15"
+              i <= step ? "bg-zinc-950" : "bg-zinc-200"
             }`}
           />
         ))}
       </div>
-      <p className="text-[11px] font-semibold tracking-[0.18em] text-white/35 uppercase">
+      <p className="text-[11px] font-semibold tracking-[0.18em] text-zinc-400 uppercase">
         Étape {step + 1} / {total}
       </p>
-      <h2 className="font-display mt-1 text-2xl font-bold text-white">{title}</h2>
-      <p className="mt-1 text-sm text-white/45">{subtitle}</p>
+      <h2 className="studio-num mt-1 text-2xl font-semibold text-zinc-950">{title}</h2>
+      <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
     </div>
   );
 }
