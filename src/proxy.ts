@@ -22,6 +22,8 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
     url.host = PRIMARY_HOST;
+    // Derrière un reverse proxy (Traefik), nextUrl garde le port interne (3000).
+    url.port = "";
     return NextResponse.redirect(url, 308);
   }
 
