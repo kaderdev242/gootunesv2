@@ -131,7 +131,7 @@ export function ReportReviewForm({
   return (
     <form
       action={action}
-      className="space-y-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
+      className="space-y-2.5 rounded-xl border border-white/[0.06] bg-black/30 p-3"
     >
       <input type="hidden" name="report_id" value={reportId} />
       <label className="block space-y-1">
@@ -139,7 +139,7 @@ export function ReportReviewForm({
         <select
           name="status"
           defaultValue={currentStatus}
-          className="w-full rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-violet-400/40"
+          className="w-full rounded-lg border border-white/[0.08] bg-[#1a1a1a] px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-white/20"
         >
           <option value="open">Ouvert</option>
           <option value="reviewing">En revue</option>
@@ -152,7 +152,7 @@ export function ReportReviewForm({
         <textarea
           name="admin_note"
           rows={2}
-          className="w-full resize-none rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-violet-400/40"
+          className="w-full resize-none rounded-lg border border-white/[0.08] bg-[#1a1a1a] px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-white/20"
         />
       </label>
       <label className="flex items-center gap-2 text-xs text-zinc-400">
@@ -163,7 +163,7 @@ export function ReportReviewForm({
       <button
         type="submit"
         disabled={pending}
-        className={consoleButtonClass("primary", "sm")}
+        className={consoleButtonClass("ghost", "sm")}
       >
         {pending ? "…" : "Enregistrer"}
       </button>
@@ -202,10 +202,10 @@ export function CreatorPlanControls({
     return (
       <div className="flex flex-col items-start gap-1.5">
         <span
-          className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
+          className={`text-[12px] ${
             active
-              ? "bg-violet-500/15 text-violet-200 ring-1 ring-violet-400/25"
-              : "bg-white/[0.05] text-zinc-400 ring-1 ring-white/10"
+              ? "text-violet-300"
+              : "text-white/40"
           }`}
         >
           {active
@@ -231,7 +231,7 @@ export function CreatorPlanControls({
               name="action"
               value="activate"
               disabled={pending}
-              className={consoleButtonClass("primary", "sm")}
+              className={consoleButtonClass("ghost", "sm")}
             >
               {pending ? "…" : "Activer 1 an"}
             </button>
@@ -246,10 +246,10 @@ export function CreatorPlanControls({
   return (
     <div className="flex flex-col items-start gap-1.5">
       <span
-        className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
+        className={`text-[12px] ${
           active
-            ? "bg-sky-500/10 text-sky-300 ring-1 ring-sky-500/20"
-            : "bg-white/[0.05] text-zinc-400 ring-1 ring-white/10"
+            ? "text-violet-300"
+            : "text-white/40"
         }`}
       >
         {active
@@ -274,7 +274,7 @@ export function CreatorPlanControls({
             <select
               name="label_plan"
               defaultValue="unlimited"
-              className="h-7 rounded-lg border border-white/[0.08] bg-[#0c0c0e] px-2 text-[11px] text-zinc-200"
+              className="h-8 rounded-full border border-white/[0.08] bg-[#1a1a1a] px-3 text-[12px] text-white"
             >
               <option value="starter">Starter</option>
               <option value="unlimited">Unlimited</option>
@@ -284,7 +284,7 @@ export function CreatorPlanControls({
               name="action"
               value="activate"
               disabled={pending}
-              className={consoleButtonClass("primary", "sm")}
+              className={consoleButtonClass("ghost", "sm")}
             >
               {pending ? "…" : "Activer 1 an"}
             </button>
@@ -316,7 +316,7 @@ export function VerifyArtistButton({
       <button
         type="submit"
         disabled={pending}
-        className={consoleButtonClass(verified ? "subtle" : "primary", "sm")}
+        className={consoleButtonClass(verified ? "subtle" : "ghost", "sm")}
       >
         {pending ? "…" : verified ? "Retirer badge" : "Certifier"}
       </button>
@@ -353,7 +353,7 @@ export function MaintenanceForm({
           defaultValue={message}
           rows={3}
           maxLength={500}
-          className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#0c0c0e] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-violet-400/40 focus:ring-2 focus:ring-violet-500/15"
+          className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#1a1a1a] px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/20 "
         />
       </label>
       <button

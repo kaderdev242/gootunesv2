@@ -23,7 +23,7 @@ export async function PublicPlaylistsSection() {
               sizes="176px"
               className="aspect-square bg-[#111]"
               imgClassName={`transition duration-300 ${
-                p.cover_url ? "group-hover:scale-[1.03]" : "opacity-40"
+                p.cover_url ? "group-hover:brightness-110" : "opacity-40"
               }`}
             />
           </div>

@@ -20,7 +20,7 @@ export default async function FanParametresPage() {
 
   return (
     <div className="mx-auto max-w-3xl pt-2">
-      <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
+      <p className="text-[12px] font-medium text-white/40">
         Compte
       </p>
       <h1 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">

@@ -2,6 +2,7 @@
 
 import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
+import { PREVIEW_SECONDS } from "@/lib/audio/constants";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Cancel01Icon,
@@ -26,7 +27,7 @@ function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export function FullscreenPlayer() {
@@ -95,9 +96,12 @@ export function FullscreenPlayer() {
           <div className="mt-1 flex justify-center">
             <TrackArtistLine
               artist={current.artist}
-              className="text-sm text-white/55"
+              className="justify-center text-sm text-white/55"
             />
           </div>
+          {accessMode === "preview" && !owned ? (
+            <p className="mt-2 font-mono text-[12px] text-white/40">Extrait de {PREVIEW_SECONDS} s</p>
+          ) : null}
         </div>
 
         <div className="mt-5 w-full shrink-0 sm:mt-8">

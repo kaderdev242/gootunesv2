@@ -22,13 +22,13 @@ export function PublishTypeModal({
         className="bg-zinc-950/70"
       >
         <Modal.Container size="md" placement="center" className="px-4">
-          <Modal.Dialog className="overflow-hidden rounded-[28px] border border-black/10 bg-white text-zinc-950 shadow-2xl">
-            <Modal.CloseTrigger className="text-zinc-500" />
-            <Modal.Header className="border-b border-black/[0.07] px-6 pt-6 pb-4">
-              <Modal.Heading className="text-2xl font-semibold tracking-tight text-zinc-950">
+          <Modal.Dialog className="overflow-hidden rounded-[28px] border border-white/10 bg-[#0f0f10] text-white shadow-2xl">
+            <Modal.CloseTrigger className="text-white/50" />
+            <Modal.Header className="border-b border-white/[0.06] px-6 pt-6 pb-4">
+              <Modal.Heading className="text-2xl font-semibold tracking-tight text-white">
                 Nouvelle publication
               </Modal.Heading>
-              <p className="mt-1.5 text-sm text-zinc-500">
+              <p className="mt-1.5 text-sm text-white/50">
                 Choisis le format de ta sortie.
               </p>
             </Modal.Header>
@@ -37,7 +37,7 @@ export function PublishTypeModal({
                 <button
                   type="button"
                   onClick={() => onSelect("single")}
-                  className="group flex flex-col items-center gap-4 rounded-2xl border border-black/[0.07] bg-white p-6 text-center transition hover:border-black/20 hover:bg-zinc-100"
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-white/[0.06] bg-[#0f0f10] p-6 text-center transition hover:border-white/20 hover:bg-white/[0.06]"
                 >
                   <AppImage
                     src="/single.png"
@@ -47,8 +47,8 @@ export function PublishTypeModal({
                     className="size-24 object-contain"
                   />
                   <span>
-                    <span className="block text-base font-semibold text-zinc-950">Single</span>
-                    <span className="mt-1 block text-sm text-zinc-500">
+                    <span className="block text-base font-semibold text-white">Single</span>
+                    <span className="mt-1 block text-sm text-white/50">
                       Un titre, une cover
                     </span>
                   </span>
@@ -57,7 +57,7 @@ export function PublishTypeModal({
                 <button
                   type="button"
                   onClick={() => onSelect("album")}
-                  className="group flex flex-col items-center gap-4 rounded-2xl border border-black/[0.07] bg-white p-6 text-center transition hover:border-black/20 hover:bg-zinc-100"
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-white/[0.06] bg-[#0f0f10] p-6 text-center transition hover:border-white/20 hover:bg-white/[0.06]"
                 >
                   <AppImage
                     src="/album.png"
@@ -67,8 +67,8 @@ export function PublishTypeModal({
                     className="size-24 object-contain"
                   />
                   <span>
-                    <span className="block text-base font-semibold text-zinc-950">Album</span>
-                    <span className="mt-1 block text-sm text-zinc-500">
+                    <span className="block text-base font-semibold text-white">Album</span>
+                    <span className="mt-1 block text-sm text-white/50">
                       Plusieurs titres, cover globale
                     </span>
                   </span>

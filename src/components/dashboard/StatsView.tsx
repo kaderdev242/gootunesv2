@@ -43,18 +43,18 @@ export function StatsView({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="studio-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-zinc-950">Morceaux / publications les plus vendus</h2>
+          <h2 className="text-[15px] font-semibold text-white">Morceaux / publications les plus vendus</h2>
           <div className="mt-4 flex flex-col gap-2">
             {stats.topSales.length === 0 ? (
-              <p className="text-sm text-zinc-500">Aucune vente pour le moment.</p>
+              <p className="text-sm text-white/50">Aucune vente pour le moment.</p>
             ) : (
               stats.topSales.map((row, i) => (
                 <div
                   key={row.releaseId}
-                  className="flex items-center gap-3 rounded-2xl border border-black/[0.07] bg-white px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#0f0f10] px-3 py-2.5"
                 >
-                  <span className="w-6 text-sm text-zinc-400">{i + 1}</span>
-                  <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+                  <span className="w-6 text-sm text-white/40">{i + 1}</span>
+                  <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-white/[0.06]">
                     {row.coverUrl ? (
                       <AppImage
                         src={row.coverUrl}
@@ -66,15 +66,15 @@ export function StatsView({
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-zinc-950">
+                    <p className="truncate text-sm font-medium text-white">
                       {row.title}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-white/50">
                       {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} ·{" "}
                       {money(row.grossFcfa)}
                     </p>
                   </div>
-                  <p className="text-xs font-medium text-emerald-700">
+                  <p className="text-xs font-medium text-emerald-400">
                     {money(row.netFcfa)}
                   </p>
                 </div>
@@ -84,27 +84,27 @@ export function StatsView({
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-zinc-950">Pays des achats</h2>
+          <h2 className="text-[15px] font-semibold text-white">Pays des achats</h2>
           <div className="mt-4 flex flex-col gap-3">
             {stats.byCountry.length === 0 ? (
-              <p className="text-sm text-zinc-500">Aucun pays enregistré.</p>
+              <p className="text-sm text-white/50">Aucun pays enregistré.</p>
             ) : (
               stats.byCountry.map((row) => (
                 <div key={row.country}>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-zinc-950">
+                    <span className="flex items-center gap-2 text-white">
                       {isCountryCode(row.country) ? (
                         <CountryFlag code={row.country} title={row.label} />
                       ) : null}
                       {row.label}
                     </span>
-                    <span className="text-zinc-500">
+                    <span className="text-white/50">
                       {row.purchases} · {money(row.amountFcfa)}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
                     <div
-                      className="h-full rounded-full bg-zinc-300"
+                      className="h-full rounded-full bg-white/15"
                       style={{
                         width: `${Math.max(6, (row.purchases / maxCountry) * 100)}%`,
                       }}
@@ -119,13 +119,13 @@ export function StatsView({
 
       {showByArtist ? (
         <section className="studio-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-zinc-950">Revenus par artiste</h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <h2 className="text-[15px] font-semibold text-white">Revenus par artiste</h2>
+          <p className="mt-1 text-xs text-white/50">
             Répartition des ventes nettes sur les artistes du label.
           </p>
           <div className="mt-4 flex flex-col gap-3">
             {stats.byArtist.length === 0 ? (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-white/50">
                 Aucun revenu artiste pour le moment.
               </p>
             ) : (
@@ -133,10 +133,10 @@ export function StatsView({
                 <Link
                   key={row.artistId}
                   href={`/label/artistes/${row.artistId}`}
-                  className="block rounded-2xl transition hover:bg-zinc-100"
+                  className="block rounded-2xl transition hover:bg-white/[0.06]"
                 >
                   <div className="mb-1.5 flex items-center gap-3">
-                    <Avatar className="size-9 shrink-0 ring-1 ring-black/10">
+                    <Avatar className="size-9 shrink-0 ring-1 ring-white/10">
                       {row.avatarUrl ? (
                         <Avatar.Image src={row.avatarUrl} alt={row.stageName} />
                       ) : null}
@@ -146,22 +146,22 @@ export function StatsView({
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="truncate font-medium text-zinc-950">
+                        <span className="truncate font-medium text-white">
                           {row.stageName}
                         </span>
-                        <span className="shrink-0 text-emerald-700">
+                        <span className="shrink-0 text-emerald-400">
                           {money(row.netFcfa)}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-white/50">
                         {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} ·{" "}
                         {money(row.grossFcfa)} brut
                       </p>
                     </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
                     <div
-                      className="h-full rounded-full bg-zinc-300"
+                      className="h-full rounded-full bg-white/15"
                       style={{
                         width: `${Math.max(6, (row.netFcfa / maxArtistNet) * 100)}%`,
                       }}
@@ -175,18 +175,18 @@ export function StatsView({
       ) : null}
 
       <section className="studio-card p-5 sm:p-6">
-        <h2 className="text-[15px] font-semibold text-zinc-950">Écoutes par morceau</h2>
-        <p className="mt-1 text-xs text-zinc-500">
+        <h2 className="text-[15px] font-semibold text-white">Écoutes par morceau</h2>
+        <p className="mt-1 text-xs text-white/50">
           Nombre de lectures et auditeurs uniques sur tes titres.
         </p>
         <div className="mt-4 overflow-x-auto">
           {stats.topTracks.length === 0 ? (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-white/50">
               Aucune écoute enregistrée pour l&apos;instant.
             </p>
           ) : (
             <table className="w-full min-w-[480px] text-left text-sm">
-              <thead className="text-xs text-zinc-500">
+              <thead className="text-xs text-white/50">
                 <tr>
                   <th className="pb-2 font-medium">Morceau</th>
                   <th className="pb-2 font-medium">Publication</th>
@@ -198,12 +198,12 @@ export function StatsView({
                 {stats.topTracks.map((row) => (
                   <tr
                     key={row.trackId}
-                    className="border-t border-black/[0.07] text-zinc-800"
+                    className="border-t border-white/[0.06] text-white/85"
                   >
-                    <td className="py-3 pr-3 font-medium text-zinc-950">
+                    <td className="py-3 pr-3 font-medium text-white">
                       {row.title}
                     </td>
-                    <td className="py-3 pr-3 text-zinc-500">{row.releaseTitle}</td>
+                    <td className="py-3 pr-3 text-white/50">{row.releaseTitle}</td>
                     <td className="py-3 pr-3">{row.plays}</td>
                     <td className="py-3">{row.uniqueListeners}</td>
                   </tr>

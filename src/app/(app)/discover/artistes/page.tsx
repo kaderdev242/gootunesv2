@@ -52,7 +52,7 @@ export default async function ArtistesPage() {
                   src={artist.avatar}
                   alt={artist.name}
                   fill
-                  className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                  className="object-cover transition-[filter] duration-200 group-hover:brightness-110"
                   sizes="160px"
                 />
               </div>

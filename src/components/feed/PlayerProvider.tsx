@@ -424,20 +424,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           audio.dataset.trackId === track.id &&
           audio.dataset.playUrl === mediaUrl &&
           !!audio.src;
+        let pendingPlay: Promise<boolean> | null = null;
         if (!alreadyLoaded) {
           audio.pause();
           audio.dataset.trackId = track.id;
           audio.dataset.playUrl = mediaUrl;
           audio.src = mediaUrl;
           audio.load();
-          // loadedmetadata se déclenche dès que le navigateur lit les headers
-          // (bien avant canplay qui attend assez de buffer).
-          // Timeout 3s : on tente play() immédiatement si le délai expire.
+          // play() tout de suite, encore dans le geste de l'utilisateur :
+          // le navigateur démarre dès qu'il a assez de données, et Safari
+          // n'annule pas la lecture si le réseau est lent.
+          pendingPlay = safePlay(audio);
           await waitForEvent(audio, "loadedmetadata", 3000, gen, playGenRef);
           if (gen !== playGenRef.current) return;
         }
 
-        let started = await safePlay(audio);
+        let started = await (pendingPlay ?? safePlay(audio));
         if (gen !== playGenRef.current) return;
 
         if (!started && mediaUrl !== proxyUrl) {

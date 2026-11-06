@@ -220,7 +220,7 @@ function SortTh({
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex items-center gap-1 uppercase tracking-[0.08em] transition hover:text-zinc-200"
+        className="inline-flex items-center gap-1 transition hover:text-zinc-200"
       >
         {children}
       </button>

@@ -18,7 +18,7 @@ import { ExplicitBadge } from "@/components/discover/ExplicitBadge";
 import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import { userOwnsRelease } from "@/lib/audio/access";
 import { getUserPlaylists } from "@/lib/playlists/queries";
-import { formatDuration, formatMoney } from "@/lib/format";
+import { formatTotalDuration, formatMoney } from "@/lib/format";
 import { isUuid, releasePath } from "@/lib/public-id";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteMediaUrl, siteUrl } from "@/lib/seo";
@@ -109,13 +109,13 @@ export default async function ReleaseDetailPage({ params }: Props) {
     0,
   );
   const durationLabel =
-    totalSeconds > 0 ? formatDuration(totalSeconds) : null;
+    totalSeconds > 0 ? formatTotalDuration(totalSeconds) : null;
   const year = release.created_at
     ? new Date(release.created_at).getFullYear()
     : null;
   const metaParts = [
     `${tracks.length} titre${tracks.length > 1 ? "s" : ""}`,
-    durationLabel ? `(${durationLabel})` : null,
+    durationLabel,
     year ? String(year) : null,
     release.genre,
   ].filter(Boolean);

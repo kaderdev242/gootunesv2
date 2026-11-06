@@ -23,7 +23,7 @@ export function ArtistHeroPlayButton({ tracks }: { tracks: Track[] }) {
         if (playingHere) togglePlay();
         else playTrack(first, tracks);
       }}
-      className="size-14 rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 hover:bg-white"
+      className="size-14 rounded-full bg-white text-black shadow-lg shadow-black/40 transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.97]"
     >
       <HugeiconsIcon icon={playingHere ? PauseIcon : PlayIcon} size={28} />
     </Button>

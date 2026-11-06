@@ -10,9 +10,9 @@ export default async function AbonnementPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Abonnement Label</h1>
-      <p className="mt-1 text-sm text-zinc-500">
-        Plan actuel : <span className="text-zinc-950">{session.profile.label_plan}</span>
+      <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-white sm:text-[34px]">Abonnement Label</h1>
+      <p className="mt-1 text-sm text-white/50">
+        Plan actuel : <span className="text-white">{session.profile.label_plan}</span>
         {session.profile.label_plan_expires_at
           ? ` · expire le ${formatDate(session.profile.label_plan_expires_at)}`
           : null}

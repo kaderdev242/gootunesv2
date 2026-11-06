@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NowPlayingBars } from "@/components/discover/NowPlayingBars";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FavouriteIcon, PlayIcon } from "@hugeicons/core-free-icons";
@@ -26,7 +27,7 @@ export function TrackList({
   emptyLabel = "Aucune sortie pour le moment.",
 }: TrackListProps) {
   const router = useRouter();
-  const { playTrack, toggleLike, isLiked, current } = usePlayer();
+  const { playTrack, toggleLike, isLiked, current, isPlaying } = usePlayer();
 
   return (
     <section>
@@ -63,8 +64,8 @@ export function TrackList({
                   active ? "bg-white/10" : "hover:bg-white/5"
                 }`}
               >
-                <span className="relative flex size-8 items-center justify-center text-sm text-white/35">
-                  {String(index + 1).padStart(2, "0")}
+                <span className="relative flex size-8 items-center justify-center text-sm tabular-nums text-white/35">
+                  {active ? <NowPlayingBars paused={!isPlaying} /> : index + 1}
                 </span>
 
                 <div className="flex min-w-0 items-center gap-3">

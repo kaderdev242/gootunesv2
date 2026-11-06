@@ -26,11 +26,11 @@ export function UploadBusy({
       aria-busy="true"
     >
       <span
-        className="size-5 shrink-0 animate-spin rounded-full border-2 border-black/20 border-t-white"
+        className="size-5 shrink-0 animate-spin rounded-full border-2 border-white/20 border-t-white"
         aria-hidden
       />
       {label || pct != null ? (
-        <span className="text-center text-xs text-zinc-600">
+        <span className="text-center text-xs text-white/60">
           {label}
           {label && pct != null ? " · " : null}
           {pct != null ? `${pct} %` : null}

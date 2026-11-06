@@ -9,6 +9,7 @@ import {
   PauseIcon,
   PlayIcon,
 } from "@hugeicons/core-free-icons";
+import { NowPlayingBars } from "@/components/discover/NowPlayingBars";
 import { AppImage } from "@/components/media/AppImage";
 import {
   TrackArtistLine,
@@ -40,7 +41,7 @@ export function DetailTrackTable({
   return (
     <div>
       <div
-        className={`mb-2 hidden items-center gap-3 border-b border-white/10 px-2 pb-3 text-[11px] font-semibold tracking-[0.14em] text-white/35 uppercase sm:grid ${
+        className={`mb-2 hidden items-center gap-3 border-b border-white/10 px-2 pb-3 text-[12px] font-medium text-white/35 sm:grid ${
           showCover
             ? "grid-cols-[2.25rem_minmax(0,1.6fr)_minmax(0,1fr)_4.5rem_auto]"
             : "grid-cols-[2.25rem_minmax(0,1.6fr)_minmax(0,1fr)_4.5rem_auto]"
@@ -92,11 +93,18 @@ export function DetailTrackTable({
                   <span className={playing || active ? "sm:hidden" : "group-hover:hidden"}>
                     {index + 1}
                   </span>
+                  {playing ? (
+                    <span className="grid place-items-center group-hover:hidden">
+                      <NowPlayingBars />
+                    </span>
+                  ) : null}
                   <span
                     className={`${
-                      playing || active
-                        ? "grid"
-                        : "hidden group-hover:grid"
+                      playing
+                        ? "hidden group-hover:grid"
+                        : active
+                          ? "grid"
+                          : "hidden group-hover:grid"
                     } place-items-center text-white`}
                   >
                     <HugeiconsIcon
@@ -123,7 +131,7 @@ export function DetailTrackTable({
                       title={track.title}
                       explicit={track.explicit}
                       className={`truncate text-sm font-medium ${
-                        active ? "text-white" : "text-white/95"
+                        active ? "text-violet-300" : "text-white/95"
                       }`}
                     />
                     <span className="sm:hidden">

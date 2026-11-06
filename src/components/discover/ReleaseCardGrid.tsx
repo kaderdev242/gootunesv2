@@ -41,7 +41,7 @@ export function ReleaseCardGrid({
             alt={r.title}
             sizes="280px"
             className="aspect-square bg-zinc-900"
-            imgClassName="transition duration-300 group-hover:scale-[1.03]"
+            imgClassName="transition-[filter] duration-200 group-hover:brightness-110"
           />
           <div className="space-y-1 px-4 py-4">
             <TrackTitleLine

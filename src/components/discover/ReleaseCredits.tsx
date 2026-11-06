@@ -53,7 +53,7 @@ export function ReleaseCredits({
         <dl className="mt-3 space-y-3 rounded-2xl border border-white/8 bg-black/20 px-4 py-4">
           {rows.map((row) => (
             <div key={row.label} className="min-w-0">
-              <dt className="text-[11px] font-semibold tracking-[0.14em] text-white/35 uppercase">
+              <dt className="text-[12px] font-medium text-white/35">
                 {row.label}
               </dt>
               <dd className="mt-1 text-sm text-white/85">{row.value}</dd>

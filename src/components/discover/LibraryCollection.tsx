@@ -69,7 +69,7 @@ export function LibraryCollection({ items }: { items: LibraryItemCard[] }) {
                     src={item.cover || FALLBACK_COVER}
                     alt={item.title}
                     fill
-                    className="object-cover transition duration-300 group-hover:scale-[1.04]"
+                    className="object-cover transition-[filter] duration-200 group-hover:brightness-110"
                     sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 220px"
                   />
                 </div>

@@ -24,9 +24,9 @@ type PurchaseRow = {
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  completed: { label: "Payé", cls: "bg-emerald-50 text-emerald-700 ring-emerald-600/15" },
-  pending: { label: "En attente", cls: "bg-amber-50 text-amber-800 ring-amber-600/15" },
-  failed: { label: "Échec", cls: "bg-red-50 text-red-600 ring-red-600/15" },
+  completed: { label: "Payé", cls: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20" },
+  pending: { label: "En attente", cls: "bg-amber-500/10 text-amber-300 ring-amber-500/20" },
+  failed: { label: "Échec", cls: "bg-red-500/10 text-red-400 ring-red-500/20" },
 };
 
 export function CreatorRevenusView({
@@ -101,7 +101,7 @@ export function CreatorRevenusView({
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
-                <tr className="text-[11px] text-zinc-400">
+                <tr className="text-[11px] text-white/40">
                   <th className="px-5 py-2.5 font-medium sm:px-6">Sortie</th>
                   <th className="px-3 py-2.5 font-medium">Date</th>
                   <th className="px-3 py-2.5 font-medium">Canal</th>
@@ -114,25 +114,25 @@ export function CreatorRevenusView({
                   const apple = isApplePaymentMethod(p.payment_method);
                   const st = STATUS[p.status] ?? {
                     label: p.status,
-                    cls: "bg-zinc-100 text-zinc-600 ring-black/5",
+                    cls: "bg-white/[0.06] text-white/60 ring-white/10",
                   };
                   return (
                     <tr
                       key={p.id}
-                      className="border-t border-black/[0.05] transition hover:bg-zinc-50/70"
+                      className="border-t border-white/[0.06] transition hover:bg-white/[0.06]/70"
                     >
-                      <td className="px-5 py-3 font-semibold text-zinc-900 sm:px-6">
+                      <td className="px-5 py-3 font-semibold text-white sm:px-6">
                         {p.releases?.title || "Sortie"}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-zinc-500">
+                      <td className="whitespace-nowrap px-3 py-3 text-white/50">
                         {formatDate(p.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-zinc-600">
+                      <td className="whitespace-nowrap px-3 py-3 text-white/60">
                         <span className="inline-flex items-center gap-1.5">
                           <HugeiconsIcon
                             icon={apple ? SmartPhone01Icon : Money01Icon}
                             size={14}
-                            className="text-zinc-400"
+                            className="text-white/40"
                           />
                           {apple ? "iOS · 70 %" : "Mobile Money · 80 %"}
                         </span>
@@ -144,7 +144,7 @@ export function CreatorRevenusView({
                           {st.label}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-zinc-950 sm:px-6">
+                      <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-white sm:px-6">
                         +{money(Number(p.artist_net_fcfa))}
                       </td>
                     </tr>

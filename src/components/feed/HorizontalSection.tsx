@@ -129,7 +129,7 @@ export function HorizontalSection(props: HorizontalSectionProps) {
                 alt={album.title}
                 sizes={card.sizes}
                 className={`aspect-square ${card.coverRound}`}
-                imgClassName="transition duration-300 group-hover:scale-[1.03]"
+                imgClassName="transition-[filter] duration-200 group-hover:brightness-110"
               />
             </div>
             <TrackTitleLine
@@ -166,7 +166,7 @@ export function HorizontalSection(props: HorizontalSectionProps) {
                   alt={track.title}
                   sizes={card.sizes}
                   className={`aspect-square ${card.coverRound}`}
-                  imgClassName="transition duration-300 group-hover:scale-[1.03]"
+                  imgClassName="transition-[filter] duration-200 group-hover:brightness-110"
                 />
               </div>
               <TrackTitleLine

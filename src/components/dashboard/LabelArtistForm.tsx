@@ -48,12 +48,12 @@ export function LabelArtistForm() {
       className="flex flex-col gap-4 studio-card p-5"
     >
       <h2 className="text-lg font-semibold">Ajouter un artiste</h2>
-      <p className="text-xs text-zinc-500">Tous les champs sont obligatoires.</p>
+      <p className="text-xs text-white/50">Tous les champs sont obligatoires.</p>
 
       <input type="hidden" name="avatar_url" value={avatarUrl} />
 
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-        <div className="relative size-20 overflow-hidden rounded-full border border-black/10 bg-zinc-50">
+        <div className="relative size-20 overflow-hidden rounded-full border border-white/10 bg-[#1a1a1a]">
           {avatarUrl ? (
             <AppImage
               src={avatarUrl}
@@ -63,14 +63,14 @@ export function LabelArtistForm() {
               unoptimized
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-zinc-400">
+            <div className="flex h-full items-center justify-center text-xs text-white/40">
               Photo
             </div>
           )}
         </div>
         <div>
           <Label>Photo de profil</Label>
-          <label className="mt-2 inline-flex cursor-pointer items-center justify-center rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-zinc-100">
+          <label className="mt-2 inline-flex cursor-pointer items-center justify-center rounded-full border border-white/10 bg-[#0f0f10] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.06]">
             {uploading
               ? "Envoi…"
               : avatarUrl
@@ -93,7 +93,7 @@ export function LabelArtistForm() {
           id="stage_name"
           name="stage_name"
           required
-          className="bg-zinc-50"
+          className="bg-[#1a1a1a]"
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -107,7 +107,7 @@ export function LabelArtistForm() {
           name="bio"
           required
           rows={3}
-          className="rounded-xl border border-black/[0.07] bg-zinc-50 px-3 py-2 text-sm text-zinc-950 outline-none focus:border-black/20"
+          className="rounded-xl border border-white/[0.06] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-white/20"
           placeholder="Présentation de l'artiste…"
         />
       </div>
@@ -115,7 +115,7 @@ export function LabelArtistForm() {
         type="submit"
         isPending={pending || uploading}
         isDisabled={!avatarUrl || uploading}
-        className="rounded-full bg-zinc-950 font-semibold text-white"
+        className="rounded-full bg-white hover:bg-white/90 font-semibold text-black"
       >
         Ajouter
       </Button>

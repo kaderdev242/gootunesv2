@@ -59,7 +59,17 @@ export function formatDuration(seconds: number | null | undefined) {
   if (seconds == null || Number.isNaN(seconds) || seconds <= 0) return "—";
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** Durée totale d'un album ou d'une playlist : « 19 min », « 1 h 05 ». */
+export function formatTotalDuration(seconds: number | null | undefined) {
+  if (seconds == null || Number.isNaN(seconds) || seconds <= 0) return "—";
+  const totalMin = Math.max(1, Math.round(seconds / 60));
+  if (totalMin < 60) return `${totalMin} min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m ? `${h} h ${String(m).padStart(2, "0")}` : `${h} h`;
 }
 
 /** Relatif court : Maintenant, 2 h, 1 j… */

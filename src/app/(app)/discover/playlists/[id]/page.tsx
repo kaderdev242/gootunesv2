@@ -9,7 +9,7 @@ import { SavePlaylistButton } from "@/components/discover/SavePlaylistButton";
 import { DetailHero } from "@/components/discover/DetailHero";
 import { ShareButton } from "@/components/discover/ShareButton";
 import { FALLBACK_COVER } from "@/lib/types/music";
-import { formatDuration } from "@/lib/format";
+import { formatTotalDuration } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -43,10 +43,10 @@ export default async function PlaylistDetailPage({ params }: Props) {
     (sum, track) => sum + (track.durationSeconds > 0 ? track.durationSeconds : 0),
     0,
   );
-  const durationLabel = totalSeconds > 0 ? formatDuration(totalSeconds) : null;
+  const durationLabel = totalSeconds > 0 ? formatTotalDuration(totalSeconds) : null;
   const meta = [
     `${playlist.tracksCount} titre${playlist.tracksCount > 1 ? "s" : ""}`,
-    durationLabel ? `(${durationLabel})` : null,
+    durationLabel,
     playlist.is_public
       ? `${playlist.savesCount} sauvegarde${playlist.savesCount > 1 ? "s" : ""}`
       : null,

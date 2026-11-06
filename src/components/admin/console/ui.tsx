@@ -1,10 +1,12 @@
+/**
+ * Kit visuel des dashboards (admin, artiste, label) — univers Discover.
+ * Fond noir, cartes graphite à fine bordure, bouton principal blanc,
+ * violet réservé à l'essentiel (sélection, morceau en cours, chiffre clé).
+ * Inspiré de la méthode « unslop » de Damir Sokolovsky (@heydamir), CC BY 4.0.
+ */
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowDownRight01Icon,
-  ArrowUpRight01Icon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 
 type IconType = typeof Search01Icon;
 
@@ -12,18 +14,18 @@ export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
-/* ─────────────── Classes de tableau partagées ─────────────── */
+/* ─────────────── Tableaux ─────────────── */
 
 export const T = {
   wrap: "overflow-x-auto",
-  table: "w-full text-left text-[13px]",
-  thead: "text-[11px] uppercase tracking-[0.08em] text-zinc-500",
-  th: "px-4 py-2.5 font-medium first:pl-5 last:pr-5",
-  tr: "border-t border-white/[0.05] transition-colors hover:bg-white/[0.025]",
+  table: "w-full text-left text-[14px]",
+  thead: "text-[12px] text-white/40",
+  th: "px-4 pb-2 pt-1 font-normal first:pl-5 last:pr-5",
+  tr: "border-t border-white/[0.06] transition-colors hover:bg-white/[0.02]",
   td: "px-4 py-3 align-middle first:pl-5 last:pr-5",
-  strong: "font-medium text-zinc-100",
-  sub: "text-[11px] text-zinc-500",
-  num: "tabular-nums text-zinc-200",
+  strong: "font-medium text-white",
+  sub: "text-[12px] text-white/45",
+  num: "tabular-nums text-white/85",
 } as const;
 
 /* ─────────────── En-tête de page ─────────────── */
@@ -32,32 +34,22 @@ export function ConsoleHeader({
   title,
   description,
   actions,
-  kicker,
 }: {
   title: string;
   description?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Ancien sur-titre : ignoré (le fil d'Ariane de la barre du haut suffit). */
   kicker?: string;
 }) {
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {kicker ? (
-          <p className="mb-1.5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-violet-300/80">
-            <span className="size-1.5 rounded-full bg-violet-400" />
-            {kicker}
-          </p>
-        ) : null}
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-white sm:text-[30px]">
-          {title}
-        </h1>
+        <h1 className="text-[28px] font-semibold leading-tight text-white">{title}</h1>
         {description ? (
-          <p className="mt-1 max-w-2xl text-sm text-zinc-400">{description}</p>
+          <p className="mt-1 max-w-2xl text-[14px] text-white/50">{description}</p>
         ) : null}
       </div>
-      {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
-      ) : null}
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }
@@ -65,16 +57,12 @@ export function ConsoleHeader({
 /* ─────────────── Boutons ─────────────── */
 
 const BTN = {
-  primary:
-    "bg-violet-600 text-white shadow-[0_0_0_1px_rgba(167,139,250,0.35),0_8px_24px_-8px_rgba(124,58,237,0.7)] hover:bg-violet-500",
-  ghost:
-    "border border-white/[0.08] bg-white/[0.03] text-zinc-200 hover:border-white/15 hover:bg-white/[0.06]",
-  danger: "bg-red-500/10 text-red-300 ring-1 ring-red-500/20 hover:bg-red-500/20",
-  success:
-    "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20 hover:bg-emerald-500/20",
-  warning:
-    "bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/20 hover:bg-amber-500/20",
-  subtle: "bg-white/[0.05] text-zinc-300 hover:bg-white/10 hover:text-white",
+  primary: "bg-white text-black hover:bg-white/90",
+  ghost: "border border-white/[0.08] bg-[#1a1a1a] text-white hover:bg-[#222]",
+  subtle: "bg-white/[0.06] text-white/80 hover:bg-white/10 hover:text-white",
+  danger: "bg-white/[0.06] text-red-300 hover:bg-red-500/15",
+  success: "bg-white/[0.06] text-emerald-300 hover:bg-emerald-500/15",
+  warning: "bg-white/[0.06] text-amber-200 hover:bg-amber-500/15",
 } as const;
 
 export type ConsoleButtonTone = keyof typeof BTN;
@@ -84,8 +72,8 @@ export function consoleButtonClass(
   size: "sm" | "md" = "md",
 ) {
   return cx(
-    "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
-    size === "sm" ? "h-7 px-2.5 text-[12px]" : "h-9 px-3.5 text-[13px]",
+    "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
+    size === "sm" ? "h-8 px-3 text-[13px]" : "h-10 px-4 text-[14px]",
     BTN[tone],
   );
 }
@@ -105,13 +93,13 @@ export function ConsoleLink({
 }) {
   return (
     <Link href={href} className={consoleButtonClass(tone, size)}>
-      {icon ? <HugeiconsIcon icon={icon} size={size === "sm" ? 13 : 15} /> : null}
+      {icon ? <HugeiconsIcon icon={icon} size={16} strokeWidth={1.5} /> : null}
       {children}
     </Link>
   );
 }
 
-/* ─────────────── Panneau ─────────────── */
+/* ─────────────── Carte ─────────────── */
 
 export function Panel({
   title,
@@ -128,96 +116,91 @@ export function Panel({
   children: React.ReactNode;
   className?: string;
   bodyClassName?: string;
-  /** Sans marge interne (tableaux). */
+  /** Sans marge interne (tableaux, listes pleine largeur). */
   flush?: boolean;
 }) {
   return (
     <section
       className={cx(
-        "overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111113]",
+        "overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0f0f10]",
         className,
       )}
     >
       {title || actions ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
           <div className="min-w-0">
-            {title ? (
-              <h2 className="truncate text-[14px] font-semibold text-zinc-100">{title}</h2>
-            ) : null}
-            {subtitle ? <p className="truncate text-xs text-zinc-500">{subtitle}</p> : null}
+            {title ? <h2 className="text-[16px] font-semibold text-white">{title}</h2> : null}
+            {subtitle ? <p className="mt-0.5 text-[13px] text-white/45">{subtitle}</p> : null}
           </div>
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
-      <div className={cx(flush ? "mt-3" : "p-5", Boolean(title) && !flush && "pt-4", bodyClassName)}>
+      <div className={cx(flush ? "mt-4" : "p-5", Boolean(title) && !flush && "pt-4", bodyClassName)}>
         {children}
       </div>
     </section>
   );
 }
 
-/* ─────────────── Indicateurs ─────────────── */
+/* ─────────────── Chiffres ─────────────── */
 
-export function Delta({ value }: { value: number }) {
+/** Variation sobre : « +12 % vs 30 j précédents ». */
+export function Delta({ value, label }: { value: number | null; label?: string }) {
+  if (value === null || !Number.isFinite(value)) return null;
   const up = value >= 0;
   return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
-        up ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300",
-      )}
-    >
-      <HugeiconsIcon icon={up ? ArrowUpRight01Icon : ArrowDownRight01Icon} size={11} />
-      {Math.abs(value)}%
+    <span className="text-[12px] tabular-nums text-white/45">
+      <span className={up ? "text-emerald-400" : "text-red-400"}>
+        {up ? "+" : "−"}
+        {Math.abs(value)} %
+      </span>
+      {label ? ` ${label}` : ""}
     </span>
   );
 }
 
+/** Un chiffre : libellé, valeur, variation ou précision. Pas d'icône ni de décor. */
 export function Kpi({
   label,
   value,
   sub,
   delta,
-  icon,
+  deltaLabel = "vs 30 j précédents",
   highlight = false,
 }: {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
-  delta?: number;
-  icon?: IconType;
+  delta?: number | null;
+  deltaLabel?: string;
+  /** Chiffre clé : seule valeur en violet sur l'écran. */
   highlight?: boolean;
+  /** Ancienne icône : ignorée (les chiffres se suffisent). */
+  icon?: IconType;
 }) {
   return (
-    <div
-      className={cx(
-        "relative overflow-hidden rounded-2xl border p-4",
-        highlight
-          ? "border-violet-400/25 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(139,92,246,0.28),transparent_60%),#141018]"
-          : "border-white/[0.06] bg-[#111113]",
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <p className="flex items-center gap-2 text-[12px] text-zinc-400">
-          {icon ? (
-            <HugeiconsIcon
-              icon={icon}
-              size={14}
-              className={highlight ? "text-violet-300" : "text-zinc-500"}
-            />
-          ) : null}
-          {label}
-        </p>
-        {delta !== undefined ? <Delta value={delta} /> : null}
-      </div>
-      <p className="mt-3 text-[22px] font-semibold tabular-nums tracking-[-0.02em] text-white">
+    <div className="min-w-0 px-4 py-4 sm:px-5">
+      <p className="truncate text-[13px] text-white/50">{label}</p>
+      <p
+        className={cx(
+          "mt-2 truncate text-[20px] font-semibold leading-none tabular-nums sm:text-[26px]",
+          highlight ? "text-violet-300" : "text-white",
+        )}
+      >
         {value}
       </p>
-      {sub ? <p className="mt-1 text-[11px] text-zinc-500">{sub}</p> : null}
+      <div className="mt-2 min-h-[16px]">
+        {delta !== undefined && delta !== null ? (
+          <Delta value={delta} label={deltaLabel} />
+        ) : sub ? (
+          <span className="text-[12px] text-white/45">{sub}</span>
+        ) : null}
+      </div>
     </div>
   );
 }
 
+/** Bande de chiffres : une seule carte découpée en cellules. */
 export function KpiGrid({
   children,
   cols = 4,
@@ -228,48 +211,53 @@ export function KpiGrid({
   const map = {
     2: "sm:grid-cols-2",
     3: "sm:grid-cols-3",
-    4: "sm:grid-cols-2 xl:grid-cols-4",
-    5: "sm:grid-cols-3 xl:grid-cols-5",
+    4: "grid-cols-2 xl:grid-cols-4",
+    5: "grid-cols-2 sm:grid-cols-3 xl:grid-cols-5",
   } as const;
-  return <div className={cx("grid gap-3", map[cols])}>{children}</div>;
+  return (
+    <div
+      className={cx(
+        "grid gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] [&>*]:bg-[#0f0f10]",
+        map[cols],
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
-/* ─────────────── Pastilles ─────────────── */
+/* ─────────────── Statuts ─────────────── */
 
-const PILL = {
-  ok: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/20",
-  warn: "bg-amber-500/10 text-amber-300 ring-amber-500/20",
-  danger: "bg-red-500/10 text-red-300 ring-red-500/20",
-  violet: "bg-violet-500/15 text-violet-200 ring-violet-400/25",
-  info: "bg-sky-500/10 text-sky-300 ring-sky-500/20",
-  neutral: "bg-white/[0.05] text-zinc-300 ring-white/10",
+const DOT = {
+  ok: "bg-emerald-400",
+  warn: "bg-amber-400",
+  danger: "bg-red-400",
+  violet: "bg-violet-400",
+  info: "bg-sky-400",
+  neutral: "bg-white/30",
 } as const;
 
-export type PillTone = keyof typeof PILL;
+export type PillTone = keyof typeof DOT;
 
+/** Statut discret : un point de couleur et le texte. */
 export function Pill({
   tone = "neutral",
   children,
-  dot = false,
 }: {
   tone?: PillTone;
   children: React.ReactNode;
+  /** Conservé pour compatibilité : le point est toujours affiché. */
   dot?: boolean;
 }) {
   return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium ring-1",
-        PILL[tone],
-      )}
-    >
-      {dot ? <span className="size-1.5 rounded-full bg-current" /> : null}
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-white/70">
+      <span className={cx("size-1.5 shrink-0 rounded-full", DOT[tone])} />
       {children}
     </span>
   );
 }
 
-/* ─────────────── Barre d'outils ─────────────── */
+/* ─────────────── Filtres et recherche ─────────────── */
 
 export function ConsoleSearch({
   value,
@@ -284,55 +272,46 @@ export function ConsoleSearch({
     <div className="relative min-w-0 flex-1">
       <HugeiconsIcon
         icon={Search01Icon}
-        size={15}
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+        size={16}
+        strokeWidth={1.5}
+        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40"
       />
       <input
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-9 w-full rounded-lg border border-white/[0.07] bg-white/[0.03] pl-9 pr-3 text-[13px] text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-400/40 focus:bg-white/[0.05] focus:ring-2 focus:ring-violet-500/15"
+        className="h-10 w-full rounded-full border border-white/[0.06] bg-[#1a1a1a] pl-10 pr-4 text-[14px] text-white outline-none transition-colors placeholder:text-white/35 focus:border-white/20"
       />
     </div>
   );
 }
 
-export function Segmented<T extends string>({
+const chip = (active: boolean) =>
+  cx(
+    "inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-colors",
+    active ? "bg-white text-black" : "bg-[#1a1a1a] text-white/70 hover:bg-[#222] hover:text-white",
+  );
+
+/** Filtres en pastilles, comme les genres de Discover. */
+export function Segmented<V extends string>({
   value,
   onChange,
   options,
 }: {
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: T; label: string; count?: number }[];
+  value: V;
+  onChange: (v: V) => void;
+  options: { value: V; label: string; count?: number }[];
 }) {
   return (
-    <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5">
+    <div className="flex flex-wrap gap-2">
       {options.map((o) => {
         const active = o.value === value;
         return (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => onChange(o.value)}
-            className={cx(
-              "inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition",
-              active
-                ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
-                : "text-zinc-400 hover:text-zinc-100",
-            )}
-          >
+          <button key={o.value} type="button" onClick={() => onChange(o.value)} className={chip(active)}>
             {o.label}
             {o.count !== undefined ? (
-              <span
-                className={cx(
-                  "rounded px-1 text-[10px] tabular-nums",
-                  active ? "bg-violet-500/30 text-violet-100" : "text-zinc-500",
-                )}
-              >
-                {o.count}
-              </span>
+              <span className={cx("tabular-nums", active ? "text-black/50" : "text-white/35")}>{o.count}</span>
             ) : null}
           </button>
         );
@@ -341,7 +320,7 @@ export function Segmented<T extends string>({
   );
 }
 
-/** Variante en liens (filtres côté serveur via l'URL). */
+/** Variante en liens (filtres portés par l'URL). */
 export function SegmentedLinks({
   value,
   options,
@@ -350,23 +329,14 @@ export function SegmentedLinks({
   options: { value: string; label: string; href: string; count?: number }[];
 }) {
   return (
-    <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5">
+    <div className="flex flex-wrap gap-2">
       {options.map((o) => {
         const active = o.value === value;
         return (
-          <Link
-            key={o.value}
-            href={o.href}
-            className={cx(
-              "inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium transition",
-              active
-                ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
-                : "text-zinc-400 hover:text-zinc-100",
-            )}
-          >
+          <Link key={o.value} href={o.href} className={chip(active)}>
             {o.label}
             {o.count !== undefined ? (
-              <span className="text-[10px] tabular-nums text-zinc-500">{o.count}</span>
+              <span className={cx("tabular-nums", active ? "text-black/50" : "text-white/35")}>{o.count}</span>
             ) : null}
           </Link>
         );
@@ -377,37 +347,28 @@ export function SegmentedLinks({
 
 export function Toolbar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-      {children}
-    </div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">{children}</div>
   );
 }
 
-/* ─────────────── États vides ─────────────── */
+/* ─────────────── Vide ─────────────── */
 
-export function ConsoleEmpty({
-  title,
-  hint,
-}: {
-  title: string;
-  hint?: string;
-}) {
+export function ConsoleEmpty({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-      <span className="mb-3 size-8 rounded-full border border-dashed border-white/15" />
-      <p className="text-sm font-medium text-zinc-300">{title}</p>
-      {hint ? <p className="mt-1 text-xs text-zinc-500">{hint}</p> : null}
+    <div className="px-6 py-12 text-center">
+      <p className="text-[14px] text-white/70">{title}</p>
+      {hint ? <p className="mt-1 text-[13px] text-white/40">{hint}</p> : null}
     </div>
   );
 }
 
-/* ─────────────── Avatar initiale ─────────────── */
+/* ─────────────── Initiale ─────────────── */
 
 export function Initial({ name, className }: { name: string; className?: string }) {
   return (
     <span
       className={cx(
-        "flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/30 to-violet-900/30 text-[12px] font-semibold text-violet-100 ring-1 ring-violet-400/20",
+        "flex size-9 shrink-0 items-center justify-center rounded-full bg-[#1a1a1a] text-[13px] font-medium text-white/70",
         className,
       )}
     >
@@ -416,8 +377,9 @@ export function Initial({ name, className }: { name: string; className?: string 
   );
 }
 
-/* ─────────────── Mini histogramme ─────────────── */
+/* ─────────────── Histogramme sobre ─────────────── */
 
+/** Barres neutres ; seule la plus haute porte le violet. */
 export function ConsoleBars({
   bars,
   format,
@@ -431,45 +393,38 @@ export function ConsoleBars({
   const peak = bars.reduce((best, b, i, arr) => (b.value > arr[best].value ? i : best), 0);
   const hasData = bars.some((b) => b.value > 0);
   return (
-    <div className="relative" style={{ height }}>
-      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between">
-        {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="border-t border-dashed border-white/[0.05]" />
-        ))}
-      </div>
-      <div className="relative flex h-full items-end gap-2">
-        {bars.map((b, i) => {
-          const active = hasData && i === peak;
-          const pct = Math.max(4, (b.value / max) * 100);
-          return (
-            <div key={b.key ?? b.label} className="group flex h-full flex-1 flex-col items-center justify-end gap-2">
-              <div className="relative flex w-full flex-1 items-end justify-center">
-                <span
-                  className={cx(
-                    "pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-violet-500 px-1.5 py-0.5 text-[10px] font-semibold text-white transition",
-                    active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                  )}
-                  style={{ bottom: `calc(${pct}% + 6px)` }}
-                >
-                  {format(b.value)}
-                </span>
-                <div
-                  className={cx(
-                    "w-full max-w-[34px] rounded-t-md transition-all",
-                    active
-                      ? "bg-gradient-to-t from-violet-700 to-violet-400 shadow-[0_0_24px_-4px_rgba(139,92,246,0.7)]"
-                      : "bg-white/[0.08] group-hover:bg-white/15",
-                  )}
-                  style={{ height: `${pct}%` }}
-                />
-              </div>
-              <span className={cx("text-[10px] capitalize", active ? "text-zinc-200" : "text-zinc-500")}>
-                {b.label}
-              </span>
+    <div className="flex items-end gap-2" style={{ height }}>
+      {bars.map((b, i) => {
+        const active = hasData && i === peak;
+        const pct = Math.max(3, (b.value / max) * 100);
+        return (
+          <div key={b.key ?? b.label} className="group flex h-full flex-1 flex-col items-center justify-end gap-2" title={format(b.value)}>
+            <div className="flex w-full flex-1 items-end justify-center">
+              <div
+                className={cx(
+                  "w-full max-w-[28px] rounded-[4px] transition-colors",
+                  active ? "bg-violet-400" : "bg-white/[0.12] group-hover:bg-white/25",
+                )}
+                style={{ height: `${pct}%` }}
+              />
             </div>
-          );
-        })}
-      </div>
+            <span className="font-mono text-[11px] text-white/40">{b.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────── Classement avec pochettes ─────────────── */
+
+export function RankBar({ value, max, lead }: { value: number; max: number; lead?: boolean }) {
+  return (
+    <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+      <div
+        className={cx("h-full rounded-full", lead ? "bg-violet-400" : "bg-white/25")}
+        style={{ width: `${Math.max(3, (value / Math.max(max, 1)) * 100)}%` }}
+      />
     </div>
   );
 }

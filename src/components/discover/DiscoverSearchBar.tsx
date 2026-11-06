@@ -295,7 +295,7 @@ function ResultGroup({
 }) {
   return (
     <div className="mb-1">
-      <p className="px-3 py-1.5 text-[10px] font-semibold tracking-wider text-white/35 uppercase">
+      <p className="px-3 py-1.5 text-[12px] font-medium text-white/35">
         {title}
       </p>
       {children}

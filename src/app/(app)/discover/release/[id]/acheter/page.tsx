@@ -84,7 +84,7 @@ export default async function AcheterReleasePage({ params }: Props) {
               />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium tracking-wide text-white/40 uppercase">
+              <p className="text-xs font-medium text-white/40">
                 {release.type === "album" ? "Album" : "Single"}
               </p>
               <h1 className="truncate text-xl font-bold text-white">

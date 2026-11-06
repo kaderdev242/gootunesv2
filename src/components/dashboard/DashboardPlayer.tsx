@@ -84,7 +84,7 @@ export function DashboardPlayer({
               <button
                 type="button"
                 onClick={onToggle}
-                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-black transition hover:scale-105"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.97]"
                 aria-label={isPlaying ? "Pause" : "Lecture"}
               >
                 <HugeiconsIcon

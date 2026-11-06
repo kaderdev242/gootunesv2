@@ -104,15 +104,15 @@ export function WithdrawalForm({
 
   return (
     <form action={action} className="flex max-w-md flex-col gap-4">
-      <div className="rounded-2xl border border-black/[0.07] bg-white px-4 py-3 text-sm">
-        <p className="text-zinc-500">Pays du compte</p>
-        <p className="mt-1 flex items-center gap-2.5 font-medium text-zinc-950">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0f0f10] px-4 py-3 text-sm">
+        <p className="text-white/50">Pays du compte</p>
+        <p className="mt-1 flex items-center gap-2.5 font-medium text-white">
           {country && isCountryCode(country) ? (
             <CountryFlag code={country} title={getCountryLabel(country)} />
           ) : null}
           {getCountryLabel(country)}
         </p>
-        <p className="mt-2 text-xs text-zinc-400">
+        <p className="mt-2 text-xs text-white/40">
           Minimum {minAmount} {currencyLabel} · solde réservé dès la demande.
         </p>
       </div>
@@ -127,7 +127,7 @@ export function WithdrawalForm({
           max={balanceLocal}
           required
           placeholder={String(minAmount)}
-          className="bg-white"
+          className="bg-[#1a1a1a]"
           disabled={waiting}
         />
       </div>
@@ -140,10 +140,10 @@ export function WithdrawalForm({
           value={method}
           onChange={(e) => setMethod(e.target.value as MobileMoneyMethodId)}
           disabled={waiting}
-          className="h-10 rounded-xl border border-black/[0.07] bg-white px-3 text-sm text-zinc-950"
+          className="h-10 rounded-xl border border-white/[0.06] bg-[#0f0f10] px-3 text-sm text-white"
         >
           {operators.map((m) => (
-            <option key={m.id} value={m.id} className="bg-white text-zinc-900">
+            <option key={m.id} value={m.id} className="bg-[#121212] text-white">
               {m.label}
             </option>
           ))}
@@ -157,16 +157,16 @@ export function WithdrawalForm({
           required
           defaultValue={defaultPhone || ""}
           placeholder={phonePlaceholder(country)}
-          className="bg-white"
+          className="bg-[#1a1a1a]"
           disabled={waiting}
         />
       </div>
 
       {waiting ? (
-        <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-3 text-sm text-amber-900">
+        <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-3 text-sm text-amber-300">
           <p className="font-medium">Retrait en cours…</p>
           {orderId ? (
-            <p className="mt-1 text-[11px] text-amber-800">Réf. {orderId}</p>
+            <p className="mt-1 text-[11px] text-amber-300">Réf. {orderId}</p>
           ) : null}
         </div>
       ) : null}
@@ -175,7 +175,7 @@ export function WithdrawalForm({
         type="submit"
         isPending={pending || waiting}
         isDisabled={waiting || balanceLocal < minAmount}
-        className="h-11 rounded-full bg-zinc-950 font-semibold text-white"
+        className="h-11 rounded-full bg-white hover:bg-white/90 font-semibold text-black"
       >
         {waiting ? "Envoi en cours…" : "Retirer"}
       </Button>

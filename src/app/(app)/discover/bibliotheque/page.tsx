@@ -18,7 +18,7 @@ export default async function BibliothequePage() {
   if (!user) {
     return (
       <div className="max-w-xl pt-6">
-        <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
+        <p className="text-[12px] font-medium text-white/40">
           Collection
         </p>
         <h1 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
@@ -88,7 +88,7 @@ export default async function BibliothequePage() {
   return (
     <div className="pb-8">
       <header className="mb-8">
-        <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
+        <p className="text-[12px] font-medium text-white/40">
           Collection
         </p>
         <h1 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">

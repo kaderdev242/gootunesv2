@@ -53,7 +53,7 @@ export async function CatalogSection() {
                 alt={r.cover_url ? r.title : ""}
                 sizes="176px"
                 className="aspect-square bg-[#111]"
-                imgClassName={`transition duration-300 ${r.cover_url ? "group-hover:scale-[1.03]" : "opacity-40"}`}
+                imgClassName={`transition duration-300 ${r.cover_url ? "group-hover:brightness-110" : "opacity-40"}`}
               />
             </div>
             <TrackTitleLine

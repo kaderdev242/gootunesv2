@@ -101,7 +101,7 @@ export function FeedSidebar({
           <Logo size="sm" />
         </Link>
 
-        <p className="mb-3 px-3 text-[11px] font-semibold tracking-[0.16em] text-white/35 uppercase">
+        <p className="mb-3 px-3 text-[12px] font-medium text-white/35">
           Menu
         </p>
         <nav className="flex flex-col gap-1">
@@ -133,7 +133,7 @@ export function FeedSidebar({
           })}
         </nav>
 
-        <p className="mt-8 mb-3 px-3 text-[11px] font-semibold tracking-[0.16em] text-white/35 uppercase">
+        <p className="mt-8 mb-3 px-3 text-[12px] font-medium text-white/35">
           Récentes
         </p>
         <div className="scrollbar-thin flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">

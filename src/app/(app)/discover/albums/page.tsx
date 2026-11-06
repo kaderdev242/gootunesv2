@@ -51,7 +51,7 @@ export default async function AlbumsPage() {
                   src={album.cover}
                   alt={album.title}
                   fill
-                  className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                  className="object-cover transition-[filter] duration-200 group-hover:brightness-110"
                   sizes="280px"
                 />
               </div>

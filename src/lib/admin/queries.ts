@@ -291,6 +291,22 @@ export async function getAdminDashboard() {
   });
   const weekTotal = salesByDay.reduce((s, d) => s + d.amount, 0);
 
+  // Série 30 jours (graphique principal de la vue d'ensemble).
+  const salesByDay30 = Array.from({ length: 30 }, (_, idx) => {
+    const key = daysAgo(29 - idx).toISOString().slice(0, 10);
+    const music = sales
+      .filter((p) => p.created_at.slice(0, 10) === key)
+      .reduce((sum, p) => sum + (p.amount_fcfa || 0), 0);
+    const abo =
+      labels
+        .filter((o) => o.created_at.slice(0, 10) === key)
+        .reduce((sum, o) => sum + (o.amount_fcfa || 0), 0) +
+      artistsAbo
+        .filter((o) => o.created_at.slice(0, 10) === key)
+        .reduce((sum, o) => sum + (o.amount_fcfa || 0), 0);
+    return { key, amount: music + abo, music, subscriptions: abo };
+  });
+
   // Segments exclusifs : net artistes + commission + abonnements
   const collectionTotal =
     artistNetCurr + commissionCurr + subscriptionsCurr || 1;
@@ -352,6 +368,7 @@ export async function getAdminDashboard() {
     openReports: openReports.count || 0,
     weekTotal,
     salesByDay,
+    salesByDay30,
     recentUsers: (recentUsers.data || []).map((u) => ({
       id: u.id,
       name: u.display_name || "Sans nom",

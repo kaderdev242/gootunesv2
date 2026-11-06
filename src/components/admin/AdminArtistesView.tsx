@@ -111,7 +111,7 @@ export function AdminArtistesView({
     <div className="space-y-5">
       <ConsoleHeader
         kicker="Communauté"
-        title="Artistes & labels"
+        title="Artistes et labels"
         description="Comptes créateurs, abonnements, suspensions et certification des profils."
       />
 

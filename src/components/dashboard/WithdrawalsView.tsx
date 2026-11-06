@@ -19,11 +19,11 @@ type WithdrawalRow = {
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  completed: { label: "Versé", cls: "bg-emerald-50 text-emerald-700 ring-emerald-600/15" },
-  pending: { label: "En cours", cls: "bg-amber-50 text-amber-800 ring-amber-600/15" },
-  processing: { label: "En cours", cls: "bg-amber-50 text-amber-800 ring-amber-600/15" },
-  failed: { label: "Échec", cls: "bg-red-50 text-red-600 ring-red-600/15" },
-  cancelled: { label: "Annulé", cls: "bg-zinc-100 text-zinc-600 ring-black/5" },
+  completed: { label: "Versé", cls: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20" },
+  pending: { label: "En cours", cls: "bg-amber-500/10 text-amber-300 ring-amber-500/20" },
+  processing: { label: "En cours", cls: "bg-amber-500/10 text-amber-300 ring-amber-500/20" },
+  failed: { label: "Échec", cls: "bg-red-500/10 text-red-400 ring-red-500/20" },
+  cancelled: { label: "Annulé", cls: "bg-white/[0.06] text-white/60 ring-white/10" },
 };
 
 export function WithdrawalsView({
@@ -94,18 +94,18 @@ export function WithdrawalsView({
               {withdrawals.map((w) => {
                 const st = STATUS[w.status] ?? {
                   label: w.status,
-                  cls: "bg-zinc-100 text-zinc-600 ring-black/5",
+                  cls: "bg-white/[0.06] text-white/60 ring-white/10",
                 };
                 return (
                   <li
                     key={w.id}
-                    className="flex items-center justify-between gap-3 border-t border-black/[0.05] px-5 py-3.5 sm:px-6"
+                    className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-5 py-3.5 sm:px-6"
                   >
                     <div className="min-w-0">
-                      <p className="font-semibold text-zinc-950">
+                      <p className="font-semibold text-white">
                         {money(Number(w.amount_fcfa))}
                       </p>
-                      <p className="truncate text-xs text-zinc-500">
+                      <p className="truncate text-xs text-white/50">
                         {[w.payment_method, w.phone, formatDate(w.created_at)]
                           .filter(Boolean)
                           .join(" · ")}

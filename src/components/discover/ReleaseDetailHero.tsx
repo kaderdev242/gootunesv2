@@ -66,7 +66,7 @@ export function ReleaseDetailHero({
 
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-white/45 uppercase">
+            <p className="text-[12px] font-medium text-white/45">
               {type === "album" ? "Album" : "Single"}
               {owned ? " · Acheté" : ""}
             </p>
@@ -96,7 +96,7 @@ export function ReleaseDetailHero({
               </Link>
             ) : null}
 
-            <p className="mt-3 text-xs font-medium tracking-wide text-white/45 uppercase">
+            <p className="mt-3 text-xs font-medium text-white/45">
               {metaParts.join(" · ")}
             </p>
           </div>

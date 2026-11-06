@@ -20,15 +20,15 @@ export default async function PublierPage({
   if (!hasActiveArtistPlan(session.profile)) {
     return (
       <div className="mx-auto max-w-xl studio-card p-8 text-center">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Abonnement requis</h1>
-        <p className="mt-3 text-sm text-zinc-500">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-white sm:text-[34px]">Abonnement requis</h1>
+        <p className="mt-3 text-sm text-white/50">
           Pour publier sur Gootunes, active l&apos;abonnement artiste annuel (
           {formatMoney(ARTIST_PLAN.price, session.profile.country)} / an) —
           publications illimitées pendant 12 mois.
         </p>
         <Link
           href="/artist/abonnement"
-          className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-zinc-950 px-6 text-sm font-semibold text-white"
+          className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-white hover:bg-white/90 px-6 text-sm font-semibold text-black"
         >
           Activer l&apos;abonnement
         </Link>
@@ -52,10 +52,10 @@ export default async function PublierPage({
   if (!artists?.length) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Publier</h1>
-        <p className="mt-4 text-sm text-zinc-500">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-white sm:text-[34px]">Publier</h1>
+        <p className="mt-4 text-sm text-white/50">
           Aucun profil artiste trouvé.{" "}
-          <Link href="/artist/publications" className="text-zinc-950 underline">
+          <Link href="/artist/publications" className="text-white underline">
             Retour aux publications
           </Link>
         </p>

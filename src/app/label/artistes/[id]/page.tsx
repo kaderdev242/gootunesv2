@@ -45,13 +45,13 @@ export default async function LabelArtistStatsPage({ params }: Props) {
         <header className="flex flex-col gap-5">
           <Link
             href="/label/artistes"
-            className="w-fit text-sm text-zinc-500 transition hover:text-zinc-950"
+            className="w-fit text-sm text-white/50 transition hover:text-white"
           >
             ← Retour aux artistes
           </Link>
 
           <div className="flex flex-col gap-4 studio-card p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
-            <div className="relative size-20 shrink-0 overflow-hidden rounded-full border border-black/10 bg-zinc-100 sm:size-24">
+            <div className="relative size-20 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.06] sm:size-24">
               {artist.avatar_url ? (
                 <AppImage
                   src={artist.avatar_url}
@@ -62,19 +62,19 @@ export default async function LabelArtistStatsPage({ params }: Props) {
                   unoptimized
                 />
               ) : (
-                <div className="flex size-full items-center justify-center text-2xl text-zinc-500">
+                <div className="flex size-full items-center justify-center text-2xl text-white/50">
                   {artist.stage_name.slice(0, 1).toUpperCase()}
                 </div>
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold tracking-[0.16em] text-zinc-400 uppercase">
+              <p className="text-[12px] font-medium text-white/40">
                 Stats artiste
               </p>
               <h1 className="studio-num mt-1 text-3xl font-bold tracking-tight">
                 {artist.stage_name}
               </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/50">
                 {artist.country && isCountryCode(artist.country) ? (
                   <span className="inline-flex items-center gap-1.5">
                     <CountryFlag
@@ -93,7 +93,7 @@ export default async function LabelArtistStatsPage({ params }: Props) {
                 </span>
               </div>
               {artist.bio ? (
-                <p className="mt-3 max-w-2xl text-sm text-zinc-500">{artist.bio}</p>
+                <p className="mt-3 max-w-2xl text-sm text-white/50">{artist.bio}</p>
               ) : null}
             </div>
           </div>

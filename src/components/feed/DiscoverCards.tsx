@@ -79,7 +79,7 @@ export async function DiscoverCards() {
             <HugeiconsIcon
               icon={icon}
               size={180}
-              className="pointer-events-none absolute -right-6 -bottom-4 text-black opacity-[0.12] transition duration-300 group-hover:scale-105 group-hover:opacity-[0.18]"
+              className="pointer-events-none absolute -right-6 -bottom-4 text-black opacity-[0.12] transition-[filter] duration-200 group-hover:brightness-110 group-hover:opacity-[0.18]"
             />
 
             <div className="relative z-10 flex h-full flex-col justify-between p-5">

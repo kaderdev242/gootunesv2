@@ -30,10 +30,10 @@ export default async function PublierPage({
   if (!artists?.length) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-zinc-950 sm:text-[34px]">Publier</h1>
-        <p className="mt-4 text-sm text-zinc-500">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-white sm:text-[34px]">Publier</h1>
+        <p className="mt-4 text-sm text-white/50">
           Ajoute d&apos;abord un artiste à ton catalogue.{" "}
-          <Link href="/label/artistes" className="text-zinc-950 underline">
+          <Link href="/label/artistes" className="text-white underline">
             Gérer les artistes
           </Link>
         </p>

@@ -92,7 +92,7 @@ export default async function ArtistDetailPage({ params }: Props) {
   const pageUrl = siteUrl(artistPath(artist.public_id));
 
   return (
-    <div className="-mx-4 -mt-6 flex flex-col pb-12 sm:-mx-6 lg:-mx-8">
+    <div className="-mx-5 -mt-5 flex flex-col pb-12 sm:-mx-8 sm:-mt-6 lg:-mx-10">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -122,13 +122,12 @@ export default async function ArtistDetailPage({ params }: Props) {
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/45 to-black" />
-          <div className="violet-card absolute inset-0 opacity-35 mix-blend-soft-light" />
         </div>
 
-        <div className="relative mx-auto flex h-full min-h-[340px] max-w-5xl flex-col justify-end px-4 pt-16 pb-8 sm:min-h-[380px] sm:px-6 sm:pb-10 lg:px-8">
+        <div className="relative flex h-full min-h-[340px] flex-col justify-end px-5 pt-16 pb-8 sm:min-h-[380px] sm:px-8 sm:pb-10 lg:px-10">
           <Link
             href="/"
-            className="absolute top-4 left-4 text-sm text-white/55 transition hover:text-white sm:left-6 lg:left-8"
+            className="absolute top-4 left-5 text-sm text-white/55 transition-colors hover:text-white sm:left-8 lg:left-10"
           >
             ← Discover
           </Link>
@@ -186,7 +185,7 @@ export default async function ArtistDetailPage({ params }: Props) {
 
       {/* Barre d'actions */}
       <div className="sticky top-0 z-10 border-b border-white/5 bg-[#121212]/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-4 px-5 py-4 sm:px-8 lg:px-10">
           <ArtistHeroPlayButton tracks={allTracks} />
           <ShareButton
             title={artist.stage_name}
@@ -195,7 +194,7 @@ export default async function ArtistDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pt-8 sm:px-6 lg:px-8">
+      <div className="flex w-full flex-col gap-10 px-5 pt-8 sm:px-8 lg:px-10">
         {artist.bio ? (
           <section>
             <h2 className="text-lg font-bold text-white">À propos</h2>

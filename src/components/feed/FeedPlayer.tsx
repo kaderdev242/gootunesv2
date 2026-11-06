@@ -20,6 +20,7 @@ import {
 } from "@/components/discover/ExplicitBadge";
 import dynamic from "next/dynamic";
 import { usePlayer } from "./PlayerProvider";
+import { NowPlayingBars } from "@/components/discover/NowPlayingBars";
 
 const FullscreenPlayer = dynamic(
   () =>
@@ -33,7 +34,7 @@ function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export function FeedPlayer() {
@@ -82,11 +83,14 @@ export function FeedPlayer() {
               />
             </div>
             <div className="min-w-0">
-              <TrackTitleLine
-                title={current.title}
-                explicit={current.explicit}
-                className="truncate text-sm font-semibold text-white"
-              />
+              <span className="flex min-w-0 items-center gap-2">
+                <NowPlayingBars paused={!isPlaying} className="shrink-0" />
+                <TrackTitleLine
+                  title={current.title}
+                  explicit={current.explicit}
+                  className="truncate text-sm font-semibold text-white"
+                />
+              </span>
               <TrackArtistLine
                 artist={current.artist}
                 className="text-xs text-white/45"

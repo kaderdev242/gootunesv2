@@ -42,7 +42,7 @@ export function DetailHero({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-white/55 uppercase">
+          <p className="text-[12px] font-medium text-white/55">
             {kicker}
           </p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
@@ -50,7 +50,7 @@ export function DetailHero({
           </h1>
           {identity ? <div className="mt-4">{identity}</div> : null}
           {meta ? (
-            <p className="mt-3 text-xs font-medium tracking-wide text-white/45 uppercase">
+            <p className="mt-3 text-xs font-medium text-white/45">
               {meta}
             </p>
           ) : null}
