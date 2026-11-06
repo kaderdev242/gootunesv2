@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AnalyticsUpIcon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatCount } from "@/lib/format";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { changePct, type CreatorOverview } from "@/lib/dashboard/overview";
 import type { CreatorBase } from "@/lib/dashboard/paths";
@@ -50,8 +50,8 @@ export function OverviewStats({
       <KpiGrid cols={4}>
         <Kpi highlight label="Solde disponible" value={money(balance)} sub="retirable en Mobile Money" />
         <Kpi label="Revenus nets, 30 jours" value={money(data.net30)} delta={changePct(data.net30, data.netPrev30)} sub="aucune vente le mois précédent" />
-        <Kpi label="Ventes, 30 jours" value={data.sales30.toLocaleString("fr-FR")} delta={changePct(data.sales30, data.salesPrev30)} sub={`${data.releasesCount} sortie${data.releasesCount > 1 ? "s" : ""} au catalogue`} />
-        <Kpi label="Écoutes, 30 jours" value={data.plays30.toLocaleString("fr-FR")} delta={changePct(data.plays30, data.playsPrev30)} sub="sur Discover et l'appli" />
+        <Kpi label="Ventes, 30 jours" value={formatCount(data.sales30)} delta={changePct(data.sales30, data.salesPrev30)} sub={`${data.releasesCount} sortie${data.releasesCount > 1 ? "s" : ""} au catalogue`} />
+        <Kpi label="Écoutes, 30 jours" value={formatCount(data.plays30)} delta={changePct(data.plays30, data.playsPrev30)} sub="sur Discover et l'appli" />
       </KpiGrid>
 
       <div className="grid gap-4 xl:grid-cols-[1.9fr_1fr]">

@@ -88,9 +88,11 @@ export function LineChart({
             <span key={i} className="border-t border-dashed border-white/[0.06]" />
           ))}
         </div>
-        <span className="pointer-events-none absolute left-0 top-0 font-mono text-[11px] text-white/35">
-          {format(geo.max)}
-        </span>
+        {empty ? null : (
+          <span className="pointer-events-none absolute left-0 top-0 font-mono text-[11px] text-white/35">
+            {format(geo.max)}
+          </span>
+        )}
 
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
           <defs>

@@ -3,7 +3,7 @@ import { StatCard, StudioPageHeader } from "@/components/studio/ui";
 import { AppImage } from "@/components/media/AppImage";
 import Link from "next/link";
 import { Avatar } from "@heroui/react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatCount } from "@/lib/format";
 import { isCountryCode } from "@/lib/geo";
 import { CountryFlag } from "@/components/auth/CountryFlag";
 import type { CreatorStats } from "@/lib/stats/creator-stats";
@@ -33,10 +33,10 @@ export function StatsView({
         <StudioPageHeader eyebrow="Audience" title={title} description={subtitle} />
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Écoutes" value={stats.totalPlays.toLocaleString("fr-FR")} hint="toutes plateformes" tone="ink" />
-        <StatCard label="Auditeurs uniques" value={stats.uniqueListeners.toLocaleString("fr-FR")} />
-        <StatCard label="Ventes" value={stats.totalSales.toLocaleString("fr-FR")} />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        <StatCard label="Écoutes" value={formatCount(stats.totalPlays)} hint="toutes plateformes" tone="ink" />
+        <StatCard label="Auditeurs uniques" value={formatCount(stats.uniqueListeners)} />
+        <StatCard label="Ventes" value={formatCount(stats.totalSales)} />
         <StatCard label="CA brut" value={money(stats.totalGross)} />
         <StatCard label="Net artiste" value={money(stats.totalNet)} tone="accent" />
       </div>

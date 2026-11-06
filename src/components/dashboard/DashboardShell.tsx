@@ -4,6 +4,8 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Add01Icon,
+  Home01Icon,
+  MusicNote01Icon,
   AnalyticsUpIcon,
   ChartHistogramIcon,
   CrownIcon,
@@ -15,6 +17,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { DashFrame, type DashNavSection } from "@/components/admin/console/DashFrame";
 import type { CreatorBase } from "@/lib/dashboard/paths";
+import type { MobileNavItem } from "@/components/ui/MobileNav";
 import type { Profile } from "@/lib/supabase/database.types";
 import { formatMoney } from "@/lib/format";
 
@@ -45,6 +48,27 @@ function navFor(basePath: CreatorBase, isLabel: boolean): DashNavSection[] {
   ];
 }
 
+/** Mobile : les 4 pages du quotidien en onglets. */
+function mobileTabsFor(basePath: CreatorBase): MobileNavItem[] {
+  return [
+    { href: basePath, label: "Accueil", icon: Home01Icon, exact: true },
+    { href: `${basePath}/publications`, label: "Publications", icon: Folder01Icon },
+    { href: `${basePath}/revenus`, label: "Revenus", icon: Money01Icon },
+    { href: `${basePath}/retraits`, label: "Retraits", icon: Wallet01Icon },
+  ];
+}
+
+/** Mobile : le reste, depuis l'avatar. */
+function mobileMenuFor(basePath: CreatorBase, isLabel: boolean): MobileNavItem[] {
+  return [
+    { href: `${basePath}/statistiques`, label: "Statistiques", icon: AnalyticsUpIcon },
+    ...(isLabel ? [{ href: `${basePath}/artistes`, label: "Artistes", icon: UserMultipleIcon }] : []),
+    { href: `${basePath}/abonnement`, label: "Abonnement", icon: CrownIcon },
+    { href: `${basePath}/parametres`, label: "Paramètres", icon: Settings01Icon },
+    { href: "/", label: "Écouter sur Discover", icon: MusicNote01Icon },
+  ];
+}
+
 export function DashboardShell({
   profile,
   basePath,
@@ -66,6 +90,18 @@ export function DashboardShell({
         subtitle: isLabel ? "Label" : "Artiste",
         avatarUrl: profile.avatar_url,
       }}
+      mobileTabs={mobileTabsFor(basePath)}
+      mobileMenu={mobileMenuFor(basePath, isLabel)}
+      mobileMenuHeader={
+        <>
+          <p className="truncate text-[16px] font-semibold text-white">
+            {profile.display_name || (isLabel ? "Mon label" : "Mon espace")}
+          </p>
+          <p className="text-[13px] text-white/45">
+            Solde disponible <span className="font-medium tabular-nums text-white">{balance}</span>
+          </p>
+        </>
+      }
       sidebarFooter={
         <Link
           href={`${basePath}/retraits`}
@@ -78,10 +114,10 @@ export function DashboardShell({
       headerRight={
         <Link
           href={`${basePath}/publications?nouveau=1`}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[14px] font-medium text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.97]"
+          className="hidden h-10 items-center gap-2 rounded-full bg-white px-4 text-[14px] font-medium text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.97] lg:inline-flex"
         >
           <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={2} />
-          <span className="hidden sm:inline">Publier</span>
+          Publier
         </Link>
       }
     >

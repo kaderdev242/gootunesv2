@@ -12,6 +12,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Logo } from "@/components/landing/Logo";
 import { signOut } from "@/lib/actions/auth";
+import {
+  MobileAvatarButton,
+  MobileSheet,
+  MobileTabBar,
+  type MobileNavItem,
+} from "@/components/ui/MobileNav";
 
 type IconType = typeof Menu01Icon;
 
@@ -42,6 +48,9 @@ export function DashFrame({
   sidebarFooter,
   headerLeft,
   headerRight,
+  mobileTabs,
+  mobileMenu,
+  mobileMenuHeader,
   children,
 }: {
   /** Espace affiché sous le logo : Admin, Artiste ou Label. */
@@ -51,9 +60,16 @@ export function DashFrame({
   sidebarFooter?: React.ReactNode;
   headerLeft?: React.ReactNode;
   headerRight?: React.ReactNode;
+  /** Mobile : onglets du bas (sinon menu latéral classique, ex. admin). */
+  mobileTabs?: MobileNavItem[];
+  /** Mobile : autres pages, ouvertes depuis l'avatar de l'en-tête. */
+  mobileMenu?: MobileNavItem[];
+  mobileMenuHeader?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const tabbed = Boolean(mobileTabs?.length);
   const pathname = usePathname();
   const current = sections.flatMap((s) => s.items).find((i) => isNavActive(pathname, i));
 
@@ -141,24 +157,71 @@ export function DashFrame({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.06] px-4 sm:px-8">
-          <button
-            type="button"
-            className="flex size-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/[0.06] lg:hidden"
-            aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-            onClick={() => setOpen((v) => !v)}
-          >
-            <HugeiconsIcon icon={open ? Cancel01Icon : Menu01Icon} size={20} strokeWidth={1.5} />
-          </button>
-          {headerLeft ?? (
-            <p className="min-w-0 truncate text-[14px] text-white/45">{current?.label ?? space}</p>
+          {tabbed ? (
+            <Link href="/" aria-label="Accueil Gootunes" className="lg:hidden">
+              <Logo size="sm" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="flex size-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/[0.06] lg:hidden"
+              aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+              onClick={() => setOpen((v) => !v)}
+            >
+              <HugeiconsIcon icon={open ? Cancel01Icon : Menu01Icon} size={20} strokeWidth={1.5} />
+            </button>
           )}
-          <div className="ml-auto flex items-center gap-2">{headerRight}</div>
+          <div className={tabbed ? "hidden min-w-0 flex-1 lg:block" : "min-w-0 flex-1"}>
+            {headerLeft ?? (
+              <p className="min-w-0 truncate text-[14px] text-white/45">{current?.label ?? space}</p>
+            )}
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {headerRight}
+            {tabbed ? (
+              <MobileAvatarButton name={user.name} avatarUrl={user.avatarUrl} onClick={() => setSheetOpen(true)} />
+            ) : null}
+          </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-4 pb-16 pt-8 sm:px-8 lg:px-10">
+        <main
+          className={`min-h-0 flex-1 overflow-y-auto px-4 pt-6 sm:px-8 sm:pt-8 lg:px-10 lg:pb-16 ${
+            tabbed ? "pb-28" : "pb-16"
+          }`}
+        >
           <div className="mx-auto max-w-[1440px]">{children}</div>
         </main>
       </div>
+
+      {tabbed ? (
+        <>
+          <MobileTabBar items={mobileTabs!} />
+          <MobileSheet
+            open={sheetOpen}
+            onClose={() => setSheetOpen(false)}
+            items={mobileMenu ?? []}
+            header={
+              mobileMenuHeader ?? (
+                <>
+                  <p className="truncate text-[16px] font-semibold text-white">{user.name}</p>
+                  <p className="truncate text-[13px] text-white/45">{user.subtitle}</p>
+                </>
+              )
+            }
+            footer={
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="flex h-12 w-full items-center gap-3 rounded-xl px-3 text-[15px] font-medium text-white/75 transition-colors active:bg-white/[0.04]"
+                >
+                  <HugeiconsIcon icon={Logout01Icon} size={20} strokeWidth={1.5} className="text-white/60" />
+                  Se déconnecter
+                </button>
+              </form>
+            }
+          />
+        </>
+      ) : null}
     </div>
   );
 }

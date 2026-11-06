@@ -1,6 +1,6 @@
 import { Calendar03Icon, Money01Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatCount } from "@/lib/format";
 import { isCountryCode } from "@/lib/geo";
 import { CountryFlag } from "@/components/auth/CountryFlag";
 import {
@@ -149,7 +149,7 @@ export function AdminStatsView({ data }: { data: Analytics }) {
             <Pill>{data.totals.fans} fans</Pill>
             <Pill>{data.totals.artists} artistes</Pill>
             <Pill>{data.totals.labels} labels</Pill>
-            <Pill tone="violet">{data.totals.plays.toLocaleString("fr-FR")} écoutes</Pill>
+            <Pill tone="violet">{formatCount(data.totals.plays)} écoutes</Pill>
           </div>
         </Panel>
 

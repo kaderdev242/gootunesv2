@@ -55,7 +55,7 @@ export function CreatorRevenusView({
         description="Chaque vente, ce que tu as touché et d'où ça vient."
       />
 
-      <div className="grid gap-4 pt-2 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 pt-2 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Solde retirable"
           value={money(balanceFcfa)}

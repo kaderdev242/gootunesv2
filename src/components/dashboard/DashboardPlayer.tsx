@@ -46,7 +46,7 @@ export function DashboardPlayer({
   const muted = volume <= 0.001;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 sm:px-6">
+    <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 px-3 pb-3 sm:px-6 lg:bottom-0">
       <div className="relative mx-auto max-w-3xl overflow-hidden rounded-[28px] border border-white/12 bg-[#0c0c0c]/92 shadow-[0_-20px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
         <div className="violet-card absolute inset-0 opacity-40" />
 

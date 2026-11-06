@@ -13,7 +13,7 @@ import {
   DeleteReleaseButton,
   HideReleaseButton,
 } from "@/components/admin/AdminActionForms";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatCount } from "@/lib/format";
 import {
   ConsoleEmpty,
   ConsoleHeader,
@@ -78,7 +78,7 @@ export function AdminMorceauxView({ releases }: { releases: AdminReleaseRow[] })
       />
 
       <KpiGrid cols={4}>
-        <Kpi highlight label="Publications" value={releases.length.toLocaleString("fr-FR")} icon={Folder01Icon} />
+        <Kpi highlight label="Publications" value={formatCount(releases.length)} icon={Folder01Icon} />
         <Kpi label="Albums" value={albumCount} icon={Album02Icon} />
         <Kpi label="Singles" value={singleCount} icon={MusicNote01Icon} />
         <Kpi label="Masquées" value={hiddenCount} icon={ViewOffIcon} />

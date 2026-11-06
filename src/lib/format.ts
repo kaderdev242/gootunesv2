@@ -4,8 +4,39 @@ import {
   usesCdf,
 } from "@/lib/currency";
 
+/**
+ * Montant court à partir de 10 000 : « 12,5K », puis « 1,25M » dès le million.
+ * Sous 10 000, le montant exact reste affiché (« 1 500 »).
+ * Renvoie null quand le format exact s'applique.
+ */
+function compactAmount(value: number): string | null {
+  const abs = Math.abs(value);
+  if (abs < 10_000) return null;
+  const sign = value < 0 ? "-" : "";
+  const fmt = (n: number, digits: number) =>
+    new Intl.NumberFormat("fr-FR", { maximumFractionDigits: digits })
+      .format(n)
+      .replace(/\u202f/g, "\u00a0");
+  if (abs >= 1_000_000) {
+    // Pas d'arrondi vers le haut qui afficherait « 1000K » sous le million.
+    return `${sign}${fmt(Math.floor(abs / 10_000) / 100, 2)}M`;
+  }
+  const k = Math.floor(abs / 100) / 10;
+  return k >= 1000 ? `${sign}1M` : `${sign}${fmt(k, 1)}K`;
+}
+
+/** Nombre court pour les compteurs (écoutes, comptes) : « 12,8K », « 1,2M ». */
+export function formatCount(value: number) {
+  return (
+    compactAmount(value) ??
+    new Intl.NumberFormat("fr-FR").format(value).replace(/\u202f/g, "\u00a0")
+  );
+}
+
 /** Format FCFA (legacy / admin / emails plateforme). */
 export function formatFcfa(amount: number) {
+  const short = compactAmount(amount);
+  if (short) return `${short}\u00a0FCFA`;
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "XAF",
@@ -26,6 +57,8 @@ export function formatMoney(
 ) {
   if (usesCdf(country)) {
     const local = fcfaToLocal(amountFcfa, country);
+    const short = compactAmount(local);
+    if (short) return `${short}\u00a0FC`;
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "CDF",

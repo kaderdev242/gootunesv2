@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatCount } from "@/lib/format";
 import { useMemo, useState } from "react";
 import {
   CheckmarkBadge01Icon,
@@ -116,8 +117,8 @@ export function AdminArtistesView({
       />
 
       <KpiGrid cols={4}>
-        <Kpi label="Artistes" value={artistCount.toLocaleString("fr-FR")} icon={UserIcon} highlight />
-        <Kpi label="Labels" value={labelCount.toLocaleString("fr-FR")} icon={UserGroupIcon} />
+        <Kpi label="Artistes" value={formatCount(artistCount)} icon={UserIcon} highlight />
+        <Kpi label="Labels" value={formatCount(labelCount)} icon={UserGroupIcon} />
         <Kpi
           label="Profils certifiés"
           value={`${verifiedCount} / ${catalogArtists.length}`}

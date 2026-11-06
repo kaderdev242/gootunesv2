@@ -128,11 +128,11 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <div className={cx("rounded-2xl border border-white/[0.06] bg-[#0f0f10] px-5 py-4", className)}>
-      <p className="text-[13px] text-white/50">{label}</p>
+    <div className={cx("min-w-0 rounded-2xl border border-white/[0.06] bg-[#0f0f10] px-4 py-4 sm:px-5", className)}>
+      <p className="truncate text-[13px] text-white/50">{label}</p>
       <p
         className={cx(
-          "mt-2 truncate text-[26px] font-semibold leading-none tabular-nums",
+          "mt-2 truncate text-[20px] font-semibold leading-none tabular-nums sm:text-[26px]",
           tone === "accent" ? "text-violet-300" : "text-white",
         )}
       >

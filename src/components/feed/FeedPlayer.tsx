@@ -65,7 +65,7 @@ export function FeedPlayer() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 border-t border-white/[0.06] bg-black/95 backdrop-blur-xl lg:bottom-0 lg:pb-[env(safe-area-inset-bottom)]">
         {/* Mobile: couverture + infos | contrôles | fermer — Desktop: 3 colonnes */}
         <div className="mx-auto flex max-w-[1600px] items-center gap-2 px-2 py-2 sm:grid sm:h-[84px] sm:grid-cols-[minmax(0,1fr)_minmax(240px,420px)_minmax(0,1fr)] sm:gap-4 sm:px-5 sm:py-0">
           <button

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AnalyticsUpIcon, Money01Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
-import { formatFcfa } from "@/lib/format";
+import { formatFcfa, formatCount } from "@/lib/format";
 import { FALLBACK_COVER } from "@/lib/types/music";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 import {
@@ -121,7 +121,7 @@ export function AdminOverview({ data }: { data: Dashboard }) {
               >
                 Inscrits aujourd&apos;hui
                 <span className="font-mono text-[13px] text-white/40">
-                  +{data.usersToday} · {data.usersTotal.toLocaleString("fr-FR")} au total
+                  +{data.usersToday} · {formatCount(data.usersTotal)} au total
                 </span>
               </Link>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { formatCount } from "@/lib/format";
 import {
   Calendar03Icon,
   Globe02Icon,
@@ -67,8 +68,8 @@ export function AdminFansView({ fans }: { fans: AdminFanRow[] }) {
       />
 
       <KpiGrid cols={4}>
-        <Kpi highlight label="Comptes fans" value={fans.length.toLocaleString("fr-FR")} icon={UserIcon} />
-        <Kpi label="Nouveaux (30 j)" value={newCount.toLocaleString("fr-FR")} icon={Calendar03Icon} />
+        <Kpi highlight label="Comptes fans" value={formatCount(fans.length)} icon={UserIcon} />
+        <Kpi label="Nouveaux (30 j)" value={formatCount(newCount)} icon={Calendar03Icon} />
         <Kpi label="Pays principal" value={topCountry} icon={Globe02Icon} />
         <Kpi label="Suspendus" value={suspended} icon={UserBlock01Icon} />
       </KpiGrid>
