@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { PauseIcon, PlayIcon, ShuffleIcon } from "@hugeicons/core-free-icons";
 import { usePlayer } from "@/components/feed/PlayerProvider";
 import type { Track } from "@/lib/types/music";
+import { IconAction } from "./IconAction";
 
 function shuffledQueue(tracks: Track[]) {
   const next = [...tracks];
@@ -18,46 +19,45 @@ function shuffledQueue(tracks: Track[]) {
 
 export function CollectionPlayControls({
   tracks,
-  showShuffle = false,
 }: {
   tracks: Track[];
-  /** Uniquement albums (pas les singles / titres). */
+  /** Conservé pour compatibilité : l'aléatoire est désormais une action en icône. */
   showShuffle?: boolean;
 }) {
   const { current, isPlaying, playTrack, togglePlay } = usePlayer();
   const first = tracks[0];
   if (!first) return null;
 
-  const playingHere =
-    !!current && isPlaying && tracks.some((t) => t.id === current.id);
+  const playingHere = !!current && isPlaying && tracks.some((t) => t.id === current.id);
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        onClick={() => {
-          if (playingHere) togglePlay();
-          else void playTrack(first, tracks);
-        }}
-        className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-7 text-sm font-semibold text-black transition hover:bg-white/90"
-      >
-        <HugeiconsIcon icon={playingHere ? PauseIcon : PlayIcon} size={18} />
-        {playingHere ? "Pause" : "Lire"}
-      </button>
-      {showShuffle ? (
-        <button
-          type="button"
-          onClick={() => {
-            const queue = shuffledQueue(tracks);
-            const start = queue[0];
-            if (start) void playTrack(start, queue);
-          }}
-          className="inline-flex h-12 items-center gap-2 rounded-full bg-white/10 px-6 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15"
-        >
-          <HugeiconsIcon icon={ShuffleIcon} size={16} />
-          Aléatoire
-        </button>
-      ) : null}
-    </div>
+    <button
+      type="button"
+      onClick={() => {
+        if (playingHere) togglePlay();
+        else void playTrack(first, tracks);
+      }}
+      className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.97]"
+    >
+      <HugeiconsIcon icon={playingHere ? PauseIcon : PlayIcon} size={18} strokeWidth={2} />
+      {playingHere ? "Pause" : "Lire"}
+    </button>
+  );
+}
+
+/** Action « Aléatoire » : lance la collection dans un ordre mélangé. */
+export function ShuffleAction({ tracks }: { tracks: Track[] }) {
+  const { playTrack } = usePlayer();
+  if (!tracks.length) return null;
+  return (
+    <IconAction
+      icon={ShuffleIcon}
+      label="Aléatoire"
+      onClick={() => {
+        const queue = shuffledQueue(tracks);
+        const start = queue[0];
+        if (start) void playTrack(start, queue);
+      }}
+    />
   );
 }

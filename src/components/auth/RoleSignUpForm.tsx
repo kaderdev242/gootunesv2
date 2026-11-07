@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from "react";
 import Link from "next/link";
 import { Button, Input, Label } from "@heroui/react";
+import { authInputClass, authLabelClass, authSubmitClass } from "./styles";
 import { signUp, type AuthState } from "@/lib/actions/auth";
 import type { UserRole } from "@/lib/supabase/database.types";
 import { useDefaultCountry } from "@/hooks/useDefaultCountry";
@@ -36,8 +37,10 @@ export function RoleSignUpForm({
   role,
   onSuccessMessage,
   compact = false,
+  next = "",
 }: {
   role: UserRole;
+  next?: string;
   onSuccessMessage?: (msg: string) => void;
   compact?: boolean;
 }) {
@@ -56,11 +59,12 @@ export function RoleSignUpForm({
       className={`flex flex-col ${compact ? "gap-3" : "gap-3.5 sm:gap-4"}`}
     >
       <input type="hidden" name="role" value={role} />
+      <input type="hidden" name="next" value={next} />
 
       <div className="flex flex-col gap-1.5 sm:gap-2">
         <Label
           htmlFor={`display_name_${role}`}
-          className="text-sm text-white/70"
+          className={authLabelClass}
         >
           {labels.nameLabel}
         </Label>
@@ -71,12 +75,12 @@ export function RoleSignUpForm({
           autoComplete="nickname"
           enterKeyHint="next"
           placeholder={labels.namePlaceholder}
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
+          className={authInputClass}
         />
       </div>
 
       <div className="flex flex-col gap-1.5 sm:gap-2">
-        <Label htmlFor={`country_${role}`} className="text-sm text-white/70">
+        <Label htmlFor={`country_${role}`} className={authLabelClass}>
           Pays
         </Label>
         <CountrySelect
@@ -90,7 +94,7 @@ export function RoleSignUpForm({
       </div>
 
       <div className="flex flex-col gap-1.5 sm:gap-2">
-        <Label htmlFor={`email_${role}`} className="text-sm text-white/70">
+        <Label htmlFor={`email_${role}`} className={authLabelClass}>
           Email
         </Label>
         <Input
@@ -102,12 +106,12 @@ export function RoleSignUpForm({
           inputMode="email"
           enterKeyHint="next"
           placeholder="toi@email.com"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
+          className={authInputClass}
         />
       </div>
 
       <div className="flex flex-col gap-1.5 sm:gap-2">
-        <Label htmlFor={`password_${role}`} className="text-sm text-white/70">
+        <Label htmlFor={`password_${role}`} className={authLabelClass}>
           Mot de passe
         </Label>
         <Input
@@ -119,11 +123,11 @@ export function RoleSignUpForm({
           autoComplete="new-password"
           enterKeyHint="go"
           placeholder="Min. 6 caractères"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
+          className={authInputClass}
         />
       </div>
 
-      <p className="text-[11px] leading-relaxed text-white/40">
+      <p className="text-[12px] leading-relaxed text-white/40">
         En créant un compte, tu acceptes les{" "}
         <Link
           href="/termes"
@@ -146,7 +150,7 @@ export function RoleSignUpForm({
       <Button
         type="submit"
         isPending={pending}
-        className="mt-1 h-12 rounded-full bg-white text-base font-semibold text-black"
+        className={authSubmitClass}
       >
         {compact && role === "fan" ? "Créer mon compte" : labels.submit}
       </Button>

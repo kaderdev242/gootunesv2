@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -23,20 +24,15 @@ import {
   MobileSheet,
   type MobileNavItem,
 } from "@/components/ui/MobileNav";
-import { FanAuthModal } from "./FanAuthModal";
 
 export function DiscoverHeader({ profile }: { profile: Profile | null }) {
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const pathname = usePathname();
+  const nextQuery = pathname && pathname !== "/" ? `?next=${encodeURIComponent(pathname)}` : "";
+  const signInHref = `/connexion${nextQuery}`;
+  const signUpHref = `/inscription${nextQuery}`;
 
   const isCreator = profile?.role === "artist" || profile?.role === "label";
-
-  function openAuth(mode: "signup" | "signin") {
-    setSheetOpen(false);
-    setAuthMode(mode);
-    setAuthOpen(true);
-  }
 
   // Pages hors onglets, accessibles depuis l'avatar (mobile).
   const sheetItems: MobileNavItem[] = [
@@ -54,7 +50,7 @@ export function DiscoverHeader({ profile }: { profile: Profile | null }) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 bg-black/85 px-4 py-3 backdrop-blur-xl sm:px-8 lg:px-10">
+      <header className="sticky top-0 z-20 bg-black/85 px-4 pb-3 pt-[calc(12px+env(safe-area-inset-top))] backdrop-blur-xl sm:px-8 lg:px-10">
         {/* Mobile : logo et avatar */}
         <div className="flex h-10 items-center justify-between lg:hidden">
           <Link href="/" aria-label="Accueil Gootunes">
@@ -91,21 +87,18 @@ export function DiscoverHeader({ profile }: { profile: Profile | null }) {
               )
             ) : (
               <>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-9 rounded-full px-4 text-white/80 hover:bg-white/10 hover:text-white"
-                  onPress={() => openAuth("signin")}
+                <Link
+                  href={signInHref}
+                  className="flex h-9 items-center rounded-full px-4 text-[14px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   Se connecter
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-9 rounded-full bg-white px-4 font-semibold text-black"
-                  onPress={() => openAuth("signup")}
+                </Link>
+                <Link
+                  href={signUpHref}
+                  className="flex h-9 items-center rounded-full bg-white px-4 text-[14px] font-semibold text-black transition-colors hover:bg-white/90"
                 >
                   Créer un compte
-                </Button>
+                </Link>
               </>
             )}
           </div>
@@ -142,26 +135,25 @@ export function DiscoverHeader({ profile }: { profile: Profile | null }) {
             </form>
           ) : (
             <div className="grid grid-cols-2 gap-2 px-2 pb-1">
-              <button
-                type="button"
-                onClick={() => openAuth("signin")}
-                className="h-11 rounded-full bg-[#1a1a1a] text-[14px] font-medium text-white"
+              <Link
+                href={signInHref}
+                onClick={() => setSheetOpen(false)}
+                className="flex h-11 items-center justify-center rounded-full bg-[#1a1a1a] text-[14px] font-medium text-white"
               >
                 Se connecter
-              </button>
-              <button
-                type="button"
-                onClick={() => openAuth("signup")}
-                className="h-11 rounded-full bg-white text-[14px] font-semibold text-black"
+              </Link>
+              <Link
+                href={signUpHref}
+                onClick={() => setSheetOpen(false)}
+                className="flex h-11 items-center justify-center rounded-full bg-white text-[14px] font-semibold text-black"
               >
                 Créer un compte
-              </button>
+              </Link>
             </div>
           )
         }
       />
 
-      <FanAuthModal isOpen={authOpen} onOpenChange={setAuthOpen} initialMode={authMode} />
     </>
   );
 }

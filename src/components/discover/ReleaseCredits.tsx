@@ -34,7 +34,7 @@ export function ReleaseCredits({
   if (!rows.length) return null;
 
   return (
-    <section className="mt-8">
+    <section id="credits" className="mt-8 scroll-mt-24">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

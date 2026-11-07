@@ -15,6 +15,13 @@ export type AuthState = {
   success?: string;
 };
 
+/** Garde seulement un chemin interne (« /… »), jamais une autre origine. */
+function safeNext(value: unknown): string {
+  const v = typeof value === "string" ? value.trim() : "";
+  if (!v.startsWith("/") || v.startsWith("//") || v.startsWith("/\\")) return "";
+  return v;
+}
+
 async function authClientIp() {
   const h = await headers();
   return clientIpFromHeaders(h);
@@ -61,7 +68,8 @@ export async function signIn(
     .eq("id", user.id)
     .maybeSingle();
 
-  if (next) redirect(next);
+  const target = safeNext(next);
+  if (target) redirect(target);
 
   if (
     (profile?.role === "artist" || profile?.role === "label") &&
@@ -146,7 +154,7 @@ export async function signUp(
 
   async function go(userId?: string | null) {
     if (userId) await syncProfile(userId);
-    if (role === "fan") redirect("/discover");
+    if (role === "fan") redirect(safeNext(formData.get("next")) || "/discover");
     redirect("/onboarding");
   }
 

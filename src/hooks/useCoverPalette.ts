@@ -18,7 +18,7 @@ function rgb(r: number, g: number, b: number) {
 
 function proxyImageUrl(src: string) {
   if (src.startsWith("/") && !src.startsWith("//")) return src;
-  return `/_next/image?url=${encodeURIComponent(src)}&w=64&q=60`;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=64&q=75`;
 }
 
 function extractPalette(img: HTMLImageElement): CoverPalette {

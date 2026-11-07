@@ -16,6 +16,9 @@ import { FALLBACK_COVER, trackStreamUrl, type Track } from "@/lib/types/music";
 import { toastInfo } from "@/lib/toast";
 
 export type AccessMode = "preview" | "full";
+export type RepeatMode = "off" | "all" | "one";
+/** Onglet du grand player : pochette seule, file d'attente ou crédits. */
+export type FullscreenTab = "cover" | "queue" | "credits";
 
 type AccessInfo = {
   access: AccessMode;
@@ -51,12 +54,18 @@ type PlayerContextValue = {
   toggleMute: () => void;
   next: () => void;
   previous: () => void;
-  openFullscreen: () => void;
+  openFullscreen: (tab?: FullscreenTab) => void;
+  fullscreenTab: FullscreenTab;
+  setFullscreenTab: (tab: FullscreenTab) => void;
   closeFullscreen: () => void;
   closePlayer: () => void;
   refreshAccess: () => Promise<void>;
   toggleLike: (trackId: string) => void;
   isLiked: (trackId: string) => boolean;
+  shuffle: boolean;
+  repeat: RepeatMode;
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -180,6 +189,8 @@ function waitForEvent(
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Fin d'un titre complet : répétition ou titre suivant (mis à jour plus bas). */
+  const onTrackEndRef = useRef<(() => void) | null>(null);
   const playGenRef = useRef(0);
   const currentRef = useRef<Track | null>(null);
   const accessModeRef = useRef<AccessMode>("preview");
@@ -290,7 +301,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (fallbackToProxy()) return;
       }
       setIsPlaying(false);
-      if (mode === "preview") setPreviewEnded(true);
+      if (mode === "preview") {
+        setPreviewEnded(true);
+        return;
+      }
+      // Titre complet terminé : répétition ou titre suivant.
+      onTrackEndRef.current?.();
     };
     const onError = () => {
       fallbackToProxy();
@@ -616,13 +632,49 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const toggleMute = useCallback(() => setMuted((m) => !m), []);
 
-  const next = useCallback(() => {
-    const cur = currentRef.current;
-    if (!cur || !queue.length) return;
-    const index = queue.findIndex((t) => t.id === cur.id);
-    const item = queue[(index + 1) % queue.length];
-    if (item) void playTrack(item, queue);
-  }, [playTrack, queue]);
+  const [fullscreenTab, setFullscreenTab] = useState<FullscreenTab>("cover");
+  const [shuffle, setShuffle] = useState(false);
+  const [repeat, setRepeat] = useState<RepeatMode>("off");
+
+  /** Titre suivant ; `auto` = fin de lecture (respecte « répéter : non »). */
+  const advance = useCallback(
+    (auto: boolean) => {
+      const cur = currentRef.current;
+      if (!cur || !queue.length) return;
+      const index = queue.findIndex((t) => t.id === cur.id);
+      let item: Track | undefined;
+      if (shuffle && queue.length > 1) {
+        const others = queue.filter((t) => t.id !== cur.id);
+        item = others[Math.floor(Math.random() * others.length)];
+      } else {
+        const atEnd = index === queue.length - 1;
+        if (auto && atEnd && repeat === "off") return;
+        item = queue[(index + 1) % queue.length];
+      }
+      if (item) void playTrack(item, queue);
+    },
+    [playTrack, queue, repeat, shuffle],
+  );
+
+  const next = useCallback(() => advance(false), [advance]);
+
+  useEffect(() => {
+    onTrackEndRef.current = () => {
+      const audio = audioRef.current;
+      if (repeat === "one" && audio) {
+        audio.currentTime = 0;
+        void audio.play().catch(() => undefined);
+        return;
+      }
+      advance(true);
+    };
+  }, [advance, repeat]);
+
+  const toggleShuffle = useCallback(() => setShuffle((v) => !v), []);
+  const cycleRepeat = useCallback(
+    () => setRepeat((r) => (r === "off" ? "all" : r === "all" ? "one" : "off")),
+    [],
+  );
 
   const previous = useCallback(() => {
     const cur = currentRef.current;
@@ -669,14 +721,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleMute,
       next,
       previous,
-      openFullscreen: () => setIsFullscreen(true),
+      openFullscreen: (tab?: FullscreenTab) => {
+        setFullscreenTab(tab ?? "cover");
+        setIsFullscreen(true);
+      },
+      fullscreenTab,
+      setFullscreenTab,
       closeFullscreen: () => setIsFullscreen(false),
       closePlayer,
       refreshAccess,
       toggleLike,
       isLiked,
+      shuffle,
+      repeat,
+      toggleShuffle,
+      cycleRepeat,
     }),
     [
+      fullscreenTab,
+      shuffle,
+      repeat,
+      toggleShuffle,
+      cycleRepeat,
       accessMode,
       closePlayer,
       current,

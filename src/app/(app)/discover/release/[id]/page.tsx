@@ -11,7 +11,7 @@ import {
 } from "@/lib/discover/queries";
 import { DetailHero } from "@/components/discover/DetailHero";
 import { ReleaseTrackTable } from "@/components/discover/ReleaseTrackTable";
-import { ReleaseDetailActions } from "@/components/discover/ReleaseDetailActions";
+import { ReleaseBuyButton, ReleaseDetailActions } from "@/components/discover/ReleaseDetailActions";
 import { PurchaseUnlock } from "@/components/discover/PurchaseUnlock";
 import { ReleaseCredits } from "@/components/discover/ReleaseCredits";
 import { ExplicitBadge } from "@/components/discover/ExplicitBadge";
@@ -215,12 +215,18 @@ export default async function ReleaseDetailPage({ params }: Props) {
             </Link>
           ) : null
         }
-        trailing={
+        primary={
+          <ReleaseBuyButton releaseId={release.public_id} priceLabel={priceLabel} owned={owned} />
+        }
+        actions={
           <ReleaseDetailActions
             releaseId={release.public_id}
             title={release.title}
-            priceLabel={priceLabel}
-            owned={owned}
+            cover={cover}
+            hasCredits={Boolean(
+              release.featuring?.trim() ||
+                Object.values((release.credits ?? {}) as Record<string, string | null>).some((v) => v?.trim()),
+            )}
           />
         }
       />

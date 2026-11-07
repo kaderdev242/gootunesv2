@@ -1,40 +1,168 @@
 "use client";
 
-import { AppImage } from "@/components/media/AppImage";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  Album02Icon,
   ArrowExpand01Icon,
   Cancel01Icon,
+  FavouriteIcon,
+  LeftToRightListBulletIcon,
+  MoreHorizontalIcon,
+  MusicNote01Icon,
   NextIcon,
   PauseIcon,
   PlayIcon,
   PreviousIcon,
+  RepeatIcon,
+  RepeatOne01Icon,
+  Share08Icon,
+  ShoppingBag01Icon,
+  ShuffleIcon,
+  UserIcon,
   VolumeHighIcon,
+  VolumeLowIcon,
   VolumeMute01Icon,
 } from "@hugeicons/core-free-icons";
+import { AppImage } from "@/components/media/AppImage";
 import { FALLBACK_COVER } from "@/lib/types/music";
-import { IconButton } from "@/components/ui/IconButton";
-import {
-  TrackArtistLine,
-  TrackTitleLine,
-} from "@/components/discover/ExplicitBadge";
-import dynamic from "next/dynamic";
-import { usePlayer } from "./PlayerProvider";
+import { formatFcfa } from "@/lib/format";
+import { PREVIEW_SECONDS } from "@/lib/audio/constants";
+import { TrackTitleLine } from "@/components/discover/ExplicitBadge";
 import { NowPlayingBars } from "@/components/discover/NowPlayingBars";
+import { usePlayer } from "./PlayerProvider";
 
 const FullscreenPlayer = dynamic(
-  () =>
-    import("./FullscreenPlayer").then((m) => ({
-      default: m.FullscreenPlayer,
-    })),
+  () => import("./FullscreenPlayer").then((m) => ({ default: m.FullscreenPlayer })),
   { ssr: false },
 );
 
 function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** Bouton icône du player : 36 px, couleur au survol, état actif en violet. */
+function Ctl({
+  label,
+  onClick,
+  active = false,
+  children,
+  className = "",
+}: {
+  label: string;
+  onClick?: () => void;
+  active?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      aria-pressed={active || undefined}
+      className={`relative inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-[color,background-color,transform] duration-150 active:scale-[0.94] ${
+        active ? "text-violet-300" : "text-white/70 hover:text-white"
+      } ${className}`}
+    >
+      {children}
+      {active ? <span className="absolute bottom-0.5 size-1 rounded-full bg-violet-300" /> : null}
+    </button>
+  );
+}
+
+function ProgressBar({
+  value,
+  max,
+  onSeek,
+  className = "",
+}: {
+  value: number;
+  max: number;
+  onSeek: (v: number) => void;
+  className?: string;
+}) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <input
+      type="range"
+      min={0}
+      max={max || 1}
+      step={0.1}
+      value={Math.min(value, max || 0)}
+      onChange={(e) => onSeek(Number(e.target.value))}
+      className={`player-range h-1 cursor-pointer appearance-none rounded-full ${className}`}
+      style={{ background: `linear-gradient(to right, rgb(255 255 255 / 90%) ${pct}%, rgb(255 255 255 / 15%) ${pct}%)` }}
+      aria-label="Progression"
+    />
+  );
+}
+
+/** Menu « … » : aller à la sortie, à l'artiste, partager. */
+function MoreMenu() {
+  const { current } = usePlayer();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  if (!current) return null;
+  const releaseHref = current.releasePublicId || current.releaseId ? `/discover/release/${current.releasePublicId || current.releaseId}` : null;
+  const artistHref = current.artistPublicId || current.artistId ? `/discover/artiste/${current.artistPublicId || current.artistId}` : null;
+
+  const share = async () => {
+    setOpen(false);
+    const url = releaseHref ? `${window.location.origin}${releaseHref}` : window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: current.title, url });
+      else await navigator.clipboard.writeText(url);
+    } catch {
+      /* partage annulé */
+    }
+  };
+
+  const item = "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[14px] text-white/80 transition-colors hover:bg-white/[0.06] hover:text-white";
+
+  return (
+    <div ref={ref} className="relative">
+      <Ctl label="Plus d'options" onClick={() => setOpen((v) => !v)}>
+        <HugeiconsIcon icon={MoreHorizontalIcon} size={18} strokeWidth={1.75} />
+      </Ctl>
+      {open ? (
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 rounded-xl border border-white/[0.08] bg-[#1a1a1a]/95 p-1 shadow-[0_16px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+          {releaseHref ? (
+            <Link href={releaseHref} onClick={() => setOpen(false)} className={item}>
+              <HugeiconsIcon icon={Album02Icon} size={18} strokeWidth={1.5} className="text-white/50" />
+              Voir la sortie
+            </Link>
+          ) : null}
+          {artistHref ? (
+            <Link href={artistHref} onClick={() => setOpen(false)} className={item}>
+              <HugeiconsIcon icon={UserIcon} size={18} strokeWidth={1.5} className="text-white/50" />
+              Voir l&apos;artiste
+            </Link>
+          ) : null}
+          <button type="button" onClick={share} className={item}>
+            <HugeiconsIcon icon={Share08Icon} size={18} strokeWidth={1.5} className="text-white/50" />
+            Partager
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function FeedPlayer() {
@@ -44,164 +172,167 @@ export function FeedPlayer() {
     isPlaying,
     currentTime,
     effectiveDuration,
+    accessMode,
+    owned,
     volume,
     muted,
+    shuffle,
+    repeat,
     togglePlay,
     seek,
     setVolume,
     toggleMute,
     next,
     previous,
+    toggleShuffle,
+    cycleRepeat,
+    toggleLike,
+    isLiked,
     openFullscreen,
     closePlayer,
   } = usePlayer();
 
   if (!hasTrack || !current) return <FullscreenPlayer />;
 
-  const pct =
-    effectiveDuration > 0
-      ? Math.min(100, (currentTime / effectiveDuration) * 100)
-      : 0;
+  const liked = isLiked(current.id);
+  const preview = accessMode === "preview" && !owned;
+  const releaseId = current.releasePublicId || current.releaseId;
+  const buyHref = releaseId ? `/discover/release/${releaseId}/acheter` : null;
+  const artistHref = current.artistPublicId || current.artistId ? `/discover/artiste/${current.artistPublicId || current.artistId}` : null;
+  const volumeIcon = muted || volume === 0 ? VolumeMute01Icon : volume < 0.5 ? VolumeLowIcon : VolumeHighIcon;
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 border-t border-white/[0.06] bg-black/95 backdrop-blur-xl lg:bottom-0 lg:pb-[env(safe-area-inset-bottom)]">
-        {/* Mobile: couverture + infos | contrôles | fermer — Desktop: 3 colonnes */}
-        <div className="mx-auto flex max-w-[1600px] items-center gap-2 px-2 py-2 sm:grid sm:h-[84px] sm:grid-cols-[minmax(0,1fr)_minmax(240px,420px)_minmax(0,1fr)] sm:gap-4 sm:px-5 sm:py-0">
-          <button
-            type="button"
-            onClick={openFullscreen}
-            className="flex min-w-0 flex-1 items-center gap-2.5 text-left sm:flex-none"
-          >
-            <div className="relative size-11 shrink-0 overflow-hidden rounded-xl sm:size-12">
-              <AppImage
-                src={current.cover || FALLBACK_COVER}
-                alt={current.title}
-                fill
-                className="object-cover"
-                sizes="48px"
-              />
-            </div>
-            <div className="min-w-0">
-              <span className="flex min-w-0 items-center gap-2">
-                <NowPlayingBars paused={!isPlaying} className="shrink-0" />
-                <TrackTitleLine
-                  title={current.title}
-                  explicit={current.explicit}
-                  className="truncate text-sm font-semibold text-white"
-                />
-              </span>
-              <TrackArtistLine
-                artist={current.artist}
-                className="text-xs text-white/45"
-              />
-            </div>
-          </button>
+      <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 border-t border-white/[0.08] bg-[#141414]/70 shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-2xl backdrop-saturate-150 lg:bottom-0 lg:pb-[env(safe-area-inset-bottom)]">
+        {/* Progression fine en haut (mobile) */}
+        <ProgressBar value={currentTime} max={effectiveDuration} onSeek={seek} className="absolute inset-x-0 top-0 block w-full rounded-none sm:hidden" />
 
-          <div className="flex shrink-0 flex-col items-center gap-1.5 sm:w-full sm:gap-2">
-            <div className="flex items-center gap-0.5 sm:gap-3">
-              <IconButton
-                className="hidden size-9 sm:inline-flex"
-                onClick={previous}
-                aria-label="Précédent"
-              >
-                <HugeiconsIcon icon={PreviousIcon} size={18} />
-              </IconButton>
+        <div className="mx-auto grid max-w-[1800px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 sm:h-[88px] sm:grid-cols-[minmax(0,1fr)_minmax(320px,560px)_minmax(0,1fr)] sm:gap-6 sm:px-5 sm:py-0">
+          {/* ── Titre en cours ── */}
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => openFullscreen()}
+              aria-label="Ouvrir le lecteur"
+              className="group relative size-12 shrink-0 overflow-hidden rounded-md shadow-[0_4px_16px_rgba(0,0,0,0.4)] sm:size-14"
+            >
+              <AppImage src={current.cover || FALLBACK_COVER} alt={current.title} fill className="object-cover" sizes="56px" />
+              <span className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+                <HugeiconsIcon icon={ArrowExpand01Icon} size={18} strokeWidth={1.75} />
+              </span>
+            </button>
+            <div className="min-w-0">
+              <button type="button" onClick={() => openFullscreen()} className="flex min-w-0 max-w-full items-center gap-2 text-left">
+                <NowPlayingBars paused={!isPlaying} className="shrink-0" />
+                <TrackTitleLine title={current.title} explicit={current.explicit} className="truncate text-[14px] font-semibold text-white" />
+              </button>
+              {artistHref ? (
+                <Link href={artistHref} className="block truncate text-[13px] text-white/55 transition-colors hover:text-white hover:underline">
+                  {current.artist}
+                </Link>
+              ) : (
+                <p className="truncate text-[13px] text-white/55">{current.artist}</p>
+              )}
+              {current.album ? (
+                <p className="hidden items-center gap-1 truncate text-[12px] text-white/40 sm:flex">
+                  <HugeiconsIcon icon={MusicNote01Icon} size={12} strokeWidth={1.5} />
+                  <span className="truncate">{current.album}</span>
+                </p>
+              ) : null}
+            </div>
+            <div className="hidden shrink-0 items-center sm:flex">
+              <Ctl label={liked ? "Retirer des favoris" : "Ajouter aux favoris"} onClick={() => toggleLike(current.id)}>
+                <HugeiconsIcon
+                  icon={FavouriteIcon}
+                  size={18}
+                  strokeWidth={1.75}
+                  className={liked ? "fill-violet-300 text-violet-300" : ""}
+                />
+              </Ctl>
+              <MoreMenu />
+            </div>
+          </div>
+
+          {/* ── Commandes ── */}
+          <div className="flex items-center gap-1 sm:flex-col sm:gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-3">
+              <Ctl label={shuffle ? "Lecture aléatoire activée" : "Lecture aléatoire"} onClick={toggleShuffle} active={shuffle} className="hidden sm:inline-flex">
+                <HugeiconsIcon icon={ShuffleIcon} size={18} strokeWidth={1.75} />
+              </Ctl>
+              <Ctl label="Précédent" onClick={previous} className="hidden sm:inline-flex">
+                <HugeiconsIcon icon={PreviousIcon} size={20} strokeWidth={2} />
+              </Ctl>
               <button
                 type="button"
                 onClick={togglePlay}
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-black sm:size-11"
                 aria-label={isPlaying ? "Pause" : "Lecture"}
+                className="inline-flex size-10 items-center justify-center rounded-full bg-white text-black transition-transform duration-150 active:scale-[0.94]"
               >
-                <HugeiconsIcon
-                  icon={isPlaying ? PauseIcon : PlayIcon}
-                  size={18}
-                />
+                <HugeiconsIcon icon={isPlaying ? PauseIcon : PlayIcon} size={20} strokeWidth={2} />
               </button>
-              <IconButton
-                className="hidden size-9 sm:inline-flex"
-                onClick={next}
-                aria-label="Suivant"
+              <Ctl label="Suivant" onClick={next} className="hidden sm:inline-flex">
+                <HugeiconsIcon icon={NextIcon} size={20} strokeWidth={2} />
+              </Ctl>
+              <Ctl
+                label={repeat === "one" ? "Répéter le titre" : repeat === "all" ? "Répéter la liste" : "Répéter"}
+                onClick={cycleRepeat}
+                active={repeat !== "off"}
+                className="hidden sm:inline-flex"
               >
-                <HugeiconsIcon icon={NextIcon} size={18} />
-              </IconButton>
+                <HugeiconsIcon icon={repeat === "one" ? RepeatOne01Icon : RepeatIcon} size={18} strokeWidth={1.75} />
+              </Ctl>
+              <Ctl label="Fermer le lecteur" onClick={closePlayer} className="sm:hidden">
+                <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={1.75} />
+              </Ctl>
             </div>
-            <div className="hidden w-full items-center gap-3 text-[11px] text-white/40 sm:flex">
-              <span className="w-10 tabular-nums">
-                {formatTime(currentTime)}
-              </span>
+            <div className="hidden w-full items-center gap-3 sm:flex">
+              <span className="w-10 text-right font-mono text-[11px] text-white/45">{formatTime(currentTime)}</span>
+              <ProgressBar value={currentTime} max={effectiveDuration} onSeek={seek} className="min-w-0 flex-1" />
+              <span className="w-10 font-mono text-[11px] text-white/45">{formatTime(effectiveDuration)}</span>
+            </div>
+          </div>
+
+          {/* ── Outils ── */}
+          <div className="hidden items-center justify-end gap-2 sm:flex">
+            <Ctl label="File d'attente" onClick={() => openFullscreen("queue")}>
+              <HugeiconsIcon icon={LeftToRightListBulletIcon} size={18} strokeWidth={1.75} />
+            </Ctl>
+            <div className="group hidden items-center lg:flex">
+              <Ctl label={muted ? "Activer le son" : "Couper le son"} onClick={toggleMute}>
+                <HugeiconsIcon icon={volumeIcon} size={18} strokeWidth={1.75} />
+              </Ctl>
               <input
                 type="range"
                 min={0}
-                max={effectiveDuration || 1}
-                step={0.1}
-                value={Math.min(currentTime, effectiveDuration || 0)}
-                onChange={(e) => seek(Number(e.target.value))}
-                className="player-range h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/10"
+                max={1}
+                step={0.01}
+                value={muted ? 0 : volume}
+                onChange={(e) => setVolume(Number(e.target.value))}
+                className="player-range h-1 w-20 cursor-pointer appearance-none rounded-full"
                 style={{
-                  background: `linear-gradient(to right, white ${pct}%, rgb(255 255 255 / 10%) ${pct}%)`,
+                  background: `linear-gradient(to right, rgb(255 255 255 / 90%) ${(muted ? 0 : volume) * 100}%, rgb(255 255 255 / 15%) ${(muted ? 0 : volume) * 100}%)`,
                 }}
-                aria-label="Progression"
+                aria-label="Volume"
               />
-              <span className="w-10 text-right tabular-nums">
-                {formatTime(effectiveDuration)}
-              </span>
             </div>
+            {preview && buyHref ? (
+              <Link
+                href={buyHref}
+                title={`Extrait de ${PREVIEW_SECONDS} s · achète pour écouter en entier`}
+                className="ml-2 inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/[0.1] bg-white/[0.08] px-4 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.14]"
+              >
+                <HugeiconsIcon icon={ShoppingBag01Icon} size={16} strokeWidth={1.75} />
+                Acheter{current.price ? ` · ${formatFcfa(current.price)}` : ""}
+              </Link>
+            ) : (
+              <Ctl label="Agrandir le lecteur" onClick={() => openFullscreen()}>
+                <HugeiconsIcon icon={ArrowExpand01Icon} size={18} strokeWidth={1.75} />
+              </Ctl>
+            )}
+            <Ctl label="Fermer le lecteur" onClick={closePlayer}>
+              <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={1.75} />
+            </Ctl>
           </div>
-
-          <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-2">
-            <IconButton
-              className="hidden size-9 lg:inline-flex"
-              onClick={toggleMute}
-              aria-label={muted ? "Activer le son" : "Couper le son"}
-            >
-              <HugeiconsIcon
-                icon={muted || volume === 0 ? VolumeMute01Icon : VolumeHighIcon}
-                size={18}
-              />
-            </IconButton>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={muted ? 0 : volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              className="player-range hidden h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/10 lg:block xl:w-20"
-              aria-label="Volume"
-            />
-            <IconButton
-              className="hidden size-9 sm:inline-flex"
-              onClick={openFullscreen}
-              aria-label="Plein écran"
-            >
-              <HugeiconsIcon icon={ArrowExpand01Icon} size={18} />
-            </IconButton>
-            <IconButton
-              className="size-9"
-              onClick={closePlayer}
-              aria-label="Fermer le lecteur"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} size={18} />
-            </IconButton>
-          </div>
-        </div>
-
-        {/* Barre de progression mobile */}
-        <div className="px-3 pb-2 sm:hidden">
-          <input
-            type="range"
-            min={0}
-            max={effectiveDuration || 1}
-            step={0.1}
-            value={Math.min(currentTime, effectiveDuration || 0)}
-            onChange={(e) => seek(Number(e.target.value))}
-            className="player-range h-1 w-full cursor-pointer appearance-none rounded-full bg-white/10"
-            style={{
-              background: `linear-gradient(to right, white ${pct}%, rgb(255 255 255 / 10%) ${pct}%)`,
-            }}
-            aria-label="Progression"
-          />
         </div>
       </div>
 

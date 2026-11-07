@@ -1,31 +1,41 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { AuthShell } from "@/components/auth/AuthShell";
-import { SignUpForm } from "@/components/auth/SignUpForm";
-import type { UserRole } from "@/lib/supabase/database.types";
+import { AuthFooterLink, AuthShell } from "@/components/auth/AuthShell";
+import { RoleSignUpForm } from "@/components/auth/RoleSignUpForm";
 import { NOINDEX } from "@/lib/seo";
+import { images } from "@/lib/images";
 
-export const metadata: Metadata = NOINDEX;
+export const metadata: Metadata = { ...NOINDEX, title: "Créer un compte" };
 
 export default async function InscriptionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string }>;
+  searchParams: Promise<{ role?: string; next?: string }>;
 }) {
   const params = await searchParams;
-  const role = (params.role as UserRole) || "artist";
 
-  if (role === "fan") {
-    redirect("/discover");
+  // Anciens liens « ?role=artist|label » : page créateur.
+  if (params.role === "artist" || params.role === "label") {
+    redirect(`/inscription/createur?role=${params.role}`);
   }
+
+  const next = params.next || "";
+  const signinHref = next ? `/connexion?next=${encodeURIComponent(next)}` : "/connexion";
 
   return (
     <AuthShell
-      eyebrow="Créateur"
-      title="Vendre sur Gootunes"
-      subtitle="Artiste ou label — crée ton compte et publie ton catalogue."
+      title="Créer un compte"
+      subtitle="Achète la musique de tes artistes et garde-la dans ta bibliothèque"
+      image={images.crowdWarm}
+      caption="Chaque achat va directement à l'artiste"
+      footer={
+        <div className="flex flex-col gap-3">
+          <AuthFooterLink href={signinHref} question="Déjà un compte ?" label="Se connecter" />
+          <AuthFooterLink href="/inscription/createur" question="Artiste ou label ?" label="Ouvrir un espace créateur" />
+        </div>
+      }
     >
-      <SignUpForm defaultRole={role === "label" ? "label" : "artist"} />
+      <RoleSignUpForm role="fan" compact next={next} />
     </AuthShell>
   );
 }

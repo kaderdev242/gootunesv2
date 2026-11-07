@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { CreatorSignUpForm } from "@/components/auth/CreatorSignUpForm";
 import type { UserRole } from "@/lib/supabase/database.types";
@@ -10,8 +9,8 @@ const creatorRoles: {
   label: string;
   hint: string;
 }[] = [
-  { id: "artist", label: "Artiste", hint: "Indépendant" },
-  { id: "label", label: "Label", hint: "Catalogue" },
+  { id: "artist", label: "Artiste", hint: "Je publie ma musique" },
+  { id: "label", label: "Label", hint: "Je gère des artistes" },
 ];
 
 export function SignUpForm({
@@ -31,38 +30,20 @@ export function SignUpForm({
             key={r.id}
             type="button"
             onClick={() => setRole(r.id)}
-            className={`rounded-2xl border px-3 py-3.5 text-center transition ${
+            aria-pressed={role === r.id}
+            className={`rounded-xl border px-4 py-3 text-left transition-colors ${
               role === r.id
-                ? "border-white/30 bg-white/15 text-white"
-                : "border-white/10 bg-white/[0.03] text-white/55 hover:bg-white/10"
+                ? "border-white/40 bg-white/[0.08] text-white"
+                : "border-white/[0.08] bg-[#161616] text-white/55 hover:text-white"
             }`}
           >
-            <span className="block text-sm font-semibold">{r.label}</span>
-            <span className="mt-0.5 block text-[11px] opacity-70">{r.hint}</span>
+            <span className="block text-[15px] font-medium">{r.label}</span>
+            <span className="mt-0.5 block text-[13px] text-white/45">{r.hint}</span>
           </button>
         ))}
       </div>
 
       <CreatorSignUpForm role={role} />
-
-      <p className="text-center text-sm text-white/45">
-        Tu es fan ?{" "}
-        <Link
-          href="/"
-          className="text-white underline-offset-2 hover:underline"
-        >
-          Inscris-toi depuis Discover
-        </Link>
-      </p>
-      <p className="text-center text-sm text-white/45">
-        Déjà inscrit ?{" "}
-        <Link
-          href="/connexion"
-          className="text-white underline-offset-2 hover:underline"
-        >
-          Se connecter
-        </Link>
-      </p>
     </div>
   );
 }

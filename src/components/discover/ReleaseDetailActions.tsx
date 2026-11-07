@@ -1,36 +1,62 @@
+"use client";
+
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ShoppingBag01Icon } from "@hugeicons/core-free-icons";
+import { InformationCircleIcon, ShoppingBag01Icon } from "@hugeicons/core-free-icons";
 import { ShareButton } from "./ShareButton";
+import { IconAction } from "./IconAction";
 
-export function ReleaseDetailActions({
+/** Bouton d'achat, à côté de « Lire ». */
+export function ReleaseBuyButton({
   releaseId,
-  title,
   priceLabel,
   owned,
 }: {
   releaseId: string;
-  title: string;
   priceLabel: string;
   owned: boolean;
 }) {
+  if (owned) return null;
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      {!owned ? (
-        <Link
-          href={`/discover/release/${releaseId}/acheter`}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white/10 px-5 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15"
-        >
-          <HugeiconsIcon icon={ShoppingBag01Icon} size={16} />
-          Acheter · {priceLabel}
-        </Link>
-      ) : null}
+    <Link
+      href={`/discover/release/${releaseId}/acheter`}
+      className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white/[0.1] px-6 text-[15px] font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-white/[0.16] active:scale-[0.97]"
+    >
+      <HugeiconsIcon icon={ShoppingBag01Icon} size={18} strokeWidth={1.75} />
+      {priceLabel}
+    </Link>
+  );
+}
 
-      <ShareButton
-        compact
-        title={title}
-        path={`/discover/release/${releaseId}`}
-      />
-    </div>
+/** Actions en icônes de la page sortie : crédits et partage. */
+export function ReleaseDetailActions({
+  releaseId,
+  title,
+  cover,
+  hasCredits = false,
+}: {
+  releaseId: string;
+  title: string;
+  cover?: string | null;
+  hasCredits?: boolean;
+  /** Conservés pour compatibilité. */
+  priceLabel?: string;
+  owned?: boolean;
+}) {
+  return (
+    <>
+      {hasCredits ? (
+        <IconAction
+          icon={InformationCircleIcon}
+          label="Crédits"
+          onClick={() => {
+            const el = document.getElementById("credits");
+            el?.scrollIntoView({ behavior: "smooth", block: "start" });
+            el?.querySelector("button")?.click();
+          }}
+        />
+      ) : null}
+      <ShareButton title={title} path={`/discover/release/${releaseId}`} cover={cover} />
+    </>
   );
 }

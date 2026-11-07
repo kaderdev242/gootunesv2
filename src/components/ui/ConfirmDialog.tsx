@@ -1,7 +1,11 @@
 "use client";
 
-import { AlertDialog, Button } from "@heroui/react";
+import { MediaModal } from "@/components/ui/MediaModal";
 
+/**
+ * Confirmation d'une action irréversible, au style des fenêtres Gootunes :
+ * bouton principal blanc, annulation en lien dessous.
+ */
 export function ConfirmDialog({
   isOpen,
   onOpenChange,
@@ -11,7 +15,7 @@ export function ConfirmDialog({
   cancelLabel = "Annuler",
   isPending = false,
   onConfirm,
-  theme = "dark",
+  cover,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,76 +25,32 @@ export function ConfirmDialog({
   cancelLabel?: string;
   isPending?: boolean;
   onConfirm: () => void;
+  cover?: string | null;
+  /** Conservé pour compatibilité : toujours sombre. */
   theme?: "dark" | "light";
 }) {
-  const light = theme === "light";
+  const close = () => {
+    if (!isPending) onOpenChange(false);
+  };
 
   return (
-    <AlertDialog>
-      <AlertDialog.Backdrop
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        variant="blur"
-        className={light ? "bg-black/40" : "bg-black/70"}
+    <MediaModal open={isOpen} onClose={close} cover={cover} title={title} description={description} labelledBy="confirm-dialog-title">
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={isPending}
+        className="mx-auto flex h-12 w-full max-w-xs items-center justify-center rounded-full bg-white text-[15px] font-semibold text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.98] disabled:opacity-60"
       >
-        <AlertDialog.Container placement="center" className="px-4">
-          <AlertDialog.Dialog
-            className={
-              light
-                ? "rounded-[28px] border border-zinc-200 bg-white text-zinc-900 shadow-xl sm:max-w-[420px]"
-                : "rounded-[28px] border border-white/12 bg-[#111] text-white sm:max-w-[420px]"
-            }
-          >
-            <AlertDialog.CloseTrigger
-              className={light ? "text-zinc-400" : "text-white/50"}
-            />
-            <AlertDialog.Header>
-              <AlertDialog.Icon status="danger" />
-              <AlertDialog.Heading
-                className={
-                  light
-                    ? "text-xl font-bold tracking-tight"
-                    : "font-display text-xl font-bold"
-                }
-              >
-                {title}
-              </AlertDialog.Heading>
-            </AlertDialog.Header>
-            <AlertDialog.Body>
-              <p
-                className={
-                  light
-                    ? "text-sm leading-relaxed text-zinc-500"
-                    : "text-sm leading-relaxed text-white/55"
-                }
-              >
-                {description}
-              </p>
-            </AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button
-                variant="outline"
-                className={
-                  light
-                    ? "rounded-full border-zinc-200 bg-white text-zinc-700"
-                    : "rounded-full border-white/20 bg-transparent text-white"
-                }
-                onPress={() => onOpenChange(false)}
-                isDisabled={isPending}
-              >
-                {cancelLabel}
-              </Button>
-              <Button
-                className="rounded-full bg-red-500 font-semibold text-white"
-                isPending={isPending}
-                onPress={onConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Dialog>
-        </AlertDialog.Container>
-      </AlertDialog.Backdrop>
-    </AlertDialog>
+        {isPending ? "Un instant…" : confirmLabel}
+      </button>
+      <button
+        type="button"
+        onClick={close}
+        disabled={isPending}
+        className="mx-auto mt-4 block text-[15px] font-medium text-white/70 transition-colors hover:text-white disabled:opacity-50"
+      >
+        {cancelLabel}
+      </button>
+    </MediaModal>
   );
 }

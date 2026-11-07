@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Button, Input, Label } from "@heroui/react";
+import { authInputClass, authLabelClass, authSubmitClass } from "./styles";
 import { signUp, type AuthState } from "@/lib/actions/auth";
 import type { UserRole } from "@/lib/supabase/database.types";
 import { useActionToast } from "@/hooks/useActionToast";
@@ -21,7 +22,7 @@ export function CreatorSignUpForm({
       <input type="hidden" name="role" value={role} />
 
       <div className="flex flex-col gap-1.5 sm:gap-2">
-        <Label htmlFor={`email_${role}`} className="text-sm text-white/70">
+        <Label htmlFor={`email_${role}`} className={authLabelClass}>
           Adresse mail
         </Label>
         <Input
@@ -33,12 +34,12 @@ export function CreatorSignUpForm({
           inputMode="email"
           enterKeyHint="next"
           placeholder="toi@email.com"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
+          className={authInputClass}
         />
       </div>
 
       <div className="flex flex-col gap-1.5 sm:gap-2">
-        <Label htmlFor={`password_${role}`} className="text-sm text-white/70">
+        <Label htmlFor={`password_${role}`} className={authLabelClass}>
           Mot de passe
         </Label>
         <Input
@@ -50,19 +51,19 @@ export function CreatorSignUpForm({
           autoComplete="new-password"
           enterKeyHint="go"
           placeholder="Min. 6 caractères"
-          className="h-12 rounded-2xl border-white/12 bg-white/[0.04] text-base"
+          className={authInputClass}
         />
       </div>
 
       <p className="text-xs leading-relaxed text-white/35">
-        Ensuite, un onboarding en 3 étapes (identité, genres, photo) pour activer
-        ton espace {role === "artist" ? "artiste" : "label"}.
+        Ensuite, trois étapes (identité, genres, photo) pour ouvrir ton espace{" "}
+        {role === "artist" ? "artiste" : "label"}.
       </p>
 
       <Button
         type="submit"
         isPending={pending}
-        className="mt-1 h-12 rounded-full bg-white text-base font-semibold text-black"
+        className={authSubmitClass}
       >
         Continuer
       </Button>

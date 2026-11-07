@@ -1,5 +1,4 @@
 import { AppImage } from "@/components/media/AppImage";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import {
@@ -10,7 +9,8 @@ import {
 import { HorizontalSection } from "@/components/feed/HorizontalSection";
 import { TrackList } from "@/components/feed/TrackList";
 import { ShareButton } from "@/components/discover/ShareButton";
-import { ArtistHeroPlayButton } from "@/components/discover/ArtistHeroPlayButton";
+import { CollectionPlayControls, ShuffleAction } from "@/components/discover/CollectionPlayControls";
+import { formatCount } from "@/lib/format";
 import { getCountryLabel } from "@/lib/constants";
 import { isCountryCode } from "@/lib/geo";
 import { CountryFlag } from "@/components/auth/CountryFlag";
@@ -109,101 +109,67 @@ export default async function ArtistDetailPage({ params }: Props) {
           })),
         }}
       />
-      {/* Hero type Spotify */}
-      <section className="relative min-h-[340px] overflow-hidden sm:min-h-[380px]">
-        <div className="absolute inset-0">
-          <AppImage
-            src={avatar}
-            alt=""
-            fill
-            className="object-cover opacity-55 blur-2xl scale-110"
-            sizes="1200px"
-            aria-hidden
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/45 to-black" />
-        </div>
+      {/* Photo plein cadre, nom posé en bas à gauche */}
+      <section className="relative h-[380px] overflow-hidden sm:h-[440px] lg:h-[480px]">
+        <AppImage
+          src={avatar}
+          alt=""
+          fill
+          className="object-cover object-[center_30%]"
+          sizes="100vw"
+          aria-hidden
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/35 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
 
-        <div className="relative flex h-full min-h-[340px] flex-col justify-end px-5 pt-16 pb-8 sm:min-h-[380px] sm:px-8 sm:pb-10 lg:px-10">
-          <Link
-            href="/"
-            className="absolute top-4 left-5 text-sm text-white/55 transition-colors hover:text-white sm:left-8 lg:left-10"
-          >
-            ← Discover
-          </Link>
-
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
-            <div className="relative mx-auto size-40 shrink-0 overflow-hidden rounded-full shadow-[0_24px_80px_rgba(0,0,0,0.65)] ring-1 ring-white/20 sm:mx-0 sm:size-52 md:size-56">
-              <AppImage
-                src={avatar}
-                alt={artist.stage_name}
-                fill
-                className="object-cover"
-                sizes="224px"
-                priority
-              />
-            </div>
-
-            <div className="min-w-0 flex-1 text-center sm:pb-1 sm:text-left">
-              <p className="text-sm font-medium text-white/80">Artiste</p>
-              <h1 className="font-display mt-1 inline-flex flex-wrap items-center justify-center gap-2 text-4xl font-bold tracking-tight text-white sm:justify-start sm:text-6xl md:text-7xl">
-                <span>{artist.stage_name}</span>
-                {artist.is_verified ? (
-                  <VerifiedBadge size={28} className="sm:size-9" />
-                ) : null}
-              </h1>
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-white/65 sm:justify-start">
-                <span>
-                  {listenCount.toLocaleString("fr-FR")} écoute
-                  {listenCount > 1 ? "s" : ""}
-                </span>
-                <span>·</span>
-                <span>
-                  {releases.length} publication{releases.length > 1 ? "s" : ""}
-                </span>
-                {artist.country ? (
-                  <>
-                    <span>·</span>
-                    {isCountryCode(artist.country) ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <CountryFlag
-                          code={artist.country}
-                          title={getCountryLabel(artist.country)}
-                        />
-                        {getCountryLabel(artist.country)}
-                      </span>
-                    ) : (
-                      <span>{getCountryLabel(artist.country)}</span>
-                    )}
-                  </>
-                ) : null}
-              </div>
-            </div>
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-8 sm:px-8 lg:px-10">
+          <p className="text-[13px] font-medium text-white/70">Artiste</p>
+          <h1 className="font-display mt-2 flex flex-wrap items-center gap-3 text-[44px] font-semibold leading-none text-white sm:text-[64px] lg:text-[80px]">
+            <span className="min-w-0 break-words">{artist.stage_name}</span>
+            {artist.is_verified ? <VerifiedBadge size={28} className="sm:size-9" /> : null}
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-white/65">
+            <span className="tabular-nums">
+              {formatCount(listenCount)} écoute{listenCount > 1 ? "s" : ""}
+            </span>
+            <span aria-hidden>·</span>
+            <span>
+              {releases.length} sortie{releases.length > 1 ? "s" : ""}
+            </span>
+            {artist.country ? (
+              <>
+                <span aria-hidden>·</span>
+                {isCountryCode(artist.country) ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CountryFlag code={artist.country} title={getCountryLabel(artist.country)} />
+                    {getCountryLabel(artist.country)}
+                  </span>
+                ) : (
+                  <span>{getCountryLabel(artist.country)}</span>
+                )}
+              </>
+            ) : null}
           </div>
         </div>
       </section>
 
-      {/* Barre d'actions */}
-      <div className="sticky top-0 z-10 border-b border-white/5 bg-[#121212]/85 backdrop-blur-xl">
-        <div className="flex items-center gap-4 px-5 py-4 sm:px-8 lg:px-10">
-          <ArtistHeroPlayButton tracks={allTracks} />
+      {/* Actions : lecture à gauche, icônes à droite */}
+      <div className="flex items-start justify-between gap-4 bg-[#0a0a0a] px-5 pt-2 sm:px-8 lg:px-10">
+        <div className="pt-1">
+          <CollectionPlayControls tracks={allTracks} />
+        </div>
+        <div className="flex items-start gap-1 sm:gap-2">
+          <ShuffleAction tracks={allTracks} />
           <ShareButton
             title={artist.stage_name}
             path={`/discover/artiste/${artist.public_id}`}
+            cover={avatar}
           />
         </div>
       </div>
 
       <div className="flex w-full flex-col gap-10 px-5 pt-8 sm:px-8 lg:px-10">
-        {artist.bio ? (
-          <section>
-            <h2 className="text-lg font-bold text-white">À propos</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-white/55">
-              {artist.bio}
-            </p>
-          </section>
-        ) : null}
-
         {allTracks.length > 0 ? (
           <TrackList
             tracks={allTracks.slice(0, 10)}
@@ -222,6 +188,15 @@ export default async function ArtistDetailPage({ params }: Props) {
             title="Singles"
             emptyLabel="Aucun single."
           />
+        ) : null}
+
+        {artist.bio ? (
+          <section>
+            <h2 className="text-[20px] font-semibold text-white">À propos</h2>
+            <p className="mt-3 max-w-3xl whitespace-pre-line text-[15px] leading-relaxed text-white/60">
+              {artist.bio}
+            </p>
+          </section>
         ) : null}
 
         {!allTracks.length && !albums.length ? (

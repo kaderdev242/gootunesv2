@@ -1,28 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Modal } from "@heroui/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Copy01Icon,
   Facebook02Icon,
-  Link01Icon,
   NewTwitterIcon,
-  Share01Icon,
+  Share08Icon,
   TelegramIcon,
   WhatsappIcon,
 } from "@hugeicons/core-free-icons";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { MediaModal } from "@/components/ui/MediaModal";
+import { IconAction } from "./IconAction";
 
+/**
+ * Partage : action en icône (par défaut) ou rond seul (`circle`).
+ * Ouvre une fenêtre au style Gootunes avec la pochette.
+ */
 export function ShareButton({
   title,
   path,
-  compact = false,
+  cover,
+  variant = "action",
 }: {
   title: string;
   path: string;
+  cover?: string | null;
+  variant?: "action" | "circle";
+  /** Conservé pour compatibilité. */
   compact?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
   const [url, setUrl] = useState(path);
 
   useEffect(() => {
@@ -38,100 +47,54 @@ export function ShareButton({
     }
   }
 
-  function openShare(shareUrl: string) {
-    window.open(shareUrl, "_blank", "noopener,noreferrer");
-  }
+  const networks = [
+    { label: "WhatsApp", icon: WhatsappIcon, href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}` },
+    { label: "Facebook", icon: Facebook02Icon, href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+    { label: "X", icon: NewTwitterIcon, href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
+    { label: "Telegram", icon: TelegramIcon, href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}` },
+  ];
 
   return (
-    <Modal>
-      <Button
-        type="button"
-        variant="ghost"
-        aria-label="Partager"
-        className={
-          compact
-            ? "hidden size-12 rounded-full border border-white/15 bg-white/5 text-white sm:inline-flex"
-            : "hidden h-11 rounded-full border border-white/15 bg-white/5 px-5 text-white sm:inline-flex"
-        }
-      >
-        <HugeiconsIcon icon={Share01Icon} size={16} />
-        {compact ? null : <span className="ml-2">Partager</span>}
-      </Button>
-      <Modal.Backdrop className="bg-black/70">
-        <Modal.Container className="px-4">
-          <Modal.Dialog className="rounded-[28px] border border-white/12 bg-[#111] text-white sm:max-w-[400px]">
-            <Modal.CloseTrigger className="text-white/50" />
-            <Modal.Header>
-              <Modal.Heading className="font-display text-xl font-bold">
-                Partager
-              </Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="flex flex-col gap-4">
-              <p className="line-clamp-2 text-sm text-white/50">{title}</p>
+    <>
+      {variant === "circle" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Partager"
+          title="Partager"
+          className="flex size-12 items-center justify-center rounded-full bg-white/[0.1] text-white transition-[background-color,transform] duration-150 hover:bg-white/[0.16] active:scale-[0.95]"
+        >
+          <HugeiconsIcon icon={Share08Icon} size={20} strokeWidth={1.75} />
+        </button>
+      ) : (
+        <IconAction icon={Share08Icon} label="Partager" onClick={() => setOpen(true)} />
+      )}
 
-              <button
-                type="button"
-                onClick={() => void copyLink()}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/10"
-              >
-                <span className="grid size-10 place-items-center rounded-full bg-white/10">
-                  <HugeiconsIcon icon={Copy01Icon} size={18} />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">Copier le lien</span>
-                  <span className="block text-xs text-white/40">
-                    Partage-le où tu veux
-                  </span>
-                </span>
-              </button>
-
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  {
-                    label: "WhatsApp",
-                    icon: WhatsappIcon,
-                    href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`,
-                  },
-                  {
-                    label: "Facebook",
-                    icon: Facebook02Icon,
-                    href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-                  },
-                  {
-                    label: "X",
-                    icon: NewTwitterIcon,
-                    href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
-                  },
-                  {
-                    label: "Telegram",
-                    icon: TelegramIcon,
-                    href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
-                  },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => openShare(item.href)}
-                    className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-left text-sm font-medium transition hover:bg-white/8"
-                  >
-                    <HugeiconsIcon icon={item.icon} size={18} />
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-start gap-2 rounded-2xl border border-white/8 bg-black/30 px-3 py-2.5 text-xs text-white/40">
-                <HugeiconsIcon
-                  icon={Link01Icon}
-                  size={14}
-                  className="mt-0.5 shrink-0"
-                />
-                <span className="break-all">{url}</span>
-              </div>
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
+      <MediaModal open={open} onClose={() => setOpen(false)} cover={cover} title={`Partager « ${title} »`} description="Envoie le lien à tes proches ou sur tes réseaux">
+        <button
+          type="button"
+          onClick={() => void copyLink()}
+          className="mx-auto flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-white text-[15px] font-semibold text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.98]"
+        >
+          <HugeiconsIcon icon={Copy01Icon} size={18} strokeWidth={1.75} />
+          Copier le lien
+        </button>
+        <div className="mt-6 flex justify-center gap-3">
+          {networks.map((n) => (
+            <button
+              key={n.label}
+              type="button"
+              onClick={() => window.open(n.href, "_blank", "noopener,noreferrer")}
+              aria-label={`Partager sur ${n.label}`}
+              title={n.label}
+              className="flex size-11 items-center justify-center rounded-full bg-white/[0.1] text-white transition-colors hover:bg-white/[0.18]"
+            >
+              <HugeiconsIcon icon={n.icon} size={18} strokeWidth={1.75} />
+            </button>
+          ))}
+        </div>
+        <p className="mt-6 truncate font-mono text-[12px] text-white/40">{url}</p>
+      </MediaModal>
+    </>
   );
 }
