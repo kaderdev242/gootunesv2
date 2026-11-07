@@ -77,11 +77,12 @@ export default async function PlaylistDetailPage({ params }: Props) {
         }
         trailing={
           <>
-            <ShareButton
-              compact
-              title={playlist.title}
-              path={`/discover/playlists/${playlist.id}`}
-            />
+            <div className="hidden sm:block">
+              <ShareButton
+                title={playlist.title}
+                path={`/discover/playlists/${playlist.id}`}
+              />
+            </div>
             {playlist.isOwner ? (
               <DeletePlaylistButton
                 playlistId={playlist.id}

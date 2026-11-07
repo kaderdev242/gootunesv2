@@ -43,8 +43,9 @@ export function ReleaseDetailActions({
   priceLabel?: string;
   owned?: boolean;
 }) {
+  // Masqués sur mobile : la page garde seulement Lire, Acheter et Aléatoire.
   return (
-    <>
+    <div className="hidden items-start gap-1 sm:flex sm:gap-2">
       {hasCredits ? (
         <IconAction
           icon={InformationCircleIcon}
@@ -57,6 +58,6 @@ export function ReleaseDetailActions({
         />
       ) : null}
       <ShareButton title={title} path={`/discover/release/${releaseId}`} cover={cover} />
-    </>
+    </div>
   );
 }

@@ -161,11 +161,13 @@ export default async function ArtistDetailPage({ params }: Props) {
         </div>
         <div className="flex items-start gap-1 sm:gap-2">
           <ShuffleAction tracks={allTracks} />
-          <ShareButton
-            title={artist.stage_name}
-            path={`/discover/artiste/${artist.public_id}`}
-            cover={avatar}
-          />
+          <div className="hidden sm:block">
+            <ShareButton
+              title={artist.stage_name}
+              path={`/discover/artiste/${artist.public_id}`}
+              cover={avatar}
+            />
+          </div>
         </div>
       </div>
 
