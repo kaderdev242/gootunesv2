@@ -48,6 +48,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Dev uniquement : permet de tester le site en visiteur sur 127.0.0.1.
+  allowedDevOrigins: ["127.0.0.1"],
   async redirects() {
     return [
       {

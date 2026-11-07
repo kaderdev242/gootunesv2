@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { creatorHome } from "@/lib/dashboard/paths";
 import { notifyWelcome } from "@/lib/email/notify";
 import { logServerError, mapAuthError } from "@/lib/errors";
@@ -25,6 +26,38 @@ function safeNext(value: unknown): string {
 async function authClientIp() {
   const h = await headers();
   return clientIpFromHeaders(h);
+}
+
+/**
+ * Première étape du parcours : l'e-mail a-t-il déjà un compte ?
+ * Limité par IP pour qu'on ne puisse pas sonder la liste des inscrits.
+ */
+export async function lookupAuthEmail(
+  email: string,
+): Promise<{ status: "existing" | "new" } | { error: string }> {
+  const value = typeof email === "string" ? email.trim().toLowerCase() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || value.length > 254) {
+    return { error: "Adresse e-mail invalide." };
+  }
+  const ip = await authClientIp();
+  const rl = await checkRateLimit(`auth:lookup:${ip}`, 10, 60_000, { strict: true });
+  if (!rl.allowed) {
+    return { error: "Trop de tentatives. Réessaie dans une minute." };
+  }
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", value)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return { status: data ? "existing" : "new" };
+  } catch (err) {
+    logServerError("auth.lookupEmail", err);
+    return { error: "Vérification impossible. Réessaie." };
+  }
 }
 
 export async function signIn(
