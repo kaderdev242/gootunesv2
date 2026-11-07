@@ -28,7 +28,8 @@ export function CollectionPlayControls({
   const first = tracks[0];
   if (!first) return null;
 
-  const playingHere = !!current && isPlaying && tracks.some((t) => t.id === current.id);
+  const playingHere =
+    !!current && isPlaying && tracks.some((t) => t.id === current.id);
 
   return (
     <button
@@ -39,7 +40,11 @@ export function CollectionPlayControls({
       }}
       className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition-[background-color,transform] duration-150 hover:bg-white/90 active:scale-[0.97]"
     >
-      <HugeiconsIcon icon={playingHere ? PauseIcon : PlayIcon} size={18} strokeWidth={2} />
+      <HugeiconsIcon
+        icon={playingHere ? PauseIcon : PlayIcon}
+        size={18}
+        strokeWidth={2}
+      />
       {playingHere ? "Pause" : "Lire"}
     </button>
   );
@@ -49,15 +54,18 @@ export function CollectionPlayControls({
 export function ShuffleAction({ tracks }: { tracks: Track[] }) {
   const { playTrack } = usePlayer();
   if (!tracks.length) return null;
+  // Masqué sur mobile, comme Crédits et Partager.
   return (
-    <IconAction
-      icon={ShuffleIcon}
-      label="Aléatoire"
-      onClick={() => {
-        const queue = shuffledQueue(tracks);
-        const start = queue[0];
-        if (start) void playTrack(start, queue);
-      }}
-    />
+    <div className="hidden sm:block">
+      <IconAction
+        icon={ShuffleIcon}
+        label="Aléatoire"
+        onClick={() => {
+          const queue = shuffledQueue(tracks);
+          const start = queue[0];
+          if (start) void playTrack(start, queue);
+        }}
+      />
+    </div>
   );
 }
