@@ -651,6 +651,27 @@ export type Database = {
           },
         ];
       };
+      feature_flags: {
+        Row: {
+          key: string;
+          enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          key: string;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          key?: string;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       site_settings: {
         Row: {
           id: number;
@@ -1005,6 +1026,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_creator_retro: {
+        Args: {
+          p_start: string;
+          p_end: string;
+        };
+        Returns: Json;
+      };
       get_release_engagement: {
         Args: {
           since_ts: string;

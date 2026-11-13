@@ -16,6 +16,7 @@ import {
   MusicNote01Icon,
   Search01Icon,
   Settings01Icon,
+  SparklesIcon,
   UserIcon,
   UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
@@ -65,6 +66,7 @@ function buildNav(counts: AdminCounts): DashNavSection[] {
     {
       title: "Système",
       items: [
+        { href: "/goo-admin/fonctionnalites", label: "Fonctionnalités", icon: SparklesIcon, keywords: "features rétro exclusives activer" },
         { href: "/goo-admin/logs", label: "Logs", icon: File01Icon, keywords: "erreurs système" },
         { href: "/goo-admin/maintenance", label: "Maintenance", icon: Settings01Icon, keywords: "mode maintenance" },
       ],

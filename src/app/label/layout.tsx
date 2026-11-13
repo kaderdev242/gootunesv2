@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { requireCreatorProfile } from "@/lib/auth/get-profile";
 import { NOINDEX } from "@/lib/seo";
+import { getEnabledFeatures } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = NOINDEX;
@@ -20,8 +21,10 @@ export default async function LabelLayout({
   }
   if (!session.profile.onboarding_completed) redirect("/onboarding");
 
+  const features = await getEnabledFeatures();
+
   return (
-    <DashboardShell profile={session.profile} basePath="/label">
+    <DashboardShell profile={session.profile} basePath="/label" features={features}>
       {children}
     </DashboardShell>
   );

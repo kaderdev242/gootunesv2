@@ -12,6 +12,7 @@ import {
   Folder01Icon,
   Money01Icon,
   Settings01Icon,
+  SparklesIcon,
   UserMultipleIcon,
   Wallet01Icon,
 } from "@hugeicons/core-free-icons";
@@ -21,7 +22,7 @@ import type { MobileNavItem } from "@/components/ui/MobileNav";
 import type { Profile } from "@/lib/supabase/database.types";
 import { formatMoney } from "@/lib/format";
 
-function navFor(basePath: CreatorBase, isLabel: boolean): DashNavSection[] {
+function navFor(basePath: CreatorBase, isLabel: boolean, retro: boolean): DashNavSection[] {
   return [
     {
       items: [
@@ -29,6 +30,7 @@ function navFor(basePath: CreatorBase, isLabel: boolean): DashNavSection[] {
         { href: `${basePath}/publications`, label: "Publications", icon: Folder01Icon },
         ...(isLabel ? [{ href: `${basePath}/artistes`, label: "Artistes", icon: UserMultipleIcon }] : []),
         { href: `${basePath}/statistiques`, label: "Statistiques", icon: AnalyticsUpIcon },
+        ...(retro ? [{ href: `${basePath}/retro`, label: "Rétro", icon: SparklesIcon }] : []),
       ],
     },
     {
@@ -59,9 +61,10 @@ function mobileTabsFor(basePath: CreatorBase): MobileNavItem[] {
 }
 
 /** Mobile : le reste, depuis l'avatar. */
-function mobileMenuFor(basePath: CreatorBase, isLabel: boolean): MobileNavItem[] {
+function mobileMenuFor(basePath: CreatorBase, isLabel: boolean, retro: boolean): MobileNavItem[] {
   return [
     { href: `${basePath}/statistiques`, label: "Statistiques", icon: AnalyticsUpIcon },
+    ...(retro ? [{ href: `${basePath}/retro`, label: "Rétro", icon: SparklesIcon }] : []),
     ...(isLabel ? [{ href: `${basePath}/artistes`, label: "Artistes", icon: UserMultipleIcon }] : []),
     { href: `${basePath}/abonnement`, label: "Abonnement", icon: CrownIcon },
     { href: `${basePath}/parametres`, label: "Paramètres", icon: Settings01Icon },
@@ -72,26 +75,30 @@ function mobileMenuFor(basePath: CreatorBase, isLabel: boolean): MobileNavItem[]
 export function DashboardShell({
   profile,
   basePath,
+  features = [],
   children,
 }: {
   profile: Profile;
   basePath: CreatorBase;
+  /** Fonctionnalités exclusives activées par l'admin */
+  features?: string[];
   children: React.ReactNode;
 }) {
+  const retro = features.includes("retro");
   const isLabel = basePath === "/label";
   const balance = formatMoney(Number(profile.balance_fcfa || 0), profile.country);
 
   return (
     <DashFrame
       space={isLabel ? "Label" : "Artiste"}
-      sections={navFor(basePath, isLabel)}
+      sections={navFor(basePath, isLabel, retro)}
       user={{
         name: profile.display_name || (isLabel ? "Mon label" : "Mon espace"),
         subtitle: isLabel ? "Label" : "Artiste",
         avatarUrl: profile.avatar_url,
       }}
       mobileTabs={mobileTabsFor(basePath)}
-      mobileMenu={mobileMenuFor(basePath, isLabel)}
+      mobileMenu={mobileMenuFor(basePath, isLabel, retro)}
       mobileMenuHeader={
         <>
           <p className="truncate text-[16px] font-semibold text-white">

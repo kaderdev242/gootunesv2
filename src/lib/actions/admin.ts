@@ -8,6 +8,7 @@ import {
   notifyAccountSuspended,
 } from "@/lib/email/notify";
 import { logServerError, mapDbError } from "@/lib/errors";
+import { FEATURES, isFeatureKey } from "@/lib/features";
 import type { LabelPlan, ReportStatus } from "@/lib/supabase/database.types";
 import type { ActionState } from "./profile";
 
@@ -268,6 +269,34 @@ export async function setMaintenance(
     success: enabled
       ? "Mode maintenance activé."
       : "Mode maintenance désactivé.",
+  };
+}
+
+export async function setFeatureEnabled(
+  key: string,
+  enabled: boolean,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
+  if (!isFeatureKey(key)) return { error: "Fonctionnalité inconnue." };
+
+  const db = createAdminClient();
+  const { error } = await db.from("feature_flags").upsert({
+    key,
+    enabled,
+    updated_at: new Date().toISOString(),
+    updated_by: admin.userId,
+  });
+
+  if (error) {
+    logServerError("admin.feature", error);
+    return { error: mapDbError(error, "Impossible de mettre à jour.") };
+  }
+
+  touchAdmin("/goo-admin/fonctionnalites");
+  for (const p of FEATURES[key].paths) revalidatePath(p, "layout");
+  return {
+    success: `${FEATURES[key].name} ${enabled ? "activée" : "désactivée"}.`,
   };
 }
 

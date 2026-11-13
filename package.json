@@ -21,6 +21,7 @@
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "country-flag-icons": "^1.6.20",
+    "html-to-image": "^1.11.13",
     "music-metadata": "^11.14.0",
     "next": "^16.4.2",
     "react": "19.2.4",

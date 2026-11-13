@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { requireCreatorProfile } from "@/lib/auth/get-profile";
 import { NOINDEX } from "@/lib/seo";
+import { getEnabledFeatures } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = NOINDEX;
@@ -20,8 +21,10 @@ export default async function ArtistLayout({
   }
   if (!session.profile.onboarding_completed) redirect("/onboarding");
 
+  const features = await getEnabledFeatures();
+
   return (
-    <DashboardShell profile={session.profile} basePath="/artist">
+    <DashboardShell profile={session.profile} basePath="/artist" features={features}>
       {children}
     </DashboardShell>
   );
