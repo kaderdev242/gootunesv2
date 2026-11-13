@@ -27,7 +27,7 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       // Scripts : Next.js a besoin d'inline scripts pour l'hydratation
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cloud.umami.is",
       // Styles : Tailwind + Google Fonts
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Fonts
@@ -37,7 +37,7 @@ const securityHeaders = [
       // Audio : Worker Cloudflare (streaming) + R2 custom domain .app + blob
       "media-src 'self' blob: https://*.workers.dev https://*.r2.dev https://*.gootunes.app",
       // Connexions (fetch, WebSocket, Supabase realtime)
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.workers.dev https://*.r2.cloudflarestorage.com https://*.gootunes.app https://eu.aptabase.com https://us.aptabase.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.workers.dev https://*.r2.cloudflarestorage.com https://*.gootunes.app https://cloud.umami.is https://api-gateway.umami.dev",
       // Frames : interdit totalement
       "frame-src 'none'",
       "frame-ancestors 'none'",

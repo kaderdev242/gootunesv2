@@ -117,8 +117,8 @@ export default function RootLayout({
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         {process.env.NODE_ENV === "production" ? (
           <Script
-            src="https://stats.prepax.io/script.js"
-            data-website-id="22f5e187-5a81-43d8-8e7f-45df5e0c3b93"
+            src="https://cloud.umami.is/script.js"
+            data-website-id="07c2c5eb-2666-4553-8e74-4675126c0367"
             strategy="afterInteractive"
           />
         ) : null}

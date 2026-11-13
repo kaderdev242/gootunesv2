@@ -1,6 +1,6 @@
 import { formatFcfa } from "@/lib/format";
 import { appUrl } from "./client";
-import { emailLayout, escapeHtml, p, strongLine } from "./layout";
+import { codeBlock, emailLayout, escapeHtml, p, strongLine } from "./layout";
 
 const ROLE_LABEL: Record<string, string> = {
   fan: "Fan",
@@ -16,7 +16,7 @@ export function welcomeEmail(input: {
   const role = ROLE_LABEL[input.role] || input.role;
   const href =
     input.role === "fan"
-      ? appUrl("/discover")
+      ? appUrl("/")
       : input.role === "label"
         ? appUrl("/label")
         : appUrl("/artist");
@@ -258,7 +258,7 @@ export function loginOtpEmail(input: {
         p(
           "Voici le code pour confirmer ta première connexion à Gootunes Artistes.",
         ),
-        strongLine("Code", input.code),
+        codeBlock(input.code),
         p("Ce code expire dans 10 minutes. Si tu n’es pas à l’origine de cette demande, ignore cet e-mail."),
       ].join(""),
     }),
@@ -273,7 +273,7 @@ export function accountReactivatedEmail(input: {
   const who = input.displayName?.trim() || "toi";
   const href =
     input.role === "fan"
-      ? appUrl("/discover")
+      ? appUrl("/")
       : input.role === "label"
         ? appUrl("/label")
         : appUrl("/artist");
