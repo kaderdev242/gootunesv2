@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1101.0",
+    "@aws-sdk/client-s3": "^3.1166.0",
     "@aws-sdk/s3-request-presigner": "^3.1101.0",
     "@heroui/react": "^3.2.3",
     "@heroui/styles": "^3.2.3",
