@@ -2,69 +2,43 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
+import Link from "next/link";
 import { SellMusicModal } from "./SellMusicModal";
+import { btnPrimary, btnSecondary } from "./ui";
 
 export function AppCtaSection() {
-  const router = useRouter();
   const [sellOpen, setSellOpen] = useState(false);
 
   return (
-    <section
-      id="explorer"
-      className="relative w-full scroll-mt-8 overflow-hidden px-5 py-16 sm:px-8 lg:px-12"
-    >
-      <div className="soundwave pointer-events-none absolute inset-x-0 top-1/2 h-40 -translate-y-1/2 opacity-30" />
-
-      <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="mx-auto w-full max-w-[420px]">
+    <section id="explorer" className="w-full scroll-mt-8 bg-[#0b0b0c] px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
+      <div className="mx-auto grid max-w-[1280px] items-center gap-12 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#141415] lg:grid-cols-[5fr_7fr]">
+        <div className="relative mx-auto w-full max-w-[360px] px-8 pt-12 lg:pb-0">
           <Image
             src="/mockup.png"
             alt="Gootunes Discover sur mobile"
             width={840}
             height={1050}
             className="h-auto w-full"
-            sizes="(max-width: 1024px) 80vw, 420px"
-            priority={false}
+            sizes="(max-width: 1024px) 80vw, 360px"
           />
         </div>
-
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950/90 p-8 sm:p-10">
-          <h2 className="font-display relative text-3xl leading-tight font-bold text-white sm:text-4xl">
-            Prêt à écouter — ou à vendre votre musique ?
+        <div className="px-8 pb-12 lg:py-16 lg:pr-16">
+          <h2 className="font-display text-[36px] leading-[1.08] font-semibold tracking-[-0.03em] text-[#ededed] sm:text-[44px]">
+            Prêt à écouter, ou à vendre votre musique
           </h2>
-          <div className="relative mt-6 space-y-4 text-sm leading-relaxed text-white/70 sm:text-base">
-            <p>
-              Explorez Discover comme sur une app de streaming, achetez albums
-              et singles via Mobile Money, et soutenez directement les artistes
-              africains.
-            </p>
-            <p>
-              Vous créez ? Pour 1&nbsp;990&nbsp;FCFA/an, publiez sans limite, touchez
-              vos fans, et gardez 80&nbsp;% de chaque vente.
-            </p>
-          </div>
-          <div className="relative mt-8 flex flex-wrap gap-3">
-            <Button
-              size="lg"
-              className="h-12 rounded-full bg-white px-7 font-semibold text-black"
-              onPress={() => router.push("/discover")}
-            >
+          <p className="mt-6 max-w-md text-[17px] leading-[28px] text-[#a1a1a6]">
+            Écoutez et achetez en Mobile Money, ou publiez votre musique et vendez-la à vos fans
+          </p>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link href="/" className={btnPrimary}>
               Explorer Discover
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-12 rounded-full border-white/30 bg-transparent px-7 font-semibold text-white"
-              onPress={() => setSellOpen(true)}
-            >
+            </Link>
+            <button type="button" onClick={() => setSellOpen(true)} className={btnSecondary}>
               Vendre ma musique
-            </Button>
+            </button>
           </div>
         </div>
       </div>
-
       <SellMusicModal isOpen={sellOpen} onOpenChange={setSellOpen} />
     </section>
   );

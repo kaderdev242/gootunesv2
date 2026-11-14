@@ -42,15 +42,18 @@ function Section({
   description,
   children,
   tone = "default",
+  id,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
   tone?: "default" | "danger";
+  id?: string;
 }) {
   return (
     <section
-      className={`rounded-[28px] border p-5 sm:p-7 ${
+      id={id}
+      className={`scroll-mt-6 rounded-[28px] border p-5 sm:p-7 ${
         tone === "danger"
           ? "border-red-500/20 bg-red-500/[0.03]"
           : "border-white/[0.08] bg-white/[0.02]"
@@ -249,17 +252,22 @@ function BecomeCreatorSection() {
       title: "Artiste",
       text: "Publie tes singles et albums, vends ta musique et suis tes revenus.",
       icon: Mic01Icon,
+      card: "border-violet-400/20 bg-violet-500/[0.07] hover:border-violet-300/40 hover:bg-violet-500/[0.12]",
+      chip: "bg-violet-400/15 text-violet-200",
     },
     {
       role: "label",
       title: "Label",
       text: "Gère plusieurs artistes, leurs sorties et les revenus du catalogue.",
       icon: Building03Icon,
+      card: "border-amber-400/20 bg-amber-500/[0.06] hover:border-amber-300/40 hover:bg-amber-500/[0.11]",
+      chip: "bg-amber-400/15 text-amber-200",
     },
   ] as const;
 
   return (
     <Section
+      id="devenir-createur"
       title="Passer en compte créateur"
       description="Garde ton email, tes achats et tes playlists. Ton compte devient créateur une fois le profil complété."
     >
@@ -268,11 +276,11 @@ function BecomeCreatorSection() {
           <Link
             key={opt.role}
             href={`/onboarding?devenir=${opt.role}`}
-            className="group flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/25 hover:bg-white/[0.06]"
+            className={`group flex flex-col gap-3 rounded-2xl border p-5 transition ${opt.card}`}
           >
             <div className="flex items-center justify-between">
-              <span className="flex size-10 items-center justify-center rounded-full bg-white/10">
-                <HugeiconsIcon icon={opt.icon} size={20} className="text-white" />
+              <span className={`flex size-10 items-center justify-center rounded-full ${opt.chip}`}>
+                <HugeiconsIcon icon={opt.icon} size={20} />
               </span>
               <HugeiconsIcon
                 icon={ArrowRight01Icon}

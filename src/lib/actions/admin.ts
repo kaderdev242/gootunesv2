@@ -272,6 +272,90 @@ export async function setMaintenance(
   };
 }
 
+function touchPlaylist(id: string) {
+  touchAdmin("/goo-admin/playlists");
+  revalidatePath("/discover/playlists");
+  revalidatePath(`/discover/playlists/${id}`);
+  revalidatePath("/", "layout");
+}
+
+export async function adminSetPlaylistPublic(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
+  const id = String(formData.get("playlist_id") || "").trim();
+  const isPublic = String(formData.get("is_public") || "") === "true";
+  if (!id) return { error: "Playlist invalide." };
+
+  const db = createAdminClient();
+  const { error } = await db
+    .from("playlists")
+    .update({ is_public: isPublic, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) {
+    logServerError("admin.playlistPublic", error);
+    return { error: mapDbError(error, "Impossible de mettre à jour.") };
+  }
+  touchPlaylist(id);
+  return { success: isPublic ? "Playlist rendue publique." : "Playlist retirée de Discover." };
+}
+
+export async function adminUpdatePlaylist(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
+  const id = String(formData.get("playlist_id") || "").trim();
+  const title = String(formData.get("title") || "").trim();
+  const description = String(formData.get("description") || "").trim();
+  const removeCover = formData.get("remove_cover") === "true";
+  if (!id) return { error: "Playlist invalide." };
+  if (!title) return { error: "Le titre est obligatoire." };
+  if (title.length > 80) return { error: "Titre trop long (80 car. max)." };
+  if (description.length > 400) return { error: "Description trop longue (400 car. max)." };
+
+  const db = createAdminClient();
+  const { error } = await db
+    .from("playlists")
+    .update({
+      title,
+      description,
+      ...(removeCover ? { cover_url: null } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) {
+    logServerError("admin.playlistUpdate", error);
+    return { error: mapDbError(error, "Impossible de mettre à jour.") };
+  }
+  touchPlaylist(id);
+  return { success: "Playlist modifiée." };
+}
+
+export async function adminDeletePlaylist(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { error: "Accès refusé." };
+  const id = String(formData.get("playlist_id") || "").trim();
+  if (!id) return { error: "Playlist invalide." };
+
+  const db = createAdminClient();
+  const { data: playlist } = await db.from("playlists").select("title").eq("id", id).maybeSingle();
+  if (!playlist) return { error: "Playlist introuvable." };
+  const { error } = await db.from("playlists").delete().eq("id", id);
+  if (error) {
+    logServerError("admin.playlistDelete", error);
+    return { error: mapDbError(error, "Impossible de supprimer.") };
+  }
+  touchPlaylist(id);
+  return { success: `« ${playlist.title} » a été supprimée.` };
+}
+
 export async function setFeatureEnabled(
   key: string,
   enabled: boolean,

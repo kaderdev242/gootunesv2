@@ -903,6 +903,66 @@ export async function listReportsAdmin(
   return data || [];
 }
 
+export type AdminPlaylistRow = {
+  id: string;
+  title: string;
+  description: string;
+  coverUrl: string | null;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  ownerName: string;
+  ownerEmail: string | null;
+  tracks: number;
+  saves: number;
+};
+
+/** Playlists créées par les utilisateurs (publiques et privées), pour la modération. */
+export async function listPlaylistsAdmin(limit = 300): Promise<AdminPlaylistRow[]> {
+  const db = createAdminClient();
+  const { data: playlists } = await db
+    .from("playlists")
+    .select("id, user_id, title, description, cover_url, is_public, created_at, updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  const rows = playlists ?? [];
+  if (!rows.length) return [];
+
+  const ids = rows.map((p) => p.id);
+  const userIds = [...new Set(rows.map((p) => p.user_id))];
+  const [{ data: owners }, { data: tracks }, { data: saves }] = await Promise.all([
+    db.from("profiles").select("id, display_name, email").in("id", userIds),
+    db.from("playlist_tracks").select("playlist_id").in("playlist_id", ids),
+    db.from("playlist_saves").select("playlist_id").in("playlist_id", ids),
+  ]);
+
+  const ownerMap = new Map((owners ?? []).map((o) => [o.id, o]));
+  const count = (list: { playlist_id: string }[] | null) => {
+    const m = new Map<string, number>();
+    for (const r of list ?? []) m.set(r.playlist_id, (m.get(r.playlist_id) ?? 0) + 1);
+    return m;
+  };
+  const trackCount = count(tracks);
+  const saveCount = count(saves);
+
+  return rows.map((p) => {
+    const owner = ownerMap.get(p.user_id);
+    return {
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      coverUrl: p.cover_url,
+      isPublic: p.is_public,
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+      ownerName: owner?.display_name || "—",
+      ownerEmail: owner?.email ?? null,
+      tracks: trackCount.get(p.id) ?? 0,
+      saves: saveCount.get(p.id) ?? 0,
+    };
+  });
+}
+
 export async function getSiteSettings() {
   const db = createAdminClient();
   const { data } = await db

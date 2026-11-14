@@ -51,7 +51,7 @@ export function DiscoverShell({
           <DiscoverHeader profile={profile} />
 
           <div className="flex min-h-0 min-w-0 flex-1">
-            <main className="scrollbar-thin min-w-0 flex-1 overflow-y-auto bg-black px-5 pt-5 pb-44 sm:px-8 sm:pt-6 lg:px-10 lg:pb-32">
+            <main className="scrollbar-thin min-w-0 flex-1 overflow-y-auto bg-black px-5 pt-5 pb-40 sm:px-8 sm:pb-44 sm:pt-6 lg:px-10 lg:pb-32">
               {children}
             </main>
           </div>

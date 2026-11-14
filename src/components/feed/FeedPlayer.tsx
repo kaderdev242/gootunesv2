@@ -165,6 +165,80 @@ function MoreMenu() {
   );
 }
 
+/**
+ * Mobile : widget flottant à droite (pochette + onde + lecture/pause)
+ * à la place de la barre pleine largeur. Un tap ouvre le grand lecteur.
+ */
+function MobilePlayerWidget() {
+  const { current, isPlaying, currentTime, effectiveDuration, togglePlay, openFullscreen, closePlayer } = usePlayer();
+  if (!current) return null;
+
+  const pct = effectiveDuration > 0 ? Math.min(1, currentTime / effectiveDuration) : 0;
+  const R = 21;
+  const C = 2 * Math.PI * R;
+  const BARS = [0.55, 0.9, 0.65, 1, 0.5];
+
+  return (
+    <div className="fixed right-3 bottom-[calc(56px+env(safe-area-inset-bottom)+12px)] z-40 sm:hidden">
+      <div className="relative flex items-center gap-1 rounded-full border border-white/[0.1] bg-[#141414]/80 p-1 pr-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.55)] backdrop-blur-2xl backdrop-saturate-150">
+        <button
+          type="button"
+          onClick={() => openFullscreen()}
+          aria-label={`Ouvrir le lecteur : ${current.title}, ${current.artist}`}
+          className="flex items-center gap-2 rounded-full pr-0.5 active:scale-[0.97] transition-transform duration-150"
+        >
+          <span className="relative block size-[46px] shrink-0">
+            <svg viewBox="0 0 46 46" className="absolute inset-0 -rotate-90" aria-hidden>
+              <circle cx="23" cy="23" r={R} fill="none" stroke="rgb(255 255 255 / 0.14)" strokeWidth="2" />
+              <circle
+                cx="23"
+                cy="23"
+                r={R}
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray={C}
+                strokeDashoffset={C * (1 - pct)}
+              />
+            </svg>
+            <span className="absolute inset-[4px] overflow-hidden rounded-full">
+              <AppImage src={current.cover || FALLBACK_COVER} alt="" fill className="object-cover" sizes="38px" />
+            </span>
+          </span>
+          <span className={`flex h-5 items-center gap-[2.5px] ${isPlaying ? "" : "now-playing-paused"}`} aria-hidden>
+            {BARS.map((h, i) => (
+              <span
+                key={i}
+                className="now-playing-bar w-[2.5px] rounded-full bg-white"
+                style={{ height: `${h * 100}%`, transformOrigin: "center", animationDelay: `${-i * 190}ms` }}
+              />
+            ))}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={isPlaying ? "Pause" : "Lecture"}
+          className="ml-1 inline-flex size-9 items-center justify-center rounded-full bg-white text-black transition-transform duration-150 active:scale-[0.94]"
+        >
+          <HugeiconsIcon icon={isPlaying ? PauseIcon : PlayIcon} size={16} strokeWidth={2} />
+        </button>
+        {!isPlaying ? (
+          <button
+            type="button"
+            onClick={closePlayer}
+            aria-label="Fermer le lecteur"
+            className="absolute -left-1 -top-1 inline-flex size-5 items-center justify-center rounded-full border border-white/[0.12] bg-[#1f1f1f] text-white/80"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function FeedPlayer() {
   const {
     current,
@@ -203,7 +277,8 @@ export function FeedPlayer() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 border-t border-white/[0.08] bg-[#141414]/70 shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-2xl backdrop-saturate-150 lg:bottom-0 lg:pb-[env(safe-area-inset-bottom)]">
+      <MobilePlayerWidget />
+      <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 hidden border-t border-white/[0.08] bg-[#141414]/70 shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-2xl backdrop-saturate-150 sm:block lg:bottom-0 lg:pb-[env(safe-area-inset-bottom)]">
         {/* Progression fine en haut (mobile) */}
         <ProgressBar value={currentTime} max={effectiveDuration} onSeek={seek} className="absolute inset-x-0 top-0 block w-full rounded-none sm:hidden" />
 

@@ -13,6 +13,7 @@ import {
   NewReleasesIcon,
   Playlist01Icon,
   Search01Icon,
+  Mic01Icon,
   Settings02Icon,
 } from "@hugeicons/core-free-icons";
 import { Logo } from "@/components/landing/Logo";
@@ -194,7 +195,15 @@ export function FeedSidebar({
         </div>
 
         {isFan ? (
-          <div className="mt-3 border-t border-white/[0.06] pt-3">
+          <div className="mt-3 space-y-1 border-t border-white/[0.06] pt-3">
+            <Link
+              href="/discover/parametres#devenir-createur"
+              onClick={onClose}
+              className="flex items-center gap-3 rounded-xl border border-violet-400/15 bg-violet-500/[0.07] px-3 py-2.5 text-[15px] font-medium text-violet-100 transition hover:border-violet-300/30 hover:bg-violet-500/[0.12]"
+            >
+              <HugeiconsIcon icon={Mic01Icon} size={20} strokeWidth={1.5} className="text-violet-300" />
+              Devenir artiste
+            </Link>
             <Link
               href="/discover/parametres"
               onClick={onClose}

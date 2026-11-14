@@ -10,6 +10,7 @@ import {
   DashboardSquare01Icon,
   GridViewIcon,
   Logout01Icon,
+  Mic01Icon,
   NewReleasesIcon,
   Playlist01Icon,
   Settings02Icon,
@@ -44,7 +45,10 @@ export function DiscoverHeader({ profile }: { profile: Profile | null }) {
     { href: "/discover/playlists", label: "Playlists", icon: Playlist01Icon },
     ...(profile ? [{ href: "/discover/playlists/nouveau", label: "Créer une playlist", icon: Add01Icon }] : []),
     ...(profile?.role === "fan"
-      ? [{ href: "/discover/parametres", label: "Paramètres", icon: Settings02Icon }]
+      ? [
+          { href: "/discover/parametres#devenir-createur", label: "Devenir artiste", icon: Mic01Icon },
+          { href: "/discover/parametres", label: "Paramètres", icon: Settings02Icon },
+        ]
       : []),
   ];
 

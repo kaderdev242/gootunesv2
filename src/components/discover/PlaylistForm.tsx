@@ -10,6 +10,7 @@ import { useActionToast } from "@/hooks/useActionToast";
 import { mapUploadError } from "@/lib/errors";
 import { toastError } from "@/lib/toast";
 import { uploadViaApi } from "@/lib/upload-client";
+import { COVER_SIZE, validateCoverFile } from "@/lib/media-validation";
 import { FALLBACK_COVER } from "@/lib/types/music";
 
 const initial: ActionState = {};
@@ -52,7 +53,8 @@ export function PlaylistForm({
       <input type="hidden" name="cover_url" value={coverUrl} />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <label className="relative mx-auto aspect-square w-full max-w-[180px] shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-white/15 bg-zinc-900 sm:mx-0">
+        <div className="mx-auto w-full max-w-[180px] shrink-0 sm:mx-0">
+        <label className="relative block aspect-square w-full cursor-pointer overflow-hidden rounded-2xl border border-white/15 bg-zinc-900">
           <AppImage
             src={coverUrl || FALLBACK_COVER}
             alt=""
@@ -71,6 +73,13 @@ export function PlaylistForm({
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
+              try {
+                await validateCoverFile(file);
+              } catch (err) {
+                toastError(err instanceof Error ? err.message : "Cover invalide.");
+                e.target.value = "";
+                return;
+              }
               setUploading(true);
               try {
                 const url = (await uploadViaApi(file, "cover")).fileUrl;
@@ -84,6 +93,10 @@ export function PlaylistForm({
             }}
           />
         </label>
+        <p className="mt-2 text-center text-[12px] text-white/40">
+          Image carrée {COVER_SIZE}×{COVER_SIZE} px
+        </p>
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div>

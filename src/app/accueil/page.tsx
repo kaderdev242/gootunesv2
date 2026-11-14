@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 /** Landing marketing masquée — l’accueil public est Discover (`/`). */
 export default function LandingPage() {
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-background">
+    <main className="min-h-dvh overflow-x-hidden bg-[#0b0b0c]">
       <HeroSection />
       <FeaturesBento />
       <IndependentSection />
