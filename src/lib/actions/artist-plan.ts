@@ -10,6 +10,7 @@ import {
   type CountryCode,
 } from "@/lib/constants";
 import { createMbiyoPayin, getMbiyoTransaction } from "@/lib/mbiyo/client";
+import { payinErrorFailure, statusFailure } from "@/lib/mbiyo/failure";
 import {
   getMbiyoCurrency,
   isValidMbiyoPhone,
@@ -181,7 +182,11 @@ export async function initiateArtistPlan(
     }
 
     if (tx.status === "failed" || tx.status === "cancelled") {
-      await failArtistPlanByOrderId(orderId, tx.transaction_id);
+      await failArtistPlanByOrderId(
+        orderId,
+        tx.transaction_id,
+        statusFailure("payin_immediate", tx.status, res.message),
+      );
       return { error: "Le paiement a échoué. Réessaie." };
     }
 
@@ -196,7 +201,8 @@ export async function initiateArtistPlan(
       success: "Paiement initié — valide sur ton téléphone Mobile Money.",
     };
   } catch (e) {
-    await failArtistPlanByOrderId(orderId);
+    const failure = payinErrorFailure(e);
+    await failArtistPlanByOrderId(orderId, failure.transactionId, failure.meta);
     logServerError("artist.plan.payin", e);
     return { error: mapPaymentError(e, "payin") };
   }
@@ -240,7 +246,11 @@ export async function checkArtistPlanStatus(orderId: string): Promise<{
       return { status: "completed" };
     }
     if (st === "failed" || st === "cancelled") {
-      await failArtistPlanByOrderId(orderId, res.data.transaction_id);
+      await failArtistPlanByOrderId(
+        orderId,
+        res.data.transaction_id,
+        statusFailure("poll", st),
+      );
       return { status: st === "cancelled" ? "cancelled" : "failed" };
     }
   } catch {

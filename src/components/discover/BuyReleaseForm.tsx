@@ -18,6 +18,7 @@ import {
 } from "@/lib/purchases/pending";
 import type { ActionState } from "@/lib/actions/profile";
 import { useActionToast } from "@/hooks/useActionToast";
+import { PaymentRedirectButton } from "@/components/payments/PaymentRedirectButton";
 import { usePlayer } from "@/components/feed/PlayerProvider";
 
 const initial: ActionState = {};
@@ -217,6 +218,10 @@ export function BuyReleaseForm({
           className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/70 [&_a]:underline [&_ol]:mt-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_strong]:text-white"
           dangerouslySetInnerHTML={{ __html: state.instructionsHtml }}
         />
+      ) : null}
+
+      {waiting && state?.redirectUrl ? (
+        <PaymentRedirectButton url={state.redirectUrl} network={method} />
       ) : null}
 
       {waiting ? (

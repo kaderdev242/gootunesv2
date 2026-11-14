@@ -67,13 +67,39 @@ async function mbiyoFetch<T>(
     const base =
       json?.message || `Erreur paiement (${res.status || "réseau"})`;
     const details = formatMbiyoErrorData(json?.data);
-    throw new Error(details ? `${base}: ${details}` : base);
+    throw new MbiyoApiError(details ? `${base}: ${details}` : base, {
+      httpStatus: res.status,
+      data: json?.data,
+    });
   }
   return json;
 }
 
+/**
+ * Erreur API Mbiyo. Garde le code HTTP et `data` : sur un « 200 — Initiation
+ * failed », Mbiyo crée quand même la transaction et renvoie son `transaction_id`.
+ */
+export class MbiyoApiError extends Error {
+  readonly httpStatus: number;
+  readonly data: unknown;
+  constructor(message: string, opts: { httpStatus: number; data: unknown }) {
+    super(message);
+    this.name = "MbiyoApiError";
+    this.httpStatus = opts.httpStatus;
+    this.data = opts.data;
+  }
+
+  /** transaction_id renvoyé malgré l'échec (opérateur qui refuse), sinon null. */
+  get transactionId(): string | null {
+    const d = this.data as { transaction_id?: unknown } | null;
+    return d && typeof d.transaction_id === "string" ? d.transaction_id : null;
+  }
+}
+
 function formatMbiyoErrorData(data: unknown): string | null {
   if (!data || typeof data !== "object") return null;
+  // Transaction échouée (200 + status error) : pas des erreurs de validation.
+  if ("transaction_id" in data) return null;
   const parts: string[] = [];
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
     if (Array.isArray(value)) {

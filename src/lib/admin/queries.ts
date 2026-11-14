@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { COUNTRIES } from "@/lib/constants";
+import { describeFailure } from "@/lib/mbiyo/failure";
 import type {
   PaymentStatus,
   ReportStatus,
@@ -1156,6 +1157,8 @@ export type AdminLedgerRow = {
   provider: string;
   orderId: string | null;
   phone: string | null;
+  /** Motif lisible si échec / annulation (provider_meta). */
+  failureReason?: string | null;
 };
 
 function profileLabel(
@@ -1170,6 +1173,12 @@ function profileLabel(
     name: row?.display_name?.trim() || row?.email || "—",
     email: row?.email || "",
   };
+}
+
+function failureReasonFor(status: string, meta: unknown) {
+  return status === "failed" || status === "cancelled"
+    ? describeFailure(meta)
+    : null;
 }
 
 export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
@@ -1188,21 +1197,21 @@ export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
     db
       .from("purchases")
       .select(
-        "id, amount_fcfa, payment_method, status, provider, order_id, payer_phone, created_at, releases(title), buyer:profiles!purchases_buyer_id_fkey(display_name, email), seller:profiles!purchases_seller_id_fkey(display_name, email)",
+        "id, amount_fcfa, payment_method, status, provider, order_id, payer_phone, provider_meta, created_at, releases(title), buyer:profiles!purchases_buyer_id_fkey(display_name, email), seller:profiles!purchases_seller_id_fkey(display_name, email)",
       )
       .order("created_at", { ascending: false })
       .limit(limit),
     db
       .from("label_plan_orders")
       .select(
-        "id, plan, amount_fcfa, payment_method, status, provider, order_id, payer_phone, created_at, profiles(display_name, email)",
+        "id, plan, amount_fcfa, payment_method, status, provider, order_id, payer_phone, provider_meta, created_at, profiles(display_name, email)",
       )
       .order("created_at", { ascending: false })
       .limit(limit),
     db
       .from("artist_plan_orders")
       .select(
-        "id, plan, amount_fcfa, payment_method, status, provider, order_id, payer_phone, created_at, profiles(display_name, email)",
+        "id, plan, amount_fcfa, payment_method, status, provider, order_id, payer_phone, provider_meta, created_at, profiles(display_name, email)",
       )
       .order("created_at", { ascending: false })
       .limit(limit),
@@ -1237,6 +1246,7 @@ export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
       provider: p.provider,
       orderId: p.order_id,
       phone: p.payer_phone,
+      failureReason: failureReasonFor(p.status, p.provider_meta),
     });
   }
 
@@ -1256,6 +1266,7 @@ export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
       provider: o.provider,
       orderId: o.order_id,
       phone: o.payer_phone,
+      failureReason: failureReasonFor(o.status, o.provider_meta),
     });
   }
 
@@ -1275,6 +1286,7 @@ export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
       provider: o.provider,
       orderId: o.order_id,
       phone: o.payer_phone,
+      failureReason: failureReasonFor(o.status, o.provider_meta),
     });
   }
 

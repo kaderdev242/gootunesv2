@@ -67,6 +67,7 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
         row.provider,
         row.orderId,
         row.phone,
+        row.failureReason,
         KIND_LABELS[row.kind],
         STATUS_LABELS[row.status] || row.status,
       ]
@@ -209,6 +210,14 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
                         {row.method} · {row.provider}
                         {row.phone ? ` · ${row.phone}` : ""}
                       </span>
+                      {row.failureReason ? (
+                        <span
+                          className="mt-1 block max-w-[260px] text-[11px] leading-snug text-red-300/80"
+                          title={row.failureReason}
+                        >
+                          {row.failureReason}
+                        </span>
+                      ) : null}
                     </td>
                   </tr>
                 ))

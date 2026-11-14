@@ -9,6 +9,7 @@ import {
 } from "@/lib/constants";
 import type { ActionState } from "@/lib/actions/profile";
 import { createMbiyoPayin, getMbiyoTransaction } from "@/lib/mbiyo/client";
+import { payinErrorFailure, statusFailure } from "@/lib/mbiyo/failure";
 import {
   getMbiyoCurrency,
   getMbiyoMinAmount,
@@ -306,7 +307,11 @@ export async function runInitiatePurchase(
     }
 
     if (tx.status === "failed" || tx.status === "cancelled") {
-      await failPurchaseByOrderId(orderId, tx.transaction_id);
+      await failPurchaseByOrderId(
+        orderId,
+        tx.transaction_id,
+        statusFailure("payin_immediate", tx.status, res.message),
+      );
       return { error: "Le paiement a échoué. Réessaie avec un autre numéro." };
     }
 
@@ -321,7 +326,8 @@ export async function runInitiatePurchase(
       success: "Paiement initié — valide sur ton téléphone Mobile Money.",
     };
   } catch (e) {
-    await failPurchaseByOrderId(orderId);
+    const failure = payinErrorFailure(e);
+    await failPurchaseByOrderId(orderId, failure.transactionId, failure.meta);
     logServerError("purchase.payin", e);
     const mapped = mapPaymentError(e, "payin");
     if (country === "CG" && mapped.includes("Numéro ou opérateur")) {
@@ -384,7 +390,11 @@ export async function runCheckPurchaseStatus(
       return { status: "completed", releaseId: purchase.release_id };
     }
     if (st === "failed" || st === "cancelled") {
-      await failPurchaseByOrderId(orderId, res.data.transaction_id);
+      await failPurchaseByOrderId(
+        orderId,
+        res.data.transaction_id,
+        statusFailure("poll", st),
+      );
       return {
         status: st === "cancelled" ? "cancelled" : "failed",
         releaseId: purchase.release_id,

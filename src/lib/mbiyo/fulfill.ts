@@ -13,6 +13,43 @@ function canFulfillFromStatus(
   return status === "failed" && isTtlExpireMeta(providerMeta);
 }
 
+type PayinTable = "purchases" | "label_plan_orders" | "artist_plan_orders";
+
+/**
+ * Passe un payin pending en « failed » en conservant le provider_meta existant
+ * (devise, montant, réseau…) et en y ajoutant le motif (`meta`).
+ */
+async function failPayinOrder(
+  table: PayinTable,
+  orderId: string,
+  providerTransactionId?: string | null,
+  meta?: Json,
+) {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from(table)
+    .select("provider_meta")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  const prev = asObject(data?.provider_meta);
+  const extra = asObject(meta ?? null);
+  await admin
+    .from(table)
+    .update({
+      status: "failed",
+      provider_transaction_id: providerTransactionId || undefined,
+      provider_meta: { ...prev, ...extra } as Json,
+    })
+    .eq("order_id", orderId)
+    .eq("status", "pending");
+}
+
+function asObject(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : {};
+}
+
 /** Marque un achat comme completed (trigger → solde + library). */
 export async function fulfillPurchaseByOrderId(
   orderId: string,
@@ -64,16 +101,7 @@ export async function failPurchaseByOrderId(
   providerTransactionId?: string | null,
   meta?: Json,
 ) {
-  const admin = createAdminClient();
-  await admin
-    .from("purchases")
-    .update({
-      status: "failed",
-      provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
-    })
-    .eq("order_id", orderId)
-    .eq("status", "pending");
+  await failPayinOrder("purchases", orderId, providerTransactionId, meta);
 }
 
 /** Active l'abonnement label après payin réussi. */
@@ -148,16 +176,7 @@ export async function failLabelPlanByOrderId(
   providerTransactionId?: string | null,
   meta?: Json,
 ) {
-  const admin = createAdminClient();
-  await admin
-    .from("label_plan_orders")
-    .update({
-      status: "failed",
-      provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
-    })
-    .eq("order_id", orderId)
-    .eq("status", "pending");
+  await failPayinOrder("label_plan_orders", orderId, providerTransactionId, meta);
 }
 
 /** Active l'abonnement artiste annuel après payin réussi. */
@@ -230,16 +249,7 @@ export async function failArtistPlanByOrderId(
   providerTransactionId?: string | null,
   meta?: Json,
 ) {
-  const admin = createAdminClient();
-  await admin
-    .from("artist_plan_orders")
-    .update({
-      status: "failed",
-      provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
-    })
-    .eq("order_id", orderId)
-    .eq("status", "pending");
+  await failPayinOrder("artist_plan_orders", orderId, providerTransactionId, meta);
 }
 
 /** Confirme un retrait payout (solde déjà réservé au pending). */

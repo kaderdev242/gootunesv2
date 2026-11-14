@@ -20,6 +20,7 @@ import {
 } from "@/lib/purchases/pending";
 import type { ActionState } from "@/lib/actions/profile";
 import { useActionToast } from "@/hooks/useActionToast";
+import { PaymentRedirectButton } from "@/components/payments/PaymentRedirectButton";
 import { hasActiveArtistPlan } from "@/lib/artist-plan";
 
 const initial: ActionState = {};
@@ -161,6 +162,11 @@ export function ArtistSubscriptionPlans({
           <p className="mt-3 text-xs text-amber-300">
             En attente de confirmation… {orderId ? `Réf. ${orderId}` : ""}
           </p>
+        ) : null}
+        {waiting && state?.redirectUrl ? (
+          <div className="mt-3">
+            <PaymentRedirectButton url={state.redirectUrl} network={method} />
+          </div>
         ) : null}
       </div>
 
