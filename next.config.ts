@@ -37,7 +37,7 @@ const securityHeaders = [
       // Audio : Worker Cloudflare (streaming) + R2 custom domain .app + blob
       "media-src 'self' blob: https://*.workers.dev https://*.r2.dev https://*.gootunes.app",
       // Connexions (fetch, WebSocket, Supabase realtime)
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.workers.dev https://*.r2.cloudflarestorage.com https://*.gootunes.app https://cloud.umami.is https://api-gateway.umami.dev",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.workers.dev https://*.r2.cloudflarestorage.com https://*.gootunes.app https://cloud.umami.is https://gateway.umami.is",
       // Frames : interdit totalement
       "frame-src 'none'",
       "frame-ancestors 'none'",
