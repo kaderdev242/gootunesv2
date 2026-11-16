@@ -1,8 +1,9 @@
+import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CheckmarkBadge01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
 import { BeatDetailWave, BeatGrid, BeatPlayHero } from "@/components/prods/BeatList";
 import { BeatmakerAvatar } from "@/components/prods/BeatmakerTiles";
@@ -76,7 +77,7 @@ export default async function BeatDetailPage({ params }: Props) {
             <Link href={`/prods/p/${a.public_id}`} className="mt-4 inline-flex items-center gap-2.5 self-start text-[15px] text-white/75 transition-colors hover:text-white">
               <BeatmakerAvatar name={by} src={a.avatar_url} size={28} />
               Prod. {by}
-              {a.is_verified ? <HugeiconsIcon icon={CheckmarkBadge01Icon} size={15} className="text-white/60" /> : null}
+              {a.is_verified ? <VerifiedBadge size={16} title="Beatmaker certifié" /> : null}
             </Link>
           ) : null}
 

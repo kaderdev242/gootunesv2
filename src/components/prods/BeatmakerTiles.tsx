@@ -1,6 +1,5 @@
+import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { CheckmarkBadge01Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
 import { getCountryLabel } from "@/lib/constants";
 import type { Beatmaker } from "@/lib/prods/queries";
@@ -37,7 +36,7 @@ export function BeatmakerTiles({ beatmakers }: { beatmakers: Beatmaker[] }) {
             <BeatmakerAvatar name={b.stage_name} src={b.avatar_url} size={80} />
             <span className="mt-4 flex max-w-full items-center gap-1 text-[15px] font-medium text-white">
               <span className="truncate">{b.stage_name}</span>
-              {b.is_verified ? <HugeiconsIcon icon={CheckmarkBadge01Icon} size={14} className="shrink-0 text-white/60" /> : null}
+              {b.is_verified ? <VerifiedBadge size={15} title="Beatmaker certifié" /> : null}
             </span>
             <span className="mt-1 text-xs text-white/45">{b.country ? getCountryLabel(b.country) : "Beatmaker"}</span>
             <span className="mt-3 font-mono text-[11px] tabular-nums text-white/40">

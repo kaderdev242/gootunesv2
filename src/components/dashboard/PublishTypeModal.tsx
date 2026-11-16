@@ -1,12 +1,8 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Album02Icon,
-  ArrowRight01Icon,
-  DrumIcon,
-  MusicNote01Icon,
-} from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { PublishIcon, type PublishIconName } from "@/components/icons/PublishIcons";
 import { MediaModal } from "@/components/ui/MediaModal";
 import type { ReleaseType } from "@/lib/supabase/database.types";
 
@@ -17,12 +13,12 @@ type Format = {
   label: string;
   hint: string;
   needs: string;
-  icon: typeof MusicNote01Icon;
+  icon: PublishIconName;
 };
 
 const FORMATS: Format[] = [
-  { type: "single", label: "Single", hint: "Un titre avec sa pochette", needs: "1 MP3", icon: MusicNote01Icon },
-  { type: "album", label: "Album", hint: "Plusieurs titres sous une même pochette", needs: "2 MP3 et plus", icon: Album02Icon },
+  { type: "single", label: "Single", hint: "Un titre avec sa pochette", needs: "1 MP3", icon: "single" },
+  { type: "album", label: "Album", hint: "Plusieurs titres sous une même pochette", needs: "2 MP3 et plus", icon: "album" },
 ];
 
 const INSTRUMENTAL: Format = {
@@ -30,7 +26,7 @@ const INSTRUMENTAL: Format = {
   label: "Instrumental",
   hint: "Une prod vendue en licence MP3, WAV ou stems, sur la vitrine Prods",
   needs: "Démo + WAV",
-  icon: DrumIcon,
+  icon: "instrumental",
 };
 
 export function PublishTypeModal({
@@ -63,8 +59,8 @@ export function PublishTypeModal({
               onClick={() => onSelect(f.type)}
               className="group flex w-full items-center gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 text-left transition-colors hover:border-white/[0.16] hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.99]"
             >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-white/80 transition-colors group-hover:bg-white group-hover:text-black">
-                <HugeiconsIcon icon={f.icon} size={20} strokeWidth={1.5} />
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-white transition-colors group-hover:bg-white group-hover:text-black">
+                <PublishIcon name={f.icon} size={26} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-3">

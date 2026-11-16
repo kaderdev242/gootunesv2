@@ -1,8 +1,9 @@
 "use client";
 
+import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CheckmarkBadge01Icon, PauseIcon, PlayIcon } from "@hugeicons/core-free-icons";
+import { PauseIcon, PlayIcon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
 import { formatTime, useBeatPlayer, type PlayableBeat } from "@/components/prods/BeatPlayer";
 import { Waveform } from "@/components/prods/Waveform";
@@ -51,7 +52,7 @@ function ArtistLine({ beat }: { beat: PublicBeat }) {
       ) : (
         <span>Beatmaker</span>
       )}
-      {a?.is_verified ? <HugeiconsIcon icon={CheckmarkBadge01Icon} size={13} className="shrink-0 text-white/60" /> : null}
+      {a?.is_verified ? <VerifiedBadge size={14} title="Beatmaker certifié" /> : null}
     </span>
   );
 }
