@@ -25,7 +25,7 @@ export default async function ProdsLayout({ children }: { children: React.ReactN
 
   return (
     <BeatPlayerProvider>
-      <div className="flex min-h-dvh flex-col bg-[#0b0b0c] pb-[72px] text-white">
+      <div className="flex min-h-dvh flex-col overflow-x-clip bg-[#0b0b0c] pb-[72px] text-white">
         {access.preview ? (
           <p className="bg-amber-400/15 px-4 py-2 text-center text-xs text-amber-100">
             Aperçu admin — la vitrine Prods est désactivée pour le public (Console › Fonctionnalités)
