@@ -3,6 +3,7 @@ export type LabelPlan = "none" | "starter" | "unlimited";
 export type ArtistPlan = "none" | "annual";
 export type ReleaseType = "single" | "album";
 export type ReleaseStatus = "draft" | "published";
+export type BeatLicense = "mp3" | "wav" | "stems";
 export type PaymentStatus = "pending" | "completed" | "failed" | "cancelled";
 export type PaymentMethod =
   | "mtn"
@@ -651,6 +652,134 @@ export type Database = {
           },
         ];
       };
+      beats: {
+        Row: {
+          id: string;
+          public_id: string;
+          artist_id: string;
+          owner_id: string;
+          title: string;
+          cover_url: string | null;
+          genre: string | null;
+          mood: string | null;
+          bpm: number | null;
+          musical_key: string | null;
+          tags: string[];
+          demo_key: string;
+          duration_seconds: number | null;
+          price_mp3_fcfa: number | null;
+          price_wav_fcfa: number | null;
+          price_stems_fcfa: number | null;
+          credits: Json;
+          status: ReleaseStatus;
+          is_hidden: boolean;
+          plays_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          public_id?: string;
+          artist_id: string;
+          owner_id: string;
+          title: string;
+          cover_url?: string | null;
+          genre?: string | null;
+          mood?: string | null;
+          bpm?: number | null;
+          musical_key?: string | null;
+          tags?: string[];
+          demo_key: string;
+          duration_seconds?: number | null;
+          price_mp3_fcfa?: number | null;
+          price_wav_fcfa?: number | null;
+          price_stems_fcfa?: number | null;
+          credits?: Json;
+          status?: ReleaseStatus;
+          is_hidden?: boolean;
+          plays_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["beats"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "beats_artist_id_fkey";
+            columns: ["artist_id"];
+            isOneToOne: false;
+            referencedRelation: "artists";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      beat_files: {
+        Row: {
+          beat_id: string;
+          mp3_key: string | null;
+          wav_key: string | null;
+          stems_key: string | null;
+          created_at: string;
+        };
+        Insert: {
+          beat_id: string;
+          mp3_key?: string | null;
+          wav_key?: string | null;
+          stems_key?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["beat_files"]["Insert"]>;
+        Relationships: [];
+      };
+      beat_orders: {
+        Row: {
+          id: string;
+          order_id: string;
+          buyer_id: string;
+          seller_id: string;
+          beat_id: string;
+          license: BeatLicense;
+          amount_fcfa: number;
+          commission_fcfa: number;
+          artist_net_fcfa: number;
+          payment_method: PaymentMethod;
+          status: PaymentStatus;
+          provider: string;
+          provider_transaction_id: string | null;
+          payer_phone: string | null;
+          provider_meta: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          buyer_id: string;
+          seller_id: string;
+          beat_id: string;
+          license: BeatLicense;
+          amount_fcfa: number;
+          commission_fcfa: number;
+          artist_net_fcfa: number;
+          payment_method: PaymentMethod;
+          status?: PaymentStatus;
+          provider?: string;
+          provider_transaction_id?: string | null;
+          payer_phone?: string | null;
+          provider_meta?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["beat_orders"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "beat_orders_beat_id_fkey";
+            columns: ["beat_id"];
+            isOneToOne: false;
+            referencedRelation: "beats";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       feature_flags: {
         Row: {
           key: string;
@@ -1033,6 +1162,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      increment_beat_plays: {
+        Args: { p_beat_id: string };
+        Returns: undefined;
+      };
       get_release_engagement: {
         Args: {
           since_ts: string;
@@ -1069,4 +1202,6 @@ export type Artist = Database["public"]["Tables"]["artists"]["Row"];
 export type Release = Database["public"]["Tables"]["releases"]["Row"];
 export type Track = Database["public"]["Tables"]["tracks"]["Row"];
 export type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
+export type Beat = Database["public"]["Tables"]["beats"]["Row"];
+export type BeatOrder = Database["public"]["Tables"]["beat_orders"]["Row"];
 export type EditorialHit = Database["public"]["Tables"]["editorial_hits"]["Row"];

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireCreatorProfile } from "@/lib/auth/get-profile";
 import { AlbumPublishWizard } from "@/components/dashboard/publish/AlbumPublishWizard";
 import { SinglePublishWizard } from "@/components/dashboard/publish/SinglePublishWizard";
+import { BeatPublishWizard } from "@/components/dashboard/publish/BeatPublishWizard";
+import { isFeatureEnabled } from "@/lib/features";
 import type { ReleaseType } from "@/lib/supabase/database.types";
 
 export default async function PublierPage({
@@ -15,8 +17,9 @@ export default async function PublierPage({
   if (!session) redirect("/connexion?next=/label/publier");
 
   const params = await searchParams;
-  const type = params.type as ReleaseType | undefined;
-  if (type !== "single" && type !== "album") {
+  const type = params.type as ReleaseType | "instrumental" | undefined;
+  const instrumental = type === "instrumental" && (await isFeatureEnabled("prods"));
+  if (type !== "single" && type !== "album" && !instrumental) {
     redirect("/label/publications");
   }
 
@@ -38,6 +41,16 @@ export default async function PublierPage({
           </Link>
         </p>
       </div>
+    );
+  }
+
+  if (instrumental) {
+    return (
+      <BeatPublishWizard
+        artists={artists}
+        basePath="/label"
+        country={session.profile.country}
+      />
     );
   }
 

@@ -111,6 +111,8 @@ export async function createPresignedGet(params: {
   key: string;
   expiresIn?: number;
   contentType?: string;
+  /** Par défaut « inline » ; ex. `attachment; filename="x.wav"` pour un téléchargement. */
+  disposition?: string;
 }) {
   const bucket = getBucket();
   if (!bucket) throw new Error("Bucket R2 manquant");
@@ -120,7 +122,7 @@ export async function createPresignedGet(params: {
     Bucket: bucket,
     Key: params.key,
     ResponseContentType: params.contentType || "audio/mpeg",
-    ResponseContentDisposition: "inline",
+    ResponseContentDisposition: params.disposition || "inline",
   });
 
   return getSignedUrl(client, command, {

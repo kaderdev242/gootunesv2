@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { AppImage } from "@/components/media/AppImage";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
@@ -12,7 +12,7 @@ import {
   PlayIcon,
 } from "@hugeicons/core-free-icons";
 import { DashboardPlayer } from "@/components/dashboard/DashboardPlayer";
-import { PublishTypeModal } from "@/components/dashboard/PublishTypeModal";
+import { PublishTypeModal, type PublishFormat } from "@/components/dashboard/PublishTypeModal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { deleteRelease, deleteTrack } from "@/lib/actions/publish";
 import type { CreatorBase } from "@/lib/dashboard/paths";
@@ -49,10 +49,15 @@ export function PublicationsView({
   basePath,
   releases,
   country,
+  prodsEnabled = false,
+  beatsSlot,
 }: {
   basePath: CreatorBase;
   releases: ReleaseRow[];
   country?: string | null;
+  /** Fonctionnalité « Prods » active : option Instrumental + liste des prods. */
+  prodsEnabled?: boolean;
+  beatsSlot?: ReactNode;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -130,7 +135,7 @@ export function PublicationsView({
     }
   }, [activeMeta, isPlaying]);
 
-  function onSelect(type: ReleaseType) {
+  function onSelect(type: PublishFormat) {
     setModalOpen(false);
     router.push(`${basePath}/publier?type=${type}`);
   }
@@ -414,6 +419,8 @@ export function PublicationsView({
         />
       ) : null}
 
+      {beatsSlot}
+
       <ConfirmDialog
         isOpen={Boolean(confirm)}
         onOpenChange={(open) => {
@@ -430,6 +437,7 @@ export function PublicationsView({
         isOpen={modalOpen}
         onOpenChange={setModalOpen}
         onSelect={onSelect}
+        showInstrumental={prodsEnabled}
       />
     </div>
   );

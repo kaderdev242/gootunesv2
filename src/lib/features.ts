@@ -13,6 +13,13 @@ export const FEATURES = {
     audience: "Artistes et labels",
     paths: ["/artist", "/label"],
   },
+  prods: {
+    name: "Prods",
+    description:
+      "Beatstore web (prod.gootunes.com) : les beatmakers publient des instrumentaux, vendus en licence MP3, WAV ou stems. Désactivée, la vitrine et l'option « Instrumental » disparaissent sans rien supprimer.",
+    audience: "Beatmakers et acheteurs (web uniquement)",
+    paths: ["/prods", "/artist", "/label"],
+  },
 } as const;
 
 export type FeatureKey = keyof typeof FEATURES;

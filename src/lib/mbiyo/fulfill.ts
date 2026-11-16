@@ -4,6 +4,11 @@ import { notifyPurchaseCompleted } from "@/lib/email/notify";
 import { isTtlExpireMeta } from "@/lib/purchases/expire-pending";
 import type { Json, LabelPlan } from "@/lib/supabase/database.types";
 import { revalidatePath } from "next/cache";
+import { BEAT_ORDER_PREFIX } from "@/lib/prods/constants";
+import {
+  failBeatOrderByOrderId,
+  fulfillBeatOrderByOrderId,
+} from "@/lib/prods/purchase";
 
 function canFulfillFromStatus(
   status: string,
@@ -318,6 +323,9 @@ export async function fulfillByOrderId(
   providerTransactionId?: string | null,
   meta?: Json,
 ) {
+  if (orderId.startsWith(BEAT_ORDER_PREFIX)) {
+    return fulfillBeatOrderByOrderId(orderId, providerTransactionId, meta);
+  }
   if (orderId.startsWith("LAB-")) {
     return fulfillLabelPlanByOrderId(orderId, providerTransactionId, meta);
   }
@@ -335,6 +343,9 @@ export async function failByOrderId(
   providerTransactionId?: string | null,
   meta?: Json,
 ) {
+  if (orderId.startsWith(BEAT_ORDER_PREFIX)) {
+    return failBeatOrderByOrderId(orderId, providerTransactionId, meta);
+  }
   if (orderId.startsWith("LAB-")) {
     return failLabelPlanByOrderId(orderId, providerTransactionId, meta);
   }
@@ -353,7 +364,9 @@ export async function getExpectedPayment(orderId: string): Promise<{
   amount: number | null;
   currency: string | null;
 }> {
-  const table = orderId.startsWith("LAB-")
+  const table = orderId.startsWith(BEAT_ORDER_PREFIX)
+    ? "beat_orders"
+    : orderId.startsWith("LAB-")
     ? "label_plan_orders"
     : orderId.startsWith("ART-")
       ? "artist_plan_orders"

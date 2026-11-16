@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireCreatorProfile } from "@/lib/auth/get-profile";
 import { PublicationsView } from "@/components/dashboard/PublicationsView";
+import { BeatsManager } from "@/components/dashboard/BeatsManager";
+import { getCreatorBeats } from "@/lib/prods/creator";
+import { prodsPublicUrl } from "@/lib/prods/constants";
 
 export default async function PublicationsPage() {
   const session = await requireCreatorProfile("label");
@@ -22,11 +25,19 @@ export default async function PublicationsPage() {
     tracks: Array.isArray(r.tracks) ? r.tracks : [],
   }));
 
+  const beats = await getCreatorBeats(session.userId);
+
   return (
     <PublicationsView
       basePath="/label"
       releases={rows}
       country={session.profile.country}
+      prodsEnabled={beats !== null}
+      beatsSlot={
+        beats?.length ? (
+          <BeatsManager beats={beats} country={session.profile.country} prodsUrl={prodsPublicUrl()} />
+        ) : null
+      }
     />
   );
 }

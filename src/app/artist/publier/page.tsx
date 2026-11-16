@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireCreatorProfile } from "@/lib/auth/get-profile";
 import { AlbumPublishWizard } from "@/components/dashboard/publish/AlbumPublishWizard";
 import { SinglePublishWizard } from "@/components/dashboard/publish/SinglePublishWizard";
+import { BeatPublishWizard } from "@/components/dashboard/publish/BeatPublishWizard";
+import { isFeatureEnabled } from "@/lib/features";
 import { hasActiveArtistPlan } from "@/lib/artist-plan";
 import { ARTIST_PLAN } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
@@ -37,8 +39,9 @@ export default async function PublierPage({
   }
 
   const params = await searchParams;
-  const type = params.type as ReleaseType | undefined;
-  if (type !== "single" && type !== "album") {
+  const type = params.type as ReleaseType | "instrumental" | undefined;
+  const instrumental = type === "instrumental" && (await isFeatureEnabled("prods"));
+  if (type !== "single" && type !== "album" && !instrumental) {
     redirect("/artist/publications");
   }
 
@@ -60,6 +63,16 @@ export default async function PublierPage({
           </Link>
         </p>
       </div>
+    );
+  }
+
+  if (instrumental) {
+    return (
+      <BeatPublishWizard
+        artists={artists}
+        basePath="/artist"
+        country={session.profile.country}
+      />
     );
   }
 
