@@ -20,15 +20,25 @@ function toPlayable(b: PublicBeat): PlayableBeat {
 }
 
 /** Liste « beatstore » : une ligne par prod, lecture directe de la démo. */
-export function BeatList({ beats, country }: { beats: PublicBeat[]; country?: string | null }) {
+export function BeatList({
+  beats,
+  country,
+  emptyTitle = "Aucune prod ne correspond",
+  emptyHint = "Essaie un autre genre ou retire un filtre.",
+}: {
+  beats: PublicBeat[];
+  country?: string | null;
+  emptyTitle?: string;
+  emptyHint?: string;
+}) {
   const { current, playing, play } = useBeatPlayer();
   const queue = beats.map(toPlayable);
 
   if (!beats.length) {
     return (
       <div className="rounded-[28px] border border-dashed border-white/10 px-6 py-16 text-center">
-        <p className="font-semibold text-white">Aucune prod ne correspond</p>
-        <p className="mt-1 text-sm text-white/50">Essaie un autre genre ou retire un filtre.</p>
+        <p className="font-semibold text-white">{emptyTitle}</p>
+        <p className="mt-1 text-sm text-white/50">{emptyHint}</p>
       </div>
     );
   }

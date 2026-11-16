@@ -147,7 +147,16 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
             ))}
           </div>
         </div>
-        <BeatList beats={beats} country={country} />
+        <BeatList
+          beats={beats}
+          country={country}
+          {...(hasFilters
+            ? {}
+            : {
+                emptyTitle: "Les premières prods arrivent",
+                emptyHint: "Les beatmakers publient en ce moment. Reviens très vite.",
+              })}
+        />
       </section>
     </>
   );
