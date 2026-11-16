@@ -39,13 +39,13 @@ export default async function BeatPurchasesPage() {
 
   return (
     <div className="pt-8">
-      <h1 className="font-display text-[34px] font-bold tracking-[-0.03em]">Mes achats</h1>
+      <h1 className="font-display text-[40px] font-semibold tracking-[-0.03em] pt-4">Mes achats</h1>
       <p className="mt-1 text-sm text-white/50">Tes licences et tes fichiers sans tag, à télécharger quand tu veux.</p>
 
       {!orders?.length ? (
-        <div className="mt-8 rounded-[28px] border border-dashed border-white/10 px-6 py-16 text-center">
+        <div className="mt-8 rounded-xl border border-dashed border-white/10 px-6 py-16 text-center">
           <p className="font-semibold text-white">Aucune prod achetée pour l&apos;instant</p>
-          <Link href="/prods" className="mt-5 inline-flex h-11 items-center rounded-full bg-white px-6 text-sm font-semibold text-black">
+          <Link href="/prods" className="mt-5 inline-flex h-11 items-center rounded-lg bg-white px-6 text-sm font-semibold text-black">
             Explorer les prods
           </Link>
         </div>
@@ -62,7 +62,7 @@ export default async function BeatPurchasesPage() {
             const avail = provided.get(o.beat_id);
             const dl = LICENSES[o.license].files.filter((f) => avail?.[f]);
             return (
-              <li key={o.order_id} className="flex flex-col gap-4 rounded-[28px] border border-white/[0.06] bg-[#0a0a0a] p-4 sm:flex-row sm:items-center">
+              <li key={o.order_id} className="flex flex-col gap-4 rounded-xl border border-white/[0.06] bg-[#0a0a0a] p-4 sm:flex-row sm:items-center">
                 <div className="flex min-w-0 flex-1 items-center gap-4">
                   <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
                     <AppImage src={beat?.cover_url || FALLBACK_COVER} alt="" fill sizes="64px" className="object-cover" />
@@ -81,7 +81,7 @@ export default async function BeatPurchasesPage() {
                     <a
                       key={f}
                       href={`/api/prods/download/${o.order_id}?file=${f}`}
-                      className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-black transition hover:bg-white/90"
+                      className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-black transition hover:bg-white/90"
                     >
                       <HugeiconsIcon icon={Download04Icon} size={16} />
                       {FILE_LABEL[f]}

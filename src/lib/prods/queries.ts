@@ -2,7 +2,16 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export const BEAT_PUBLIC_SELECT =
-  "id, public_id, title, cover_url, genre, mood, bpm, musical_key, tags, duration_seconds, price_mp3_fcfa, price_wav_fcfa, price_stems_fcfa, plays_count, created_at, owner_id, credits, artists(id, public_id, stage_name, avatar_url, country, is_verified)" as const;
+  "id, public_id, title, cover_url, genre, mood, bpm, musical_key, tags, duration_seconds, price_mp3_fcfa, price_wav_fcfa, price_stems_fcfa, plays_count, waveform, created_at, owner_id, credits, artists(id, public_id, stage_name, avatar_url, country, is_verified)" as const;
+
+export type BeatArtist = {
+  id: string;
+  public_id: string;
+  stage_name: string;
+  avatar_url: string | null;
+  country: string | null;
+  is_verified: boolean;
+};
 
 export type PublicBeat = {
   id: string;
@@ -19,17 +28,11 @@ export type PublicBeat = {
   price_wav_fcfa: number | null;
   price_stems_fcfa: number | null;
   plays_count: number;
+  waveform: number[] | null;
   created_at: string;
   owner_id: string;
   credits: unknown;
-  artists: {
-    id: string;
-    public_id: string;
-    stage_name: string;
-    avatar_url: string | null;
-    country: string | null;
-    is_verified: boolean;
-  } | null;
+  artists: BeatArtist | null;
 };
 
 export type BeatFilters = {
@@ -48,7 +51,7 @@ const BPM_RANGES = {
 } as const;
 
 function normalize(row: unknown): PublicBeat {
-  const r = row as PublicBeat & { artists: PublicBeat["artists"] | PublicBeat["artists"][] };
+  const r = row as PublicBeat & { artists: BeatArtist | BeatArtist[] | null };
   return { ...r, artists: Array.isArray(r.artists) ? (r.artists[0] ?? null) : r.artists };
 }
 
@@ -62,7 +65,10 @@ export async function listBeats(filters: BeatFilters = {}, limit = 60): Promise<
     .eq("is_hidden", false);
 
   const q = filters.q?.trim().replace(/[%,()]/g, " ").slice(0, 60);
-  if (q) query = query.ilike("title", `%${q}%`);
+  if (q) {
+    const tag = /^[\p{L}\p{N}-]+$/u.test(q) ? `,tags.cs.{${q.toLowerCase()}}` : "";
+    query = query.or(`title.ilike.%${q}%,genre.ilike.%${q}%${tag}`);
+  }
   if (filters.genre) query = query.eq("genre", filters.genre);
   if (filters.mood) query = query.eq("mood", filters.mood);
   if (filters.key) query = query.eq("musical_key", filters.key);
@@ -79,6 +85,20 @@ export async function listBeats(filters: BeatFilters = {}, limit = 60): Promise<
   return (data ?? []).map(normalize);
 }
 
+/** Les plus écoutées (au moins une écoute). */
+export async function listTrendingBeats(limit = 8): Promise<PublicBeat[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("beats")
+    .select(BEAT_PUBLIC_SELECT)
+    .eq("status", "published")
+    .eq("is_hidden", false)
+    .gt("plays_count", 0)
+    .order("plays_count", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map(normalize);
+}
+
 export const getBeatByPublicId = cache(async (publicId: string): Promise<PublicBeat | null> => {
   const supabase = await createClient();
   const { data } = await supabase
@@ -91,22 +111,54 @@ export const getBeatByPublicId = cache(async (publicId: string): Promise<PublicB
   return data ? normalize(data) : null;
 });
 
-export async function listBeatsByArtist(artistId: string, excludeId: string, limit = 6) {
+export async function listBeatsByArtist(artistId: string, excludeId?: string, limit = 60) {
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("beats")
     .select(BEAT_PUBLIC_SELECT)
     .eq("artist_id", artistId)
     .eq("status", "published")
-    .eq("is_hidden", false)
-    .neq("id", excludeId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .eq("is_hidden", false);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data } = await query.order("created_at", { ascending: false }).limit(limit);
   return (data ?? []).map(normalize);
 }
 
-/** Genres présents dans le catalogue (pour les filtres). */
-export async function listBeatGenres(): Promise<string[]> {
+export type Beatmaker = BeatArtist & { bio: string | null; beats: number; plays: number };
+
+/** Beatmakers ayant au moins une prod en ligne, classés par écoutes. */
+export async function listBeatmakers(limit = 12): Promise<Beatmaker[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("beats")
+    .select("plays_count, artists(id, public_id, stage_name, avatar_url, country, is_verified, bio)")
+    .eq("status", "published")
+    .eq("is_hidden", false)
+    .limit(1000);
+  const map = new Map<string, Beatmaker>();
+  for (const row of data ?? []) {
+    const a = (Array.isArray(row.artists) ? row.artists[0] : row.artists) as (BeatArtist & { bio: string | null }) | null;
+    if (!a) continue;
+    const cur = map.get(a.id) ?? { ...a, beats: 0, plays: 0 };
+    cur.beats += 1;
+    cur.plays += row.plays_count;
+    map.set(a.id, cur);
+  }
+  return [...map.values()].sort((x, y) => y.plays - x.plays || y.beats - x.beats).slice(0, limit);
+}
+
+export const getBeatmaker = cache(async (publicId: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("artists")
+    .select("id, public_id, stage_name, avatar_url, country, is_verified, bio")
+    .eq("public_id", publicId)
+    .maybeSingle();
+  return data as (BeatArtist & { bio: string | null }) | null;
+});
+
+/** Genres présents dans le catalogue, avec leur nombre de prods. */
+export async function listBeatGenres(): Promise<{ genre: string; count: number }[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("beats")
@@ -114,8 +166,12 @@ export async function listBeatGenres(): Promise<string[]> {
     .eq("status", "published")
     .eq("is_hidden", false)
     .not("genre", "is", null)
-    .limit(500);
-  return [...new Set((data ?? []).map((r) => r.genre as string))].sort((a, b) => a.localeCompare(b, "fr"));
+    .limit(1000);
+  const counts = new Map<string, number>();
+  for (const r of data ?? []) counts.set(r.genre as string, (counts.get(r.genre as string) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([genre, count]) => ({ genre, count }))
+    .sort((a, b) => b.count - a.count || a.genre.localeCompare(b.genre, "fr"));
 }
 
 /** Pays du visiteur connecté (affichage des prix en devise locale), sinon null = FCFA. */

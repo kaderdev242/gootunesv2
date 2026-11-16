@@ -272,3 +272,9 @@ body {
     transform: translateY(0) scale(1);
   }
 }
+
+/* Prods : indicateur « en lecture » (barres d'égaliseur) */
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}

@@ -33,6 +33,7 @@ import {
   isBeatLicense,
   LICENSES,
 } from "@/lib/prods/constants";
+import { notifyBeatOrderCompleted } from "@/lib/email/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, PaymentMethod } from "@/lib/supabase/database.types";
 import { payinFormSchema } from "@/lib/validation/schemas";
@@ -164,17 +165,18 @@ export async function runInitiateBeatPurchase(
   };
 
   if (bypass) {
-    const { error } = await admin.from("beat_orders").insert({
+    const { data: demoOrder, error } = await admin.from("beat_orders").insert({
       ...base,
       status: "completed",
       provider: "demo",
       payer_phone: phone || "demo",
       provider_meta: { mode: purchaseDevBypass() ? "dev_bypass" : "demo_no_mbiyo_key" },
-    });
+    }).select("id").single();
     if (error) {
       logServerError("prods.purchase.demo", error);
       return { error: mapDbError(error, "Impossible de finaliser l'achat.") };
     }
+    if (demoOrder) void notifyBeatOrderCompleted(demoOrder.id);
     revalidateBeatPurchase(beat.public_id);
     return {
       success: `Achat test de « ${beat.title} » (paiement désactivé).`,
@@ -341,6 +343,7 @@ export async function fulfillBeatOrderByOrderId(
     .eq("status", order.status);
   if (error) return { ok: false as const, reason: "update_failed" as const };
 
+  void notifyBeatOrderCompleted(order.id);
   const beat = order.beats as { public_id?: string } | null;
   revalidateBeatPurchase(beat?.public_id);
   return { ok: true as const, already: false as const };

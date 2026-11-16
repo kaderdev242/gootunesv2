@@ -28,6 +28,7 @@ import {
   type BeatFileKind,
 } from "@/lib/prods/constants";
 import { uploadBeatFile } from "@/lib/prods/upload-client";
+import { computeWaveform } from "@/lib/prods/waveform";
 import { toastError } from "@/lib/toast";
 import { uploadViaApi } from "@/lib/upload-client";
 import type { Artist, BeatLicense } from "@/lib/supabase/database.types";
@@ -76,6 +77,7 @@ export function BeatPublishWizard({
     stems: null,
   });
   const [duration, setDuration] = useState(0);
+  const [waveform, setWaveform] = useState<number[] | null>(null);
   const [enabled, setEnabled] = useState<Record<BeatLicense, boolean>>({
     mp3: true,
     wav: true,
@@ -166,12 +168,14 @@ export function BeatPublishWizard({
     setBusy(kind);
     setPercent(0);
     try {
-      const [key, dur] = await Promise.all([
+      const [key, dur, peaks] = await Promise.all([
         uploadBeatFile(file, kind, setPercent),
         kind === "demo" ? readAudioDuration(file) : Promise.resolve(0),
+        kind === "demo" ? computeWaveform(file) : Promise.resolve(null),
       ]);
       setFiles((f) => ({ ...f, [kind]: { key, name: file.name } }));
       if (kind === "demo" && dur) setDuration(Math.round(dur));
+      if (kind === "demo") setWaveform(peaks);
       if (kind !== "demo") {
         const lic = (Object.keys(LICENSE_FILE) as BeatLicense[]).find((l) => LICENSE_FILE[l] === kind);
         if (lic) setEnabled((e) => ({ ...e, [lic]: true }));
@@ -236,6 +240,7 @@ export function BeatPublishWizard({
         <input type="hidden" name="producteur" value={producteur} />
         <input type="hidden" name="demo_key" value={files.demo?.key || ""} />
         <input type="hidden" name="duration_seconds" value={duration || ""} />
+        <input type="hidden" name="waveform" value={waveform ? JSON.stringify(waveform) : ""} />
         <input type="hidden" name="mp3_key" value={files.mp3?.key || ""} />
         <input type="hidden" name="wav_key" value={files.wav?.key || ""} />
         <input type="hidden" name="stems_key" value={files.stems?.key || ""} />

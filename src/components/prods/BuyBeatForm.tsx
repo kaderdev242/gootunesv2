@@ -144,7 +144,7 @@ export function BuyBeatForm({
         type="submit"
         isPending={pending || waiting}
         isDisabled={waiting}
-        className="h-12 rounded-full bg-white text-sm font-semibold text-black"
+        className="h-12 rounded-lg bg-white text-sm font-semibold text-black"
       >
         {waiting ? "Paiement en cours…" : `Payer ${priceLabel}`}
       </Button>

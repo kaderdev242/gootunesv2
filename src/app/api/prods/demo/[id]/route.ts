@@ -67,7 +67,11 @@ export async function GET(request: NextRequest, { params }: Params) {
   // Une écoute = une première requête depuis le début du fichier.
   if (start === 0) {
     const once = await checkRateLimit(`prods:play:${beat.id}:${ip}`, 1, 30 * 60_000);
-    if (once.allowed) void admin.rpc("increment_beat_plays", { p_beat_id: beat.id });
+    // La requête supabase-js n'est envoyée que si elle est attendue.
+    if (once.allowed) {
+      const { error } = await admin.rpc("increment_beat_plays", { p_beat_id: beat.id });
+      if (error) console.error("[prods.demo] compteur d'écoutes", error.message);
+    }
   }
 
   try {

@@ -48,14 +48,14 @@ export default async function BuyBeatPage({ params, searchParams }: Props) {
         </p>
       ) : null}
 
-      <div className="mt-6 rounded-[28px] border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
+      <div className="mt-6 rounded-xl border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
         <div className="flex items-center gap-4">
           <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/15">
             <AppImage src={beat.cover_url || FALLBACK_COVER} alt="" fill sizes="80px" className="object-cover" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-white/40">Prod. {beat.artists?.stage_name || "Beatmaker"}</p>
-            <h1 className="truncate text-xl font-bold text-white">{beat.title}</h1>
+            <h1 className="truncate text-xl font-semibold text-white">{beat.title}</h1>
             <p className="mt-1 text-sm font-semibold text-white">{priceLabel}</p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default async function BuyBeatPage({ params, searchParams }: Props) {
                 role="radio"
                 aria-checked={l === license}
                 className={`rounded-2xl border px-3 py-3 text-center transition ${
-                  l === license ? "border-violet-400/60 bg-violet-400/10" : "border-white/10 hover:bg-white/[0.04]"
+                  l === license ? "border-white/40 bg-white/[0.06]" : "border-white/10 hover:bg-white/[0.04]"
                 }`}
               >
                 <span className="block text-[13px] font-semibold text-white">{LICENSES[l].name.replace("Licence ", "")}</span>

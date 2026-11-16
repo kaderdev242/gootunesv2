@@ -294,3 +294,60 @@ export function accountReactivatedEmail(input: {
     text: `Bonjour ${who}. Ton compte Gootunes a été réactivé. ${href}`,
   };
 }
+
+export function beatPurchaseBuyerEmail(input: {
+  buyerName?: string | null;
+  title: string;
+  beatmaker: string;
+  licenseName: string;
+  amountFcfa: number;
+  files: string[];
+  downloadsUrl: string;
+}) {
+  const name = input.buyerName?.trim() || "toi";
+  return {
+    subject: `Ta prod est prête — ${input.title}`,
+    html: emailLayout({
+      preheader: "Tes fichiers sans tag t’attendent dans Mes achats.",
+      title: "Merci pour ton achat",
+      bodyHtml: [
+        p(`C’est bon, ${name}. Ta licence est active et tes fichiers sans tag sont prêts.`),
+        strongLine("Prod", input.title),
+        strongLine("Beatmaker", input.beatmaker),
+        strongLine("Licence", input.licenseName),
+        strongLine("Fichiers", input.files.join(", ")),
+        strongLine("Montant", formatFcfa(input.amountFcfa)),
+        p("Tu peux les retélécharger quand tu veux depuis « Mes achats », même si tu as fermé la page."),
+      ].join(""),
+      cta: { label: "Télécharger mes fichiers", href: input.downloadsUrl },
+    }),
+    text: `Achat confirmé : ${input.title} (${input.licenseName}). Télécharge tes fichiers : ${input.downloadsUrl}`,
+  };
+}
+
+export function beatPurchaseSellerEmail(input: {
+  sellerName?: string | null;
+  title: string;
+  licenseName: string;
+  amountFcfa: number;
+  netFcfa: number;
+  dashboardPath: string;
+}) {
+  const name = input.sellerName?.trim() || "toi";
+  return {
+    subject: `Prod vendue — ${input.title}`,
+    html: emailLayout({
+      preheader: "Une licence de ta prod vient d’être achetée.",
+      title: "Prod vendue",
+      bodyHtml: [
+        p(`Bonne nouvelle, ${name}. Une licence vient d’être achetée.`),
+        strongLine("Prod", input.title),
+        strongLine("Licence", input.licenseName),
+        strongLine("Montant payé", formatFcfa(input.amountFcfa)),
+        strongLine("Net crédité", formatFcfa(input.netFcfa)),
+      ].join(""),
+      cta: { label: "Voir mon espace", href: appUrl(input.dashboardPath) },
+    }),
+    text: `Prod vendue : ${input.title} — net ${formatFcfa(input.netFcfa)}`,
+  };
+}

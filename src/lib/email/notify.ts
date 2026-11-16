@@ -1,8 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { contactInbox, sendEmailSafe } from "./client";
+import { appUrl, contactInbox, sendEmailSafe } from "./client";
+import { LICENSES } from "@/lib/prods/constants";
 import {
   accountReactivatedEmail,
   accountSuspendedEmail,
+  beatPurchaseBuyerEmail,
+  beatPurchaseSellerEmail,
   loginOtpEmail,
   labelArtistCreatedEmail,
   purchaseBuyerEmail,
@@ -184,4 +187,58 @@ export function notifyAccountReactivated(input: {
     html: mail.html,
     text: mail.text,
   });
+}
+
+/** Mails acheteur + vendeur après l'achat d'une licence de prod. */
+export async function notifyBeatOrderCompleted(orderId: string) {
+  try {
+    const admin = createAdminClient();
+    const { data: order } = await admin
+      .from("beat_orders")
+      .select("id, status, license, amount_fcfa, artist_net_fcfa, buyer_id, seller_id, beat_id, beats(title, artists(stage_name))")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order || order.status !== "completed") return;
+
+    const beat = (Array.isArray(order.beats) ? order.beats[0] : order.beats) as {
+      title: string;
+      artists: { stage_name: string } | { stage_name: string }[] | null;
+    } | null;
+    const artist = Array.isArray(beat?.artists) ? beat?.artists[0] : beat?.artists;
+    const [{ data: buyer }, { data: seller }, { data: files }] = await Promise.all([
+      admin.from("profiles").select("email, display_name").eq("id", order.buyer_id).maybeSingle(),
+      admin.from("profiles").select("email, display_name, role").eq("id", order.seller_id).maybeSingle(),
+      admin.from("beat_files").select("mp3_key, wav_key, stems_key").eq("beat_id", order.beat_id).maybeSingle(),
+    ]);
+    const license = LICENSES[order.license];
+    const labels = { mp3: "MP3", wav: "WAV", stems: "Stems (ZIP)" } as const;
+    const provided = license.files.filter((f) => files?.[`${f}_key` as const]).map((f) => labels[f]);
+    const title = beat?.title || "Prod";
+
+    if (buyer?.email) {
+      const mail = beatPurchaseBuyerEmail({
+        buyerName: buyer.display_name,
+        title,
+        beatmaker: artist?.stage_name || "Beatmaker",
+        licenseName: license.name,
+        amountFcfa: Number(order.amount_fcfa),
+        files: provided,
+        downloadsUrl: appUrl("/prods/achats"),
+      });
+      sendEmailSafe({ to: buyer.email, subject: mail.subject, html: mail.html, text: mail.text });
+    }
+    if (seller?.email) {
+      const mail = beatPurchaseSellerEmail({
+        sellerName: seller.display_name,
+        title,
+        licenseName: license.name,
+        amountFcfa: Number(order.amount_fcfa),
+        netFcfa: Number(order.artist_net_fcfa),
+        dashboardPath: seller.role === "label" ? "/label/publications" : "/artist/publications",
+      });
+      sendEmailSafe({ to: seller.email, subject: mail.subject, html: mail.html, text: mail.text });
+    }
+  } catch (e) {
+    console.error("[email] notifyBeatOrderCompleted", e);
+  }
 }

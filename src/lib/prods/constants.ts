@@ -86,3 +86,9 @@ export function prodsPublicUrl(path = "") {
   const base = (process.env.NEXT_PUBLIC_PRODS_URL || "/prods").replace(/\/$/, "");
   return `${base}${path}`;
 }
+
+/** Étiquette tempo affichée partout : « 142 BPM · G#m ». */
+export function tempoLabel(beat: { bpm: number | null; musical_key: string | null }) {
+  const key = beat.musical_key?.replace(/ min$/, "m").replace(/ maj$/, "") ?? null;
+  return [beat.bpm ? `${beat.bpm} BPM` : null, key].filter(Boolean).join(" · ") || null;
+}

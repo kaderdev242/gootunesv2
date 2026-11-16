@@ -37,7 +37,8 @@ export async function proxy(request: NextRequest) {
   // restent sur www, où vit le cookie de connexion.
   if (host === PRODS_HOST && !isApi) {
     const inner = path.startsWith("/prods") ? path.slice("/prods".length) || "/" : path;
-    const isPublicProds = inner === "/" || /^\/b\/[^/]+\/?$/.test(inner);
+    const isPublicProds =
+      inner === "/" || inner === "/beatmakers" || /^\/(b|p)\/[^/]+\/?$/.test(inner);
     const isPrivateProds = inner === "/achats" || /^\/b\/[^/]+\/acheter\/?$/.test(inner);
 
     if (isPublicProds) {

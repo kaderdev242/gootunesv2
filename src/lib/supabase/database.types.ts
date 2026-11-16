@@ -674,6 +674,7 @@ export type Database = {
           status: ReleaseStatus;
           is_hidden: boolean;
           plays_count: number;
+          waveform: number[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -698,6 +699,7 @@ export type Database = {
           status?: ReleaseStatus;
           is_hidden?: boolean;
           plays_count?: number;
+          waveform?: number[] | null;
           created_at?: string;
           updated_at?: string;
         };

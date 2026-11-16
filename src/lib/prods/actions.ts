@@ -55,6 +55,13 @@ const beatSchema = z.object({
   price_wav_fcfa: optPrice,
   price_stems_fcfa: optPrice,
   producteur: z.string().trim().max(120).optional(),
+  waveform: z.preprocess((v) => {
+    try {
+      return v ? JSON.parse(String(v)) : null;
+    } catch {
+      return null;
+    }
+  }, z.array(z.number().int().min(0).max(100)).max(400).nullable()),
   ownership_certified: z.literal("true", {
     error: "Certifie être l'auteur et le propriétaire de la prod.",
   }),
@@ -154,6 +161,7 @@ export async function createBeat(_prev: ActionState, formData: FormData): Promis
       price_wav_fcfa: input.price_wav_fcfa,
       price_stems_fcfa: input.price_stems_fcfa,
       credits: { producteur: input.producteur || "" },
+      waveform: input.waveform?.length ? input.waveform : null,
       status: "published",
     })
     .select("id")
