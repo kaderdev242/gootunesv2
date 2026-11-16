@@ -200,7 +200,7 @@ export function BeatPlayHero({ beat, country }: { beat: PublicBeat; country?: st
     <button
       type="button"
       onClick={() => play(playable, [playable])}
-      className="inline-flex h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-medium text-black transition-transform active:scale-[0.98]"
+      className="inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-white px-5 text-sm font-medium text-black transition-transform active:scale-[0.98]"
     >
       <HugeiconsIcon icon={active ? PauseIcon : PlayIcon} size={18} />
       {active ? "Pause" : "Écouter la démo"}

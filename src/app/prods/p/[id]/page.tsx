@@ -43,14 +43,14 @@ export default async function BeatmakerPage({ params }: Props) {
     <div>
       <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden pb-16 pt-8">
         <CoverAtmosphere coverUrl={heroCover} intensity="panel" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#0b0b0c]" aria-hidden />
+        <div className="pointer-events-none absolute inset-x-0 -bottom-px h-40 bg-gradient-to-b from-transparent via-[#0b0b0c]/70 to-[#0b0b0c]" aria-hidden />
         <div className="relative z-10 mx-auto max-w-[1400px] px-4 md:px-6">
           <Link href="/prods/beatmakers" className="text-sm text-white/60 transition-colors hover:text-white">
             Beatmakers
           </Link>
 
           <div className="mt-16 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-6">
               <span className="rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
                 <BeatmakerAvatar name={bm.stage_name} src={bm.avatar_url} size={128} />
               </span>
@@ -58,8 +58,8 @@ export default async function BeatmakerPage({ params }: Props) {
                 <p className="text-sm text-white/65">
                   Beatmaker{bm.country ? ` · ${getCountryLabel(bm.country)}` : ""}
                 </p>
-                <h1 className="mt-1 flex items-center gap-2 font-display text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-[48px]">
-                  <span className="truncate">{bm.stage_name}</span>
+                <h1 className="mt-1 flex flex-wrap items-center gap-x-2 font-display text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-[48px]">
+                  <span className="min-w-0 break-words">{bm.stage_name}</span>
                   {bm.is_verified ? <VerifiedBadge size={26} title="Beatmaker certifié" /> : null}
                 </h1>
                 {genres.length ? <p className="mt-2 text-sm text-white/55">{genres.join(" · ")}</p> : null}

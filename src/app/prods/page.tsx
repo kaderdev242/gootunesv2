@@ -71,7 +71,7 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
   return (
     <>
       {/* Hero : texte et recherche à gauche, la prod du moment à droite */}
-      <section className={`grid items-center gap-10 pb-4 pt-12 md:pt-16 ${featured && !browsing ? "lg:grid-cols-[1fr_520px]" : ""}`}>
+      <section className={`grid grid-cols-[minmax(0,1fr)] items-center gap-10 pb-4 pt-12 md:pt-16 ${featured && !browsing ? "lg:grid-cols-[minmax(0,1fr)_520px]" : ""}`}>
         <div className="max-w-xl">
           <h1 className="font-display text-[40px] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-[56px]">
             Les prods des beatmakers d&apos;Afrique
@@ -113,7 +113,7 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
               </div>
               <div className="min-w-0">
                 <p className="text-xs text-white/45">{trending[0] ? "La plus écoutée" : "Dernière sortie"}</p>
-                <Link href={`/prods/b/${featured.public_id}`} className="mt-1 block truncate font-display text-[22px] font-semibold tracking-[-0.02em] hover:underline">
+                <Link href={`/prods/b/${featured.public_id}`} className="mt-1 line-clamp-2 font-display text-[22px] font-semibold leading-tight tracking-[-0.02em] hover:underline">
                   {featured.title}
                 </Link>
                 <p className="truncate text-sm text-white/55">
@@ -125,11 +125,11 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
             <div className="mt-5">
               <BeatDetailWave beat={featured} country={country} />
             </div>
-            <div className="mt-5 flex items-center gap-2">
+            <div className="mt-5 flex flex-wrap items-center gap-2">
               <BeatPlayHero beat={featured} country={country} />
               <a
                 href={`/prods/b/${featured.public_id}#licences`}
-                className="inline-flex h-11 items-center rounded-lg px-4 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="inline-flex h-11 items-center whitespace-nowrap rounded-lg px-4 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.06] hover:text-white"
               >
                 Voir les licences
               </a>

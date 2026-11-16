@@ -63,7 +63,7 @@ export default async function BeatDetailPage({ params }: Props) {
         ) : null}
       </nav>
 
-      <section className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] lg:gap-12">
+      <section className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-12">
         <div className="relative aspect-square w-full max-w-[320px] overflow-hidden rounded-2xl bg-white/[0.04]">
           <AppImage src={beat.cover_url || FALLBACK_COVER} alt={beat.title} fill sizes="320px" className="object-cover" priority />
         </div>
@@ -89,7 +89,7 @@ export default async function BeatDetailPage({ params }: Props) {
             <BeatPlayHero beat={beat} country={country} />
             <a
               href="#licences"
-              className="inline-flex h-11 items-center rounded-lg border border-white/[0.12] px-5 text-sm font-medium text-white transition-colors hover:bg-white/[0.06]"
+              className="inline-flex h-11 items-center whitespace-nowrap rounded-lg border border-white/[0.12] px-5 text-sm font-medium text-white transition-colors hover:bg-white/[0.06]"
             >
               Acheter une licence
             </a>
