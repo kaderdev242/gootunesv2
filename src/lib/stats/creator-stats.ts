@@ -53,6 +53,8 @@ export type ProdsStats = {
   grossFcfa: number;
   netFcfa: number;
   top: BeatStatRow[];
+  /** Ventes de licences par pays d'acheteur (fusionnées dans « Pays des achats »). */
+  countries: Record<string, { purchases: number; amountFcfa: number }>;
 };
 
 export type CreatorStats = {
@@ -69,7 +71,7 @@ export type CreatorStats = {
   prods?: ProdsStats;
 };
 
-const EMPTY_PRODS: ProdsStats = { beats: 0, plays: 0, sales: 0, grossFcfa: 0, netFcfa: 0, top: [] };
+const EMPTY_PRODS: ProdsStats = { beats: 0, plays: 0, sales: 0, grossFcfa: 0, netFcfa: 0, top: [], countries: {} };
 
 async function getProdsStats(
   supabase: SupabaseClient<Database>,
@@ -87,7 +89,7 @@ async function getProdsStats(
 
     const { data: orders } = await supabase
       .from("beat_orders")
-      .select("beat_id, amount_fcfa, artist_net_fcfa")
+      .select("beat_id, amount_fcfa, artist_net_fcfa, buyer_country")
       .eq("seller_id", sellerId)
       .eq("status", "completed")
       .in(
@@ -98,7 +100,12 @@ async function getProdsStats(
     const byBeat = new Map<string, { sales: number; net: number }>();
     let gross = 0;
     let net = 0;
+    const countries: ProdsStats["countries"] = {};
     for (const o of orders ?? []) {
+      const c = o.buyer_country || "??";
+      countries[c] = countries[c] ?? { purchases: 0, amountFcfa: 0 };
+      countries[c].purchases += 1;
+      countries[c].amountFcfa += Number(o.amount_fcfa);
       const cur = byBeat.get(o.beat_id) ?? { sales: 0, net: 0 };
       cur.sales += 1;
       cur.net += Number(o.artist_net_fcfa);
@@ -127,6 +134,7 @@ async function getProdsStats(
       grossFcfa: gross,
       netFcfa: net,
       top,
+      countries,
     };
   } catch {
     // Tables Prods absentes : section masquée.
@@ -153,7 +161,7 @@ export async function getCreatorStats(
 
   let purchaseQuery = supabase
     .from("purchases")
-    .select("id, amount_fcfa, artist_net_fcfa, release_id, buyer_id")
+    .select("id, amount_fcfa, artist_net_fcfa, release_id, buyer_country")
     .eq("seller_id", sellerId)
     .eq("status", "completed");
 
@@ -179,29 +187,13 @@ export async function getCreatorStats(
 
   const rows = purchases ?? [];
   const releaseIds = [...new Set(rows.map((p) => p.release_id))];
-  const buyerIds = [...new Set(rows.map((p) => p.buyer_id))];
 
-  const [{ data: releases }, { data: buyers }] = await Promise.all([
-    releaseIds.length
-      ? supabase
-          .from("releases")
-          .select("id, title, cover_url, artist_id")
-          .in("id", releaseIds)
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            title: string;
-            cover_url: string | null;
-            artist_id: string;
-          }[],
-        }),
-    buyerIds.length
-      ? supabase.from("profiles").select("id, country").in("id", buyerIds)
-      : Promise.resolve({ data: [] as { id: string; country: string | null }[] }),
-  ]);
+  // Le pays de l'acheteur est figé dans la vente (migration 031) : un créateur ne peut pas lire le profil de ses acheteurs.
+  const { data: releases } = releaseIds.length
+    ? await supabase.from("releases").select("id, title, cover_url, artist_id").in("id", releaseIds)
+    : { data: [] as { id: string; title: string; cover_url: string | null; artist_id: string }[] };
 
   const releaseMap = new Map((releases ?? []).map((r) => [r.id, r]));
-  const buyerMap = new Map((buyers ?? []).map((b) => [b.id, b]));
 
   const artistIds = [
     ...new Set((releases ?? []).map((r) => r.artist_id).filter(Boolean)),
@@ -255,7 +247,7 @@ export async function getCreatorStats(
     prev.netFcfa += Number(p.artist_net_fcfa);
     byRelease.set(p.release_id, prev);
 
-    const country = buyerMap.get(p.buyer_id)?.country || "??";
+    const country = p.buyer_country || "??";
     const cPrev = byCountry.get(country) || { purchases: 0, amountFcfa: 0 };
     cPrev.purchases += 1;
     cPrev.amountFcfa += Number(p.amount_fcfa);
@@ -281,6 +273,14 @@ export async function getCreatorStats(
     .map(([releaseId, v]) => ({ releaseId, ...v }))
     .sort((a, b) => b.salesCount - a.salesCount || b.grossFcfa - a.grossFcfa)
     .slice(0, 10);
+
+  const prods = await getProdsStats(supabase, sellerId, artistId);
+  for (const [c, v] of Object.entries(prods.countries)) {
+    const cur = byCountry.get(c) || { purchases: 0, amountFcfa: 0 };
+    cur.purchases += v.purchases;
+    cur.amountFcfa += v.amountFcfa;
+    byCountry.set(c, cur);
+  }
 
   const countryStats: CountryStatRow[] = [...byCountry.entries()]
     .map(([country, v]) => ({
@@ -370,6 +370,6 @@ export async function getCreatorStats(
     byCountry: countryStats,
     topTracks,
     byArtist: artistStats,
-    prods: await getProdsStats(supabase, sellerId, artistId),
+    prods,
   };
 }

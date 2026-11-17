@@ -335,6 +335,7 @@ export type Database = {
           provider_transaction_id: string | null;
           payer_phone: string | null;
           provider_meta: Json;
+          buyer_country: string | null;
         };
         Insert: {
           id?: string;
@@ -749,6 +750,7 @@ export type Database = {
           provider_transaction_id: string | null;
           payer_phone: string | null;
           provider_meta: Json;
+          buyer_country: string | null;
           created_at: string;
           updated_at: string;
         };
