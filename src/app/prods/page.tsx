@@ -7,6 +7,7 @@ import { BeatmakerTiles } from "@/components/prods/BeatmakerTiles";
 import { Section } from "@/components/prods/Section";
 import { MOODS, tempoLabel } from "@/lib/prods/constants";
 import {
+  getOwnedBeatLicenses,
   getViewerCountry,
   listBeatGenres,
   listBeatmakers,
@@ -50,12 +51,13 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
   const all = one(sp.vue) === "toutes";
   const browsing = all || Boolean(filters.q || filters.genre || filters.mood || filters.bpm || filters.tri !== "recent");
 
-  const [results, trending, genres, beatmakers, country] = await Promise.all([
+  const [results, trending, genres, beatmakers, country, owned] = await Promise.all([
     listBeats(filters, browsing ? 60 : 15),
     browsing ? Promise.resolve([]) : listTrendingBeats(8),
     listBeatGenres(),
     browsing ? Promise.resolve([]) : listBeatmakers(6),
     getViewerCountry(),
+    getOwnedBeatLicenses(),
   ]);
 
   const href = (patch: Partial<BeatFilters>) => {
@@ -123,10 +125,10 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
               </div>
             </div>
             <div className="mt-5">
-              <BeatDetailWave beat={featured} country={country} />
+              <BeatDetailWave beat={featured} country={country} owned={owned} />
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              <BeatPlayHero beat={featured} country={country} />
+              <BeatPlayHero beat={featured} country={country} owned={owned} />
               <a
                 href={`/prods/b/${featured.public_id}#licences`}
                 className="inline-flex h-11 items-center whitespace-nowrap rounded-lg px-4 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.06] hover:text-white"
@@ -175,7 +177,7 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
           </div>
           <div className="mt-6">
             {results.length ? (
-              <BeatRows beats={results} country={country} />
+              <BeatRows beats={results} country={country} owned={owned} />
             ) : (
               <p className="py-16 text-center text-sm text-white/50">Aucune prod pour ces filtres</p>
             )}
@@ -185,13 +187,13 @@ export default async function ProdsHomePage({ searchParams }: { searchParams: SP
         <>
           {trending.length ? (
             <Section title="En tendance" href="/prods?tri=populaire">
-              <BeatRows beats={trending} country={country} ranked />
+              <BeatRows beats={trending} country={country} ranked owned={owned} />
             </Section>
           ) : null}
 
           <Section title="Nouvelles prods" href={results.length >= 15 ? "/prods?vue=toutes" : undefined}>
             {results.length ? (
-              <BeatGrid beats={results} country={country} />
+              <BeatGrid beats={results} country={country} owned={owned} />
             ) : (
               <div className="rounded-xl border border-white/[0.06] px-6 py-12 text-center">
                 <p className="font-medium text-white">Les premières prods arrivent</p>

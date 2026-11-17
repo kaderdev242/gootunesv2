@@ -6,7 +6,7 @@ import { CoverAtmosphere } from "@/components/discover/CoverAtmosphere";
 import { BeatRows } from "@/components/prods/BeatList";
 import { BeatmakerAvatar } from "@/components/prods/BeatmakerTiles";
 import { getCountryLabel } from "@/lib/constants";
-import { getBeatmaker, getViewerCountry, listBeatsByArtist } from "@/lib/prods/queries";
+import { getBeatmaker, getOwnedBeatLicenses, getViewerCountry, listBeatsByArtist } from "@/lib/prods/queries";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -26,7 +26,7 @@ export default async function BeatmakerPage({ params }: Props) {
   const bm = await getBeatmaker(id);
   if (!bm) notFound();
 
-  const [beats, country] = await Promise.all([listBeatsByArtist(bm.id), getViewerCountry()]);
+  const [beats, country, owned] = await Promise.all([listBeatsByArtist(bm.id), getViewerCountry(), getOwnedBeatLicenses()]);
   if (!beats.length) notFound();
 
   const plays = beats.reduce((s, b) => s + b.plays_count, 0);
@@ -83,7 +83,7 @@ export default async function BeatmakerPage({ params }: Props) {
 
       <section className="mt-10">
         <h2 className="mb-4 font-display text-[24px] font-semibold tracking-[-0.02em]">Toutes les prods</h2>
-        <BeatRows beats={beats} country={country} />
+        <BeatRows beats={beats} country={country} owned={owned} />
       </section>
     </div>
   );

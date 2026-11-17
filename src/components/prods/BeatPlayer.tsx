@@ -34,6 +34,8 @@ export type PlayableBeat = {
   tempo?: string | null;
   waveform?: number[] | null;
   priceLabel?: string | null;
+  /** Le visiteur possède déjà au moins une licence de cette prod. */
+  owned?: boolean;
 };
 
 type Ctx = {
@@ -295,12 +297,21 @@ function PlayerBar() {
               className="h-1 w-24 cursor-pointer accent-white"
             />
           </div>
-          <a
-            href={`/prods/b/${current.public_id}#licences`}
-            className="hidden h-9 items-center rounded-lg bg-white px-3.5 text-[13px] font-medium text-black transition-colors hover:bg-white/90 sm:inline-flex"
-          >
-            {current.priceLabel ? `Acheter · ${current.priceLabel}` : "Acheter"}
-          </a>
+          {current.owned ? (
+            <a
+              href="/prods/achats"
+              className="hidden h-9 items-center rounded-lg border border-white/[0.14] px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.06] sm:inline-flex"
+            >
+              Mes fichiers
+            </a>
+          ) : (
+            <a
+              href={`/prods/b/${current.public_id}#licences`}
+              className="hidden h-9 items-center rounded-lg bg-white px-3.5 text-[13px] font-medium text-black transition-colors hover:bg-white/90 sm:inline-flex"
+            >
+              {current.priceLabel ? `Acheter · ${current.priceLabel}` : "Acheter"}
+            </a>
+          )}
         </div>
       </div>
     </div>

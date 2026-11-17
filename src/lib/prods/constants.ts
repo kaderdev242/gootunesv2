@@ -92,3 +92,11 @@ export function tempoLabel(beat: { bpm: number | null; musical_key: string | nul
   const key = beat.musical_key?.replace(/ min$/, "m").replace(/ maj$/, "") ?? null;
   return [beat.bpm ? `${beat.bpm} BPM` : null, key].filter(Boolean).join(" · ") || null;
 }
+
+const LICENSE_RANK: Record<BeatLicense, number> = { mp3: 1, wav: 2, stems: 3 };
+
+/** Une licence est acquise si l'acheteur possède celle-ci ou une licence supérieure (stems ⊃ WAV ⊃ MP3). */
+export function licenseCovered(owned: BeatLicense[] | undefined, license: BeatLicense) {
+  if (!owned?.length) return false;
+  return Math.max(...owned.map((l) => LICENSE_RANK[l])) >= LICENSE_RANK[license];
+}

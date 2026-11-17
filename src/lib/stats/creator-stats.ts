@@ -36,6 +36,25 @@ export type ArtistRevenueRow = {
   netFcfa: number;
 };
 
+export type BeatStatRow = {
+  beatId: string;
+  publicId: string;
+  title: string;
+  coverUrl: string | null;
+  plays: number;
+  sales: number;
+  netFcfa: number;
+};
+
+export type ProdsStats = {
+  beats: number;
+  plays: number;
+  sales: number;
+  grossFcfa: number;
+  netFcfa: number;
+  top: BeatStatRow[];
+};
+
 export type CreatorStats = {
   totalSales: number;
   totalGross: number;
@@ -46,7 +65,74 @@ export type CreatorStats = {
   byCountry: CountryStatRow[];
   topTracks: TrackListenRow[];
   byArtist: ArtistRevenueRow[];
+  /** Instrumentaux (Prods) : écoutes des démos et licences vendues. */
+  prods?: ProdsStats;
 };
+
+const EMPTY_PRODS: ProdsStats = { beats: 0, plays: 0, sales: 0, grossFcfa: 0, netFcfa: 0, top: [] };
+
+async function getProdsStats(
+  supabase: SupabaseClient<Database>,
+  sellerId: string,
+  artistId?: string,
+): Promise<ProdsStats> {
+  try {
+    let beatsQuery = supabase
+      .from("beats")
+      .select("id, public_id, title, cover_url, plays_count")
+      .eq("owner_id", sellerId);
+    if (artistId) beatsQuery = beatsQuery.eq("artist_id", artistId);
+    const { data: beats } = await beatsQuery;
+    if (!beats?.length) return EMPTY_PRODS;
+
+    const { data: orders } = await supabase
+      .from("beat_orders")
+      .select("beat_id, amount_fcfa, artist_net_fcfa")
+      .eq("seller_id", sellerId)
+      .eq("status", "completed")
+      .in(
+        "beat_id",
+        beats.map((b) => b.id),
+      );
+
+    const byBeat = new Map<string, { sales: number; net: number }>();
+    let gross = 0;
+    let net = 0;
+    for (const o of orders ?? []) {
+      const cur = byBeat.get(o.beat_id) ?? { sales: 0, net: 0 };
+      cur.sales += 1;
+      cur.net += Number(o.artist_net_fcfa);
+      byBeat.set(o.beat_id, cur);
+      gross += Number(o.amount_fcfa);
+      net += Number(o.artist_net_fcfa);
+    }
+
+    const top = beats
+      .map((b) => ({
+        beatId: b.id,
+        publicId: b.public_id,
+        title: b.title,
+        coverUrl: b.cover_url,
+        plays: b.plays_count,
+        sales: byBeat.get(b.id)?.sales ?? 0,
+        netFcfa: byBeat.get(b.id)?.net ?? 0,
+      }))
+      .sort((a, b) => b.sales - a.sales || b.plays - a.plays)
+      .slice(0, 10);
+
+    return {
+      beats: beats.length,
+      plays: beats.reduce((s, b) => s + b.plays_count, 0),
+      sales: orders?.length ?? 0,
+      grossFcfa: gross,
+      netFcfa: net,
+      top,
+    };
+  } catch {
+    // Tables Prods absentes : section masquée.
+    return EMPTY_PRODS;
+  }
+}
 
 export async function getCreatorStats(
   sellerId: string,
@@ -83,6 +169,7 @@ export async function getCreatorStats(
         byCountry: [],
         topTracks: [],
         byArtist: [],
+        prods: await getProdsStats(supabase, sellerId, artistId),
       };
     }
     purchaseQuery = purchaseQuery.in("release_id", scopedReleaseIds);
@@ -283,5 +370,6 @@ export async function getCreatorStats(
     byCountry: countryStats,
     topTracks,
     byArtist: artistStats,
+    prods: await getProdsStats(supabase, sellerId, artistId),
   };
 }

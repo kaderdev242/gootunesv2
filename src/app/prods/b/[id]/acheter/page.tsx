@@ -4,8 +4,8 @@ import { AppImage } from "@/components/media/AppImage";
 import { BuyBeatForm } from "@/components/prods/BuyBeatForm";
 import { formatMoney } from "@/lib/format";
 import { purchaseDevBypass } from "@/lib/mbiyo/config";
-import { beatPriceFor, isBeatLicense, LICENSE_ORDER, LICENSES } from "@/lib/prods/constants";
-import { getBeatByPublicId } from "@/lib/prods/queries";
+import { beatPriceFor, isBeatLicense, LICENSE_ORDER, LICENSES, licenseCovered } from "@/lib/prods/constants";
+import { getBeatByPublicId, getOwnedBeatLicenses } from "@/lib/prods/queries";
 import { createClient } from "@/lib/supabase/server";
 import { FALLBACK_COVER } from "@/lib/types/music";
 
@@ -21,7 +21,10 @@ export default async function BuyBeatPage({ params, searchParams }: Props) {
   const beat = await getBeatByPublicId(id);
   if (!beat) notFound();
 
-  const available = LICENSE_ORDER.filter((l) => beatPriceFor(beat, l) !== null);
+  const owned = (await getOwnedBeatLicenses())[beat.id];
+  // Seules les licences pas encore acquises (ni incluses dans une licence supérieure) sont proposées.
+  const available = LICENSE_ORDER.filter((l) => beatPriceFor(beat, l) !== null && !licenseCovered(owned, l));
+  if (!available.length) redirect(owned?.length ? "/prods/achats" : `/prods/b/${beat.public_id}`);
   const license = sp.licence && isBeatLicense(sp.licence) && available.includes(sp.licence) ? sp.licence : available[0];
   const path = `/prods/b/${beat.public_id}/acheter?licence=${license}`;
 

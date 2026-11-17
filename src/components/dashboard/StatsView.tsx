@@ -26,15 +26,66 @@ export function StatsView({
   const maxCountry = Math.max(...stats.byCountry.map((c) => c.purchases), 1);
   const maxArtistNet = Math.max(...stats.byArtist.map((a) => a.netFcfa), 1);
   const money = (n: number) => formatMoney(n, country);
+  const hasProds = Boolean(stats.prods && stats.prods.beats > 0);
+  // Compte qui ne vend que des prods : leur section passe en premier.
+  const prodsFirst = hasProds && stats.totalPlays === 0 && stats.totalSales === 0;
+  const prodsSection =
+    hasProds && stats.prods ? (
+      <section className="studio-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-[15px] font-semibold text-white">Prods</h2>
+            <p className="mt-1 text-xs text-white/45">
+              {stats.prods.beats} instrumental{stats.prods.beats > 1 ? "aux" : ""} en vente sur la
+              vitrine Prods
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Écoutes des démos" value={formatCount(stats.prods.plays)} />
+          <StatCard label="Licences vendues" value={formatCount(stats.prods.sales)} />
+          <StatCard label="CA brut" value={money(stats.prods.grossFcfa)} />
+          <StatCard label="Net beatmaker" value={money(stats.prods.netFcfa)} tone="accent" />
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          {stats.prods.top.map((row, i) => (
+            <div
+              key={row.beatId}
+              className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#0f0f10] px-3 py-2.5"
+            >
+              <span className="w-6 text-sm text-white/40">{i + 1}</span>
+              <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-white/[0.06]">
+                {row.coverUrl ? (
+                  <AppImage src={row.coverUrl} alt="" fill className="object-cover" sizes="44px" />
+                ) : null}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white">{row.title}</p>
+                <p className="text-xs text-white/50">
+                  {row.plays} écoute{row.plays > 1 ? "s" : ""} · {row.sales} vente
+                  {row.sales > 1 ? "s" : ""}
+                </p>
+              </div>
+              <p className="text-xs font-medium text-emerald-400">{money(row.netFcfa)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : null;
 
   return (
     <div className="flex flex-col gap-4">
-      {headerSlot ?? (
-        <StudioPageHeader eyebrow="Audience" title={title} description={subtitle} />
-      )}
+      {headerSlot ?? <StudioPageHeader eyebrow="Audience" title={title} description={subtitle} />}
+
+      {prodsFirst ? prodsSection : null}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-        <StatCard label="Écoutes" value={formatCount(stats.totalPlays)} hint="toutes plateformes" tone="ink" />
+        <StatCard
+          label="Écoutes"
+          value={formatCount(stats.totalPlays)}
+          hint="toutes plateformes"
+          tone="ink"
+        />
         <StatCard label="Auditeurs uniques" value={formatCount(stats.uniqueListeners)} />
         <StatCard label="Ventes" value={formatCount(stats.totalSales)} />
         <StatCard label="CA brut" value={money(stats.totalGross)} />
@@ -43,7 +94,9 @@ export function StatsView({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="studio-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-white">Morceaux / publications les plus vendus</h2>
+          <h2 className="text-[15px] font-semibold text-white">
+            Morceaux / publications les plus vendus
+          </h2>
           <div className="mt-4 flex flex-col gap-2">
             {stats.topSales.length === 0 ? (
               <p className="text-sm text-white/50">Aucune vente pour le moment.</p>
@@ -66,17 +119,12 @@ export function StatsView({
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
-                      {row.title}
-                    </p>
+                    <p className="truncate text-sm font-medium text-white">{row.title}</p>
                     <p className="text-xs text-white/50">
-                      {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} ·{" "}
-                      {money(row.grossFcfa)}
+                      {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} · {money(row.grossFcfa)}
                     </p>
                   </div>
-                  <p className="text-xs font-medium text-emerald-400">
-                    {money(row.netFcfa)}
-                  </p>
+                  <p className="text-xs font-medium text-emerald-400">{money(row.netFcfa)}</p>
                 </div>
               ))
             )}
@@ -125,9 +173,7 @@ export function StatsView({
           </p>
           <div className="mt-4 flex flex-col gap-3">
             {stats.byArtist.length === 0 ? (
-              <p className="text-sm text-white/50">
-                Aucun revenu artiste pour le moment.
-              </p>
+              <p className="text-sm text-white/50">Aucun revenu artiste pour le moment.</p>
             ) : (
               stats.byArtist.map((row) => (
                 <Link
@@ -140,18 +186,12 @@ export function StatsView({
                       {row.avatarUrl ? (
                         <Avatar.Image src={row.avatarUrl} alt={row.stageName} />
                       ) : null}
-                      <Avatar.Fallback>
-                        {row.stageName.slice(0, 1).toUpperCase()}
-                      </Avatar.Fallback>
+                      <Avatar.Fallback>{row.stageName.slice(0, 1).toUpperCase()}</Avatar.Fallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="truncate font-medium text-white">
-                          {row.stageName}
-                        </span>
-                        <span className="shrink-0 text-emerald-400">
-                          {money(row.netFcfa)}
-                        </span>
+                        <span className="truncate font-medium text-white">{row.stageName}</span>
+                        <span className="shrink-0 text-emerald-400">{money(row.netFcfa)}</span>
                       </div>
                       <p className="text-xs text-white/50">
                         {row.salesCount} vente{row.salesCount > 1 ? "s" : ""} ·{" "}
@@ -181,9 +221,7 @@ export function StatsView({
         </p>
         <div className="mt-4 overflow-x-auto">
           {stats.topTracks.length === 0 ? (
-            <p className="text-sm text-white/50">
-              Aucune écoute enregistrée pour l&apos;instant.
-            </p>
+            <p className="text-sm text-white/50">Aucune écoute enregistrée pour l&apos;instant.</p>
           ) : (
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead className="text-xs text-white/50">
@@ -196,13 +234,8 @@ export function StatsView({
               </thead>
               <tbody>
                 {stats.topTracks.map((row) => (
-                  <tr
-                    key={row.trackId}
-                    className="border-t border-white/[0.06] text-white/85"
-                  >
-                    <td className="py-3 pr-3 font-medium text-white">
-                      {row.title}
-                    </td>
+                  <tr key={row.trackId} className="border-t border-white/[0.06] text-white/85">
+                    <td className="py-3 pr-3 font-medium text-white">{row.title}</td>
                     <td className="py-3 pr-3 text-white/50">{row.releaseTitle}</td>
                     <td className="py-3 pr-3">{row.plays}</td>
                     <td className="py-3">{row.uniqueListeners}</td>
@@ -213,6 +246,8 @@ export function StatsView({
           )}
         </div>
       </section>
+
+      {prodsFirst ? null : prodsSection}
     </div>
   );
 }

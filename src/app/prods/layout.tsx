@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Logo } from "@/components/landing/Logo";
 import { BeatPlayerProvider } from "@/components/prods/BeatPlayer";
+import { CountryCookie } from "@/components/prods/CountryCookie";
 import { ProdsFooter } from "@/components/prods/ProdsFooter";
 import { getProdsAccess } from "@/lib/prods/access";
+import { getViewerCountry } from "@/lib/prods/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +24,11 @@ const navLink = "rounded-md px-3 py-1.5 text-sm text-white/60 transition-colors 
 export default async function ProdsLayout({ children }: { children: React.ReactNode }) {
   const access = await getProdsAccess();
   if (!access.allowed) notFound();
+  const country = await getViewerCountry();
 
   return (
     <BeatPlayerProvider>
+      <CountryCookie known={Boolean(country)} />
       <div className="flex min-h-dvh flex-col overflow-x-clip bg-[#0b0b0c] pb-[72px] text-white">
         {access.preview ? (
           <p className="bg-amber-400/15 px-4 py-2 text-center text-xs text-amber-100">

@@ -1,5 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
+import { checkRateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function recordTrackPlay(input: {
@@ -28,13 +31,40 @@ export async function recordTrackPlay(input: {
     country = profile?.country ?? null;
   }
 
-  const { error } = await supabase.from("track_plays").insert({
+  const row = {
     track_id: trackId,
     release_id: releaseId,
     owner_id: ownerId,
     listener_id: user?.id ?? null,
     country,
-  });
+  };
 
-  return { ok: !error };
+  if (user) {
+    const { error } = await supabase.from("track_plays").insert(row);
+    return { ok: !error };
+  }
+
+  // Visiteur non connecté : la base n'accepte que les insertions authentifiées,
+  // on enregistre donc côté serveur, une écoute par IP et par titre toutes les 30 min.
+  const ip = clientIpFromHeaders(await headers());
+  const once = await checkRateLimit(`play:anon:${ip}:${trackId}`, 1, 30 * 60_000);
+  if (!once.allowed) return { ok: true };
+  try {
+    const admin = createAdminClient();
+    // Le titre doit exister et appartenir à cette publication / ce propriétaire.
+    const { data: track } = await admin
+      .from("tracks")
+      .select("id, releases!inner(id, owner_id, status)")
+      .eq("id", trackId)
+      .eq("release_id", releaseId)
+      .maybeSingle();
+    const rel = (Array.isArray(track?.releases) ? track?.releases[0] : track?.releases) as
+      | { owner_id: string; status: string }
+      | undefined;
+    if (!rel || rel.owner_id !== ownerId || rel.status !== "published") return { ok: false };
+    const { error } = await admin.from("track_plays").insert(row);
+    return { ok: !error };
+  } catch {
+    return { ok: false };
+  }
 }

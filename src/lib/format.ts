@@ -62,7 +62,8 @@ export function formatMoney(
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "CDF",
-      maximumFractionDigits: 2,
+      // Montant entier : c'est ce que Mbiyo prélève réellement (toMbiyoPayAmount arrondit).
+      maximumFractionDigits: 0,
       minimumFractionDigits: 0,
     })
       .format(local)

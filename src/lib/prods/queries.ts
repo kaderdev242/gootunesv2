@@ -1,5 +1,8 @@
 import { cache } from "react";
+import { cookies } from "next/headers";
+import { isCountryCode } from "@/lib/geo";
 import { createClient } from "@/lib/supabase/server";
+import type { BeatLicense } from "@/lib/supabase/database.types";
 
 export const BEAT_PUBLIC_SELECT =
   "id, public_id, title, cover_url, genre, mood, bpm, musical_key, tags, duration_seconds, price_mp3_fcfa, price_wav_fcfa, price_stems_fcfa, plays_count, waveform, created_at, owner_id, credits, artists(id, public_id, stage_name, avatar_url, country, is_verified)" as const;
@@ -174,17 +177,48 @@ export async function listBeatGenres(): Promise<{ genre: string; count: number }
     .sort((a, b) => b.count - a.count || a.genre.localeCompare(b.genre, "fr"));
 }
 
-/** Pays du visiteur connecté (affichage des prix en devise locale), sinon null = FCFA. */
+/** Cookie posé dans le navigateur (fuseau horaire / langue) pour les visiteurs non connectés. */
+export const COUNTRY_COOKIE = "gt_country";
+
+/**
+ * Pays d'affichage des prix : profil du visiteur connecté, sinon pays détecté par le
+ * navigateur (cookie), sinon null = FCFA. RDC → Franc congolais.
+ */
 export const getViewerCountry = cache(async (): Promise<string | null> => {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from("profiles").select("country").eq("id", user.id).maybeSingle();
-    return data?.country ?? null;
+    if (user) {
+      const { data } = await supabase.from("profiles").select("country").eq("id", user.id).maybeSingle();
+      if (data?.country) return data.country;
+    }
   } catch {
-    return null;
+    /* on retombe sur le cookie */
+  }
+  const jar = await cookies();
+  const c = jar.get(COUNTRY_COOKIE)?.value?.toUpperCase();
+  return c && isCountryCode(c) ? c : null;
+});
+
+/** Licences déjà achetées par le visiteur connecté, par prod. */
+export const getOwnedBeatLicenses = cache(async (): Promise<Record<string, BeatLicense[]>> => {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return {};
+    const { data } = await supabase
+      .from("beat_orders")
+      .select("beat_id, license")
+      .eq("buyer_id", user.id)
+      .eq("status", "completed");
+    const owned: Record<string, BeatLicense[]> = {};
+    for (const o of data ?? []) (owned[o.beat_id] ??= []).push(o.license);
+    return owned;
+  } catch {
+    return {};
   }
 });

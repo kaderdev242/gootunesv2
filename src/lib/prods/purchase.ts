@@ -31,6 +31,7 @@ import {
   BEAT_ORDER_PREFIX,
   beatPriceFor,
   isBeatLicense,
+  licenseCovered,
   LICENSES,
 } from "@/lib/prods/constants";
 import { notifyBeatOrderCompleted } from "@/lib/email/notify";
@@ -113,18 +114,16 @@ export async function runInitiateBeatPurchase(
   }
 
   const admin = createAdminClient();
-  const { data: owned } = await admin
+  // Déjà acquise, ou incluse dans une licence supérieure déjà achetée (stems ⊃ WAV ⊃ MP3).
+  const { data: ownedRows } = await admin
     .from("beat_orders")
-    .select("id")
+    .select("license")
     .eq("buyer_id", user.id)
     .eq("beat_id", beat.id)
-    .eq("license", license)
-    .eq("status", "completed")
-    .limit(1)
-    .maybeSingle();
-  if (owned) {
+    .eq("status", "completed");
+  if (licenseCovered((ownedRows ?? []).map((r) => r.license), license)) {
     return {
-      success: `Tu possèdes déjà la ${LICENSES[license].name} de « ${beat.title} ».`,
+      success: `Tu possèdes déjà la ${LICENSES[license].name} de « ${beat.title} » (ou une licence qui l'inclut).`,
       actionHref: "/prods/achats",
       actionLabel: "Mes téléchargements",
     };

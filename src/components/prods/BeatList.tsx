@@ -3,16 +3,19 @@
 import { VerifiedBadge } from "@/components/discover/VerifiedBadge";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PauseIcon, PlayIcon } from "@hugeicons/core-free-icons";
+import { PauseIcon, PlayIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
 import { formatTime, useBeatPlayer, type PlayableBeat } from "@/components/prods/BeatPlayer";
 import { Waveform } from "@/components/prods/Waveform";
 import { formatMoney } from "@/lib/format";
 import { lowestBeatPrice, tempoLabel } from "@/lib/prods/constants";
 import type { PublicBeat } from "@/lib/prods/queries";
+import type { BeatLicense } from "@/lib/supabase/database.types";
 import { FALLBACK_COVER } from "@/lib/types/music";
 
-export function toPlayable(b: PublicBeat, country?: string | null): PlayableBeat {
+export type OwnedMap = Record<string, BeatLicense[]>;
+
+export function toPlayable(b: PublicBeat, country?: string | null, owned?: OwnedMap): PlayableBeat {
   const from = lowestBeatPrice(b);
   return {
     public_id: b.public_id,
@@ -23,6 +26,7 @@ export function toPlayable(b: PublicBeat, country?: string | null): PlayableBeat
     tempo: tempoLabel(b),
     waveform: b.waveform,
     priceLabel: from ? formatMoney(from, country) : null,
+    owned: Boolean(owned?.[b.id]?.length),
   };
 }
 
@@ -57,10 +61,28 @@ function ArtistLine({ beat }: { beat: PublicBeat }) {
   );
 }
 
+/** Bouton prix, ou « Acquise » si le visiteur a déjà une licence. */
+function PriceButton({ beat, label, owned }: { beat: PublicBeat; label: string | null | undefined; owned: boolean }) {
+  const base = "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium tabular-nums transition-colors";
+  if (owned) {
+    return (
+      <a href="/prods/achats" className={`${base} border border-white/[0.14] text-white/85 hover:bg-white/[0.06]`} title="Tu possèdes déjà cette prod">
+        <HugeiconsIcon icon={Tick02Icon} size={14} />
+        Acquise
+      </a>
+    );
+  }
+  return (
+    <Link href={`/prods/b/${beat.public_id}#licences`} className={`${base} bg-white/[0.07] text-white hover:bg-white/[0.12]`}>
+      {label ?? "Voir"}
+    </Link>
+  );
+}
+
 /** Grille de pochettes : lecture au survol, étiquette tempo, prix. */
-export function BeatGrid({ beats, country }: { beats: PublicBeat[]; country?: string | null }) {
+export function BeatGrid({ beats, country, owned }: { beats: PublicBeat[]; country?: string | null; owned?: OwnedMap }) {
   const { current, playing, play } = useBeatPlayer();
-  const queue = beats.map((b) => toPlayable(b, country));
+  const queue = beats.map((b) => toPlayable(b, country, owned));
 
   return (
     <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
@@ -104,12 +126,13 @@ export function BeatGrid({ beats, country }: { beats: PublicBeat[]; country?: st
                 <ArtistLine beat={b} />
               </div>
             </div>
-            <Link
-              href={`/prods/b/${b.public_id}#licences`}
-              className="mt-3 inline-flex h-8 items-center rounded-lg bg-white/[0.07] px-3 text-[13px] font-medium tabular-nums text-white transition-colors hover:bg-white/[0.12]"
-            >
-              {queue[i].priceLabel ? `Dès ${queue[i].priceLabel}` : "Voir"}
-            </Link>
+            <div className="mt-3">
+              <PriceButton
+                beat={b}
+                label={queue[i].priceLabel ? `Dès ${queue[i].priceLabel}` : null}
+                owned={Boolean(queue[i].owned)}
+              />
+            </div>
           </li>
         );
       })}
@@ -122,13 +145,15 @@ export function BeatRows({
   beats,
   country,
   ranked = false,
+  owned,
 }: {
   beats: PublicBeat[];
   country?: string | null;
   ranked?: boolean;
+  owned?: OwnedMap;
 }) {
   const { current, playing, progress, duration, play, seek } = useBeatPlayer();
-  const queue = beats.map((b) => toPlayable(b, country));
+  const queue = beats.map((b) => toPlayable(b, country, owned));
 
   return (
     <ol className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
@@ -178,12 +203,9 @@ export function BeatRows({
               {tempoLabel(b) ?? (b.duration_seconds ? formatTime(b.duration_seconds) : "")}
             </span>
             <span className="hidden truncate text-[13px] text-white/50 lg:block">{b.genre}</span>
-            <Link
-              href={`/prods/b/${b.public_id}#licences`}
-              className="inline-flex h-8 items-center justify-self-end rounded-lg bg-white/[0.07] px-3 text-[13px] font-medium tabular-nums text-white transition-colors hover:bg-white/[0.12]"
-            >
-              {queue[i].priceLabel ?? "Voir"}
-            </Link>
+            <div className="justify-self-end">
+              <PriceButton beat={b} label={queue[i].priceLabel} owned={Boolean(queue[i].owned)} />
+            </div>
           </li>
         );
       })}
@@ -192,10 +214,10 @@ export function BeatRows({
 }
 
 /** Bouton lecture de la page d'une prod. */
-export function BeatPlayHero({ beat, country }: { beat: PublicBeat; country?: string | null }) {
+export function BeatPlayHero({ beat, country, owned }: { beat: PublicBeat; country?: string | null; owned?: OwnedMap }) {
   const { current, playing, play } = useBeatPlayer();
   const active = current?.public_id === beat.public_id && playing;
-  const playable = toPlayable(beat, country);
+  const playable = toPlayable(beat, country, owned);
   return (
     <button
       type="button"
@@ -209,10 +231,10 @@ export function BeatPlayHero({ beat, country }: { beat: PublicBeat; country?: st
 }
 
 /** Grande waveform de la page d'une prod, liée au lecteur. */
-export function BeatDetailWave({ beat, country }: { beat: PublicBeat; country?: string | null }) {
+export function BeatDetailWave({ beat, country, owned }: { beat: PublicBeat; country?: string | null; owned?: OwnedMap }) {
   const { current, progress, duration, play, seek } = useBeatPlayer();
   const active = current?.public_id === beat.public_id;
-  const playable = toPlayable(beat, country);
+  const playable = toPlayable(beat, country, owned);
   return (
     <div className="flex items-center gap-3">
       <span className="w-10 text-right font-mono text-[11px] tabular-nums text-white/45">

@@ -10,6 +10,7 @@ import { UploadBusy } from "@/components/dashboard/publish/UploadBusy";
 import type { ActionState } from "@/lib/actions/profile";
 import type { CreatorBase } from "@/lib/dashboard/paths";
 import { mapUploadError, toUserError } from "@/lib/errors";
+import { currencyLabelForCountry, fcfaToLocal, localToFcfa } from "@/lib/currency";
 import { formatMoney } from "@/lib/format";
 import {
   COVER_SIZE,
@@ -44,11 +45,19 @@ const LICENSE_FILE: Record<BeatLicense, Exclude<BeatFileKind, "demo">> = {
   stems: "stems",
 };
 
-const DEFAULT_PRICES: Record<BeatLicense, string> = {
-  mp3: "10000",
-  wav: "25000",
-  stems: "50000",
+/** Prix proposés par défaut (FCFA), convertis dans la devise du beatmaker à l'affichage. */
+const DEFAULT_PRICES_FCFA: Record<BeatLicense, number> = {
+  mp3: 10000,
+  wav: 25000,
+  stems: 50000,
 };
+
+/** Arrondi lisible en devise locale (ex. 40 251 FC → 40 000 FC). */
+function roundLocal(n: number) {
+  if (n >= 10000) return Math.round(n / 1000) * 1000;
+  if (n >= 1000) return Math.round(n / 100) * 100;
+  return Math.round(n);
+}
 
 export function BeatPublishWizard({
   artists,
@@ -83,7 +92,12 @@ export function BeatPublishWizard({
     wav: true,
     stems: false,
   });
-  const [prices, setPrices] = useState<Record<BeatLicense, string>>(DEFAULT_PRICES);
+  const currency = currencyLabelForCountry(country);
+  const [prices, setPrices] = useState<Record<BeatLicense, string>>(() => ({
+    mp3: String(roundLocal(fcfaToLocal(DEFAULT_PRICES_FCFA.mp3, country))),
+    wav: String(roundLocal(fcfaToLocal(DEFAULT_PRICES_FCFA.wav, country))),
+    stems: String(roundLocal(fcfaToLocal(DEFAULT_PRICES_FCFA.stems, country))),
+  }));
   const [ownershipCertified, setOwnershipCertified] = useState(false);
   const [busy, setBusy] = useState<BeatFileKind | "cover" | null>(null);
   const [percent, setPercent] = useState<number | null>(null);
@@ -101,10 +115,11 @@ export function BeatPublishWizard({
 
   const uploading = busy !== null;
 
+  /** Prix stocké en FCFA (le beatmaker saisit dans sa devise). */
   function priceOf(l: BeatLicense): number | null {
     if (!enabled[l]) return null;
     const n = Number(prices[l]);
-    return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+    return Number.isFinite(n) && n > 0 ? localToFcfa(n, country) : null;
   }
 
   function validateStep(index: number) {
@@ -122,7 +137,7 @@ export function BeatPublishWizard({
         if (!enabled[l]) continue;
         const p = priceOf(l);
         if (!p || p < MIN_BEAT_PRICE_FCFA) {
-          return `${LICENSES[l].name} : prix minimum ${MIN_BEAT_PRICE_FCFA} FCFA.`;
+          return `${LICENSES[l].name} : prix minimum ${formatMoney(MIN_BEAT_PRICE_FCFA, country)}.`;
         }
         if (!files[LICENSE_FILE[l]]) {
           return `${LICENSES[l].name} : ajoute le fichier ${BEAT_FILE_TYPES[LICENSE_FILE[l]].label} (étape Fichiers).`;
@@ -443,12 +458,12 @@ export function BeatPublishWizard({
                           inputMode="numeric"
                           value={prices[l]}
                           onChange={(e) =>
-                            setPrices((p) => ({ ...p, [l]: e.target.value.replace(/\D/g, "").slice(0, 7) }))
+                            setPrices((p) => ({ ...p, [l]: e.target.value.replace(/\D/g, "").slice(0, 9) }))
                           }
                           className="h-11 w-36 rounded-xl bg-[#0f0f10]"
-                          aria-label={`Prix ${LICENSES[l].name} en FCFA`}
+                          aria-label={`Prix ${LICENSES[l].name} en ${currency}`}
                         />
-                        <span className="text-xs text-white/45">FCFA</span>
+                        <span className="text-xs text-white/45">{currency}</span>
                         {!hasFile ? (
                           <span className="ml-auto text-xs text-amber-200/80">
                             Fichier {BEAT_FILE_TYPES[LICENSE_FILE[l]].label} manquant
