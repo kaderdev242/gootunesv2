@@ -14,6 +14,7 @@ import {
   Folder01Icon,
   Money01Icon,
   MusicNote01Icon,
+  News01Icon,
   Playlist01Icon,
   Search01Icon,
   Settings01Icon,
@@ -56,6 +57,12 @@ function buildNav(counts: AdminCounts): DashNavSection[] {
         { href: "/goo-admin/morceaux", label: "Morceaux", icon: Folder01Icon, keywords: "releases sorties albums singles" },
         { href: "/goo-admin/hits", label: "Les Hits", icon: MusicNote01Icon, keywords: "éditorial tendances" },
         { href: "/goo-admin/playlists", label: "Playlists", icon: Playlist01Icon, keywords: "playlists utilisateurs modération" },
+      ],
+    },
+    {
+      title: "Éditorial",
+      items: [
+        { href: "/goo-admin/blog", label: "Blog", icon: News01Icon, keywords: "articles actualités annonces" },
       ],
     },
     {

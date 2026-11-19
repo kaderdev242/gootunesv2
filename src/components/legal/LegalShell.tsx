@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/landing/Logo";
 
 const links = [
+  { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Support" },
   { href: "/termes", label: "Conditions d'utilisation" },
   { href: "/confidentialite", label: "Confidentialité" },

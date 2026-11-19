@@ -8,6 +8,9 @@ export function SiteFooter() {
         <Logo size="sm" />
         <div className="flex flex-col gap-2 sm:items-end">
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-[#a1a1a6]">
+            <Link href="/blog" className="transition-colors hover:text-[#ededed]">
+              Blog
+            </Link>
             <Link href="/termes" className="transition-colors hover:text-[#ededed]">
               Conditions d&apos;utilisation
             </Link>

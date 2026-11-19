@@ -805,6 +805,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      blog_posts: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          excerpt: string;
+          cover_url: string | null;
+          content: Json;
+          reading_minutes: number;
+          status: BlogPostStatus;
+          published_at: string | null;
+          author_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          excerpt?: string;
+          cover_url?: string | null;
+          content?: Json;
+          reading_minutes?: number;
+          status?: BlogPostStatus;
+          published_at?: string | null;
+          author_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["blog_posts"]["Insert"]>;
+        Relationships: [];
+      };
       site_settings: {
         Row: {
           id: number;
@@ -1208,4 +1240,6 @@ export type Track = Database["public"]["Tables"]["tracks"]["Row"];
 export type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 export type Beat = Database["public"]["Tables"]["beats"]["Row"];
 export type BeatOrder = Database["public"]["Tables"]["beat_orders"]["Row"];
+export type BlogPostStatus = "draft" | "published";
+export type BlogPost = Database["public"]["Tables"]["blog_posts"]["Row"];
 export type EditorialHit = Database["public"]["Tables"]["editorial_hits"]["Row"];

@@ -14,6 +14,7 @@ const STATIC_PATHS: { path: string; changeFrequency: MetadataRoute.Sitemap[numbe
   { path: "/discover/genres", changeFrequency: "weekly", priority: 0.7 },
   { path: "/discover/nouveautes", changeFrequency: "daily", priority: 0.7 },
   { path: "/discover/decouvrir", changeFrequency: "daily", priority: 0.7 },
+  { path: "/blog", changeFrequency: "daily", priority: 0.7 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.5 },
   { path: "/termes", changeFrequency: "yearly", priority: 0.3 },
   { path: "/confidentialite", changeFrequency: "yearly", priority: 0.3 },
@@ -62,6 +63,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: siteUrl(artistPath(a.public_id)),
         lastModified: new Date(a.created_at),
         changeFrequency: "weekly",
+        priority: 0.6,
+      });
+    }
+
+    const { data: posts } = await supabase
+      .from("blog_posts")
+      .select("slug, updated_at")
+      .order("published_at", { ascending: false })
+      .limit(1000);
+    for (const p of posts || []) {
+      entries.push({
+        url: siteUrl(`/blog/${p.slug}`),
+        lastModified: new Date(p.updated_at),
+        changeFrequency: "monthly",
         priority: 0.6,
       });
     }
