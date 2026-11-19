@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { DiscoverFooter } from "@/components/discover/DiscoverFooter";
 import { BlogCard, BlogFeatured } from "@/components/blog/BlogCard";
 import { listPublishedPosts } from "@/lib/blog/queries";
 import { listPageMetadata } from "@/lib/seo";
@@ -18,7 +17,7 @@ export default async function BlogPage() {
   const [featured, ...rest] = posts;
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-10 pb-4">
+    <div className="flex flex-col gap-10">
       <header>
         <h1 className="font-display text-4xl font-bold tracking-tight text-white">Blog</h1>
         <p className="mt-2 max-w-xl text-sm text-white/45">
@@ -46,7 +45,6 @@ export default async function BlogPage() {
         </p>
       )}
 
-      <DiscoverFooter />
     </div>
   );
 }

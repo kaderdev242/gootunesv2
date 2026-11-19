@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DiscoverFooter } from "@/components/discover/DiscoverFooter";
 import { BlogContent } from "@/components/blog/BlogContent";
 import { BlogCard, formatBlogDate } from "@/components/blog/BlogCard";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -46,7 +45,7 @@ export default async function BlogArticlePage({ params }: Props) {
   const others = recent.filter((p) => p.id !== post.id).slice(0, 3);
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-12 pb-4">
+    <div className="flex flex-col gap-12">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -99,7 +98,6 @@ export default async function BlogArticlePage({ params }: Props) {
         </section>
       ) : null}
 
-      <DiscoverFooter />
     </div>
   );
 }
