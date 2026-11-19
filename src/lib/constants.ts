@@ -86,7 +86,7 @@ export const LABEL_PLANS = {
 export const ARTIST_PLAN = {
   id: "annual" as const,
   name: "Artiste Annuel",
-  price: 1990,
+  price: 990,
   description: "Publications illimitées · 1 an",
 } as const;
 

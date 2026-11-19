@@ -199,9 +199,9 @@ export function FeedSidebar({
             <Link
               href="/discover/parametres#devenir-createur"
               onClick={onClose}
-              className="flex items-center gap-3 rounded-xl border border-violet-400/15 bg-violet-500/[0.07] px-3 py-2.5 text-[15px] font-medium text-violet-100 transition hover:border-violet-300/30 hover:bg-violet-500/[0.12]"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium text-white/55 transition hover:bg-white/[0.04] hover:text-white"
             >
-              <HugeiconsIcon icon={Mic01Icon} size={20} strokeWidth={1.5} className="text-violet-300" />
+              <HugeiconsIcon icon={Mic01Icon} size={20} strokeWidth={1.5} className="text-white/70" />
               Devenir artiste
             </Link>
             <Link
