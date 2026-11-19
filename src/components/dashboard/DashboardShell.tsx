@@ -10,6 +10,7 @@ import {
   ChartHistogramIcon,
   CrownIcon,
   Folder01Icon,
+  File01Icon,
   Money01Icon,
   Settings01Icon,
   SparklesIcon,
@@ -44,6 +45,7 @@ function navFor(basePath: CreatorBase, isLabel: boolean, retro: boolean): DashNa
       title: "Compte",
       items: [
         { href: `${basePath}/abonnement`, label: "Abonnement", icon: CrownIcon },
+        { href: `${basePath}/contrat`, label: "Contrat", icon: File01Icon },
         { href: `${basePath}/parametres`, label: "Paramètres", icon: Settings01Icon },
       ],
     },
@@ -67,6 +69,7 @@ function mobileMenuFor(basePath: CreatorBase, isLabel: boolean, retro: boolean):
     ...(retro ? [{ href: `${basePath}/retro`, label: "Rétro", icon: SparklesIcon }] : []),
     ...(isLabel ? [{ href: `${basePath}/artistes`, label: "Artistes", icon: UserMultipleIcon }] : []),
     { href: `${basePath}/abonnement`, label: "Abonnement", icon: CrownIcon },
+    { href: `${basePath}/contrat`, label: "Contrat", icon: File01Icon },
     { href: `${basePath}/parametres`, label: "Paramètres", icon: Settings01Icon },
     { href: "/", label: "Écouter sur Discover", icon: MusicNote01Icon },
   ];

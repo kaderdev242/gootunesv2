@@ -11,6 +11,7 @@ import {
   ChartHistogramIcon,
   CreditCardIcon,
   File01Icon,
+  File02Icon,
   Folder01Icon,
   Money01Icon,
   MusicNote01Icon,
@@ -49,6 +50,7 @@ function buildNav(counts: AdminCounts): DashNavSection[] {
       items: [
         { href: "/goo-admin/artistes", label: "Artistes et labels", icon: UserMultipleIcon, keywords: "créateurs certification" },
         { href: "/goo-admin/fans", label: "Fans", icon: UserIcon, keywords: "utilisateurs comptes" },
+        { href: "/goo-admin/contrats", label: "Contrats", icon: File02Icon, keywords: "contrats signatures artistes labels pdf" },
       ],
     },
     {

@@ -71,8 +71,9 @@ export default async function OnboardingPage({ searchParams }: Props) {
                     country: profile.country ?? "",
                     genres: profile.genres ?? [],
                     avatarUrl: profile.avatar_url ?? "",
+                    email: profile.email ?? "",
                   }
-                : undefined
+                : { email: profile.email ?? "" }
             }
           />
         </div>

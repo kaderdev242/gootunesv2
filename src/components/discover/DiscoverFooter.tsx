@@ -30,6 +30,9 @@ export function DiscoverFooter() {
             <Link href="/blog" className="transition hover:text-white">
               Blog
             </Link>
+            <Link href="/contrat" className="transition hover:text-white">
+              Contrat
+            </Link>
             <Link href="/termes" className="transition hover:text-white">
               Conditions
             </Link>

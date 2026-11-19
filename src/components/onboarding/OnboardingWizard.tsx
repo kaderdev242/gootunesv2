@@ -4,6 +4,12 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import { AppImage } from "@/components/media/AppImage";
 import { Button, Input, Label, TextArea } from "@heroui/react";
 import { CountrySelect } from "@/components/auth/CountrySelect";
+import {
+  ContractSignFields,
+  EMPTY_SIGN_STATE,
+  signStateError,
+  type ContractSignState,
+} from "@/components/contracts/ContractSignFields";
 import { GenrePicker } from "@/components/genres/GenrePicker";
 import { useDefaultCountry } from "@/hooks/useDefaultCountry";
 import { completeOnboarding, type OnboardingState } from "@/lib/actions/onboarding";
@@ -24,7 +30,11 @@ export type OnboardingDefaults = {
   country?: string;
   genres?: string[];
   avatarUrl?: string;
+  /** E-mail du compte, repris dans le contrat. */
+  email?: string;
 };
+
+const LAST_STEP = 3;
 
 export function OnboardingWizard({
   role,
@@ -43,6 +53,7 @@ export function OnboardingWizard({
   const [bio, setBio] = useState("");
   const [genres, setGenres] = useState<string[]>(defaults?.genres ?? []);
   const [avatarUrl, setAvatarUrl] = useState(defaults?.avatarUrl ?? "");
+  const [contract, setContract] = useState<ContractSignState>(EMPTY_SIGN_STATE);
 
   const [uploading, setUploading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -73,6 +84,7 @@ export function OnboardingWizard({
     if (index === 2) {
       if (!avatarUrl) return "Ajoute une photo de profil.";
     }
+    if (index === 3) return signStateError(contract);
     return null;
   }
 
@@ -82,7 +94,7 @@ export function OnboardingWizard({
       setLocalError(err);
       return;
     }
-    setStep((s) => Math.min(2, s + 1));
+    setStep((s) => Math.min(LAST_STEP, s + 1));
   }
 
   async function onAvatarChange(file: File | null) {
@@ -110,7 +122,7 @@ export function OnboardingWizard({
   return (
     <div className="mx-auto w-full max-w-lg">
       <div className="mb-8 flex items-center gap-2">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             className={`h-1.5 flex-1 rounded-full transition ${
@@ -121,20 +133,32 @@ export function OnboardingWizard({
       </div>
 
       <p className="text-[11px] font-semibold tracking-[0.18em] text-white/35 uppercase">
-        Étape {step + 1} / 3
+        Étape {step + 1} / {LAST_STEP + 1}
       </p>
       <h1 className="font-display mt-2 text-3xl font-bold tracking-tight text-white">
         {step === 0 && "Ton identité"}
         {step === 1 && "Ton univers"}
         {step === 2 && "Ta photo"}
+        {step === 3 && "Ton contrat"}
       </h1>
       <p className="mt-2 text-sm text-white/45">
         {step === 0 && "Ces infos apparaissent sur ton profil public."}
         {step === 1 && "Description courte + genres que tu incarnes."}
         {step === 2 && "Une photo claire pour que les fans te reconnaissent."}
+        {step === 3 && "Lis le contrat prérempli avec tes infos, puis signe-le pour finaliser ton inscription."}
       </p>
 
-      <form action={action} className="mt-8 flex flex-col gap-5">
+      <form
+        action={action}
+        onSubmit={(e) => {
+          const err = validateStep(LAST_STEP);
+          if (err) {
+            e.preventDefault();
+            setLocalError(err);
+          }
+        }}
+        className="mt-8 flex flex-col gap-5"
+      >
         <input type="hidden" name="display_name" value={displayName} />
         <input type="hidden" name="phone" value={phone} />
         <input type="hidden" name="bio" value={bio} />
@@ -235,6 +259,20 @@ export function OnboardingWizard({
           </div>
         ) : null}
 
+        {step === 3 ? (
+          <ContractSignFields
+            role={role}
+            party={{
+              displayName,
+              email: defaults?.email ?? "",
+              phone,
+              country,
+            }}
+            value={contract}
+            onChange={setContract}
+          />
+        ) : null}
+
         {(localError || state.error) && (
           <p className="rounded-2xl bg-red-500/10 px-3 py-2 text-sm text-red-300">
             {localError || state.error}
@@ -256,7 +294,7 @@ export function OnboardingWizard({
             </Button>
           ) : null}
 
-          {step < 2 ? (
+          {step < LAST_STEP ? (
             <Button
               type="button"
               className="h-12 flex-1 rounded-full bg-white font-semibold text-black"
@@ -268,12 +306,12 @@ export function OnboardingWizard({
             <Button
               type="submit"
               isPending={pending || uploading}
-              isDisabled={!avatarUrl || uploading}
+              isDisabled={!avatarUrl || uploading || Boolean(signStateError(contract))}
               className="h-12 flex-1 rounded-full bg-white font-semibold text-black"
             >
               {conversion
-                ? `Devenir ${role === "label" ? "label" : "artiste"}`
-                : "Terminer & accéder"}
+                ? `Signer et devenir ${role === "label" ? "label" : "artiste"}`
+                : "Signer et terminer"}
             </Button>
           )}
         </div>

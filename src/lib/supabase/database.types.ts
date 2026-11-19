@@ -805,6 +805,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      creator_contracts: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          role: "artist" | "label";
+          contract_version: string;
+          party: Json;
+          signer_name: string;
+          signature_png: string;
+          content_hash: string;
+          signed_ip: string | null;
+          signed_user_agent: string | null;
+          signed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          role: "artist" | "label";
+          contract_version: string;
+          party: Json;
+          signer_name: string;
+          signature_png: string;
+          content_hash: string;
+          signed_ip?: string | null;
+          signed_user_agent?: string | null;
+          signed_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["creator_contracts"]["Insert"]>;
+        Relationships: [];
+      };
       blog_posts: {
         Row: {
           id: string;
@@ -1240,6 +1270,7 @@ export type Track = Database["public"]["Tables"]["tracks"]["Row"];
 export type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 export type Beat = Database["public"]["Tables"]["beats"]["Row"];
 export type BeatOrder = Database["public"]["Tables"]["beat_orders"]["Row"];
+export type CreatorContract = Database["public"]["Tables"]["creator_contracts"]["Row"];
 export type BlogPostStatus = "draft" | "published";
 export type BlogPost = Database["public"]["Tables"]["blog_posts"]["Row"];
 export type EditorialHit = Database["public"]["Tables"]["editorial_hits"]["Row"];

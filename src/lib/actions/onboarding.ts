@@ -8,6 +8,7 @@ import { creatorHome } from "@/lib/dashboard/paths";
 import { isMusicGenre } from "@/lib/genres";
 import { isCountryCode } from "@/lib/geo";
 import { logServerError, mapDbError } from "@/lib/errors";
+import { readSignatureForm, recordContractSignature } from "@/lib/contracts/server";
 
 export type OnboardingState = {
   error?: string;
@@ -47,6 +48,10 @@ export async function completeOnboarding(
     return { error: "Sélectionne au moins un genre valide." };
   }
   if (!avatarUrl) return { error: "Photo de profil obligatoire." };
+
+  // Dernière étape : le contrat doit être accepté et signé.
+  const signature = readSignatureForm(formData);
+  if (signature.error) return { error: signature.error };
 
   const supabase = await createClient();
   const {
@@ -151,6 +156,25 @@ export async function completeOnboarding(
         return fail(mapDbError(error, "Impossible de créer le profil artiste."));
       }
     }
+  }
+
+  const signed = await recordContractSignature({
+    userId: user.id,
+    role: profile.role,
+    party: {
+      legalName: signature.legalName,
+      displayName,
+      email: user.email ?? "",
+      phone,
+      country,
+      city: signature.city,
+    },
+    signaturePng: signature.signaturePng,
+  });
+  if (signed.error) {
+    // Le profil vient d'être marqué terminé : on le rouvre pour que le contrat soit signé.
+    await createAdminClient().from("profiles").update({ onboarding_completed: false }).eq("id", user.id);
+    return fail(signed.error);
   }
 
   if (converting) revalidatePath("/", "layout");

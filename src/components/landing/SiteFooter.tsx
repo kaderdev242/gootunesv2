@@ -11,6 +11,9 @@ export function SiteFooter() {
             <Link href="/blog" className="transition-colors hover:text-[#ededed]">
               Blog
             </Link>
+            <Link href="/contrat" className="transition-colors hover:text-[#ededed]">
+              Contrat
+            </Link>
             <Link href="/termes" className="transition-colors hover:text-[#ededed]">
               Conditions d&apos;utilisation
             </Link>

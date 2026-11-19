@@ -4,7 +4,8 @@ import { Logo } from "@/components/landing/Logo";
 const links = [
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Support" },
-  { href: "/termes", label: "Conditions d'utilisation" },
+  { href: "/termes", label: "Conditions d'utilisation", short: "Conditions" },
+  { href: "/contrat", label: "Contrat" },
   { href: "/confidentialite", label: "Confidentialité" },
 ] as const;
 
@@ -20,18 +21,25 @@ export function LegalShell({
   return (
     <div className="min-h-dvh bg-[#050505] text-white">
       <header className="border-b border-white/8">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5 sm:px-8">
-          <Link href="/" aria-label="Accueil Gootunes">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
+          <Link href="/" aria-label="Accueil Gootunes" className="shrink-0">
             <Logo size="sm" />
           </Link>
-          <nav className="flex gap-4 text-xs text-white/45">
+          <nav className="flex flex-wrap justify-end gap-x-4 gap-y-1.5 text-xs text-white/45">
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
                 className="transition hover:text-white"
               >
-                {l.label}
+                {"short" in l ? (
+                  <>
+                    <span className="sm:hidden">{l.short}</span>
+                    <span className="hidden sm:inline">{l.label}</span>
+                  </>
+                ) : (
+                  l.label
+                )}
               </Link>
             ))}
           </nav>
