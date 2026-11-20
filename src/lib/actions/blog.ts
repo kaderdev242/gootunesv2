@@ -21,7 +21,8 @@ export type BlogSaveInput = {
   slug?: string;
   excerpt?: string;
   coverUrl?: string | null;
-  content: unknown;
+  /** Document Tiptap sérialisé en JSON (texte). */
+  content: string;
   status: BlogPostStatus;
 };
 

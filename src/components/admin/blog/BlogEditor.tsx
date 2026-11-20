@@ -307,7 +307,9 @@ export function BlogEditor({ post }: { post: BlogEditorPost | null }) {
         slug,
         excerpt,
         coverUrl,
-        content: editor.getJSON(),
+        // Envoyé en texte JSON : le document Tiptap contient des objets que React
+        // ne sait pas transmettre tels quels à une Server Action (nœuds image).
+        content: JSON.stringify(editor.getJSON()),
         status: nextStatus,
       });
       toastFromAction(res);

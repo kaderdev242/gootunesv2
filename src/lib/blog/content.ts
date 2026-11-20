@@ -108,6 +108,15 @@ function cleanNode(raw: Raw, depth: number): BlogNode | null {
 
 /** Reconstruit un document sûr à partir de n'importe quel JSON reçu. */
 export function sanitizeDoc(raw: unknown): BlogDoc {
+  // Accepte le document sous forme de texte JSON (envoi depuis l'éditeur).
+  if (typeof raw === "string") {
+    if (raw.length > 500_000) return EMPTY_DOC;
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      return EMPTY_DOC;
+    }
+  }
   const root = (raw ?? {}) as Raw;
   if (root.type !== "doc") return EMPTY_DOC;
   return { type: "doc", content: cleanChildren(root.content, 0) };
