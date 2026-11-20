@@ -6,8 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   notifyAccountReactivated,
   notifyAccountSuspended,
+  notifyPlanGifted,
 } from "@/lib/email/notify";
 import { logServerError, mapDbError } from "@/lib/errors";
+import { LABEL_PLANS } from "@/lib/constants";
 import { FEATURES, isFeatureKey } from "@/lib/features";
 import type { LabelPlan, ReportStatus } from "@/lib/supabase/database.types";
 import type { ActionState } from "./profile";
@@ -767,6 +769,16 @@ export async function adminSetCreatorPlan(
     }
 
     touchAdmin("/goo-admin/artistes", "/artist", "/artist/abonnement");
+    if (action !== "revoke" && target.email) {
+      notifyPlanGifted({
+        email: target.email,
+        displayName: target.display_name,
+        kind: "artist",
+        planName: "Artiste",
+        years,
+        expiresAt: expires,
+      });
+    }
     return {
       success:
         action === "revoke"
@@ -801,6 +813,16 @@ export async function adminSetCreatorPlan(
   }
 
   touchAdmin("/goo-admin/artistes", "/label", "/label/abonnement");
+  if (action !== "revoke" && target.email) {
+    notifyPlanGifted({
+      email: target.email,
+      displayName: target.display_name,
+      kind: "label",
+      planName: LABEL_PLANS[labelPlan].name,
+      years,
+      expiresAt: expires,
+    });
+  }
   return {
     success:
       action === "revoke"

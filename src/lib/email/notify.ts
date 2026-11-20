@@ -7,6 +7,7 @@ import {
   beatPurchaseBuyerEmail,
   beatPurchaseSellerEmail,
   loginOtpEmail,
+  planGiftedEmail,
   labelArtistCreatedEmail,
   purchaseBuyerEmail,
   purchaseSellerEmail,
@@ -241,4 +242,22 @@ export async function notifyBeatOrderCompleted(orderId: string) {
   } catch (e) {
     console.error("[email] notifyBeatOrderCompleted", e);
   }
+}
+
+/** Abonnement artiste ou label offert par l'admin. */
+export function notifyPlanGifted(input: {
+  email: string;
+  displayName?: string | null;
+  kind: "artist" | "label";
+  planName: string;
+  years: number;
+  expiresAt: Date;
+}) {
+  const mail = planGiftedEmail(input);
+  sendEmailSafe({
+    to: input.email,
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text,
+  });
 }

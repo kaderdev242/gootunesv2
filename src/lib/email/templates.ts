@@ -351,3 +351,45 @@ export function beatPurchaseSellerEmail(input: {
     text: `Prod vendue : ${input.title} — net ${formatFcfa(input.netFcfa)}`,
   };
 }
+
+/** Abonnement offert par Gootunes (activation manuelle par l'admin). */
+export function planGiftedEmail(input: {
+  displayName?: string | null;
+  kind: "artist" | "label";
+  planName: string;
+  years: number;
+  expiresAt: Date;
+}) {
+  const who = input.displayName?.trim() || "toi";
+  const duration = input.years > 1 ? `${input.years} ans` : "1 an";
+  const until = input.expiresAt.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const href = appUrl(input.kind === "label" ? "/label/abonnement" : "/artist/abonnement");
+  const perks =
+    input.kind === "label"
+      ? "Tu peux gérer tes artistes, publier leurs sorties et suivre leurs ventes depuis ton espace label."
+      : "Tu peux publier tes singles et albums, vendre ta musique et encaisser tes ventes Mobile Money.";
+
+  return {
+    subject: `Félicitations ! Gootunes t'offre ${duration} d'abonnement`,
+    html: emailLayout({
+      preheader: `Ton abonnement ${input.planName} est actif jusqu'au ${until}.`,
+      title: "Félicitations !",
+      bodyHtml: [
+        p(`Bonjour ${who},`),
+        p(
+          `Bonne nouvelle : Gootunes t'offre ${duration} d'abonnement ${input.planName}. Il est déjà actif, tu n'as rien à payer.`,
+        ),
+        p(perks),
+        strongLine("Formule", input.planName),
+        strongLine("Valable jusqu'au", until),
+        p("Merci de faire vivre la musique sur Gootunes."),
+      ].join(""),
+      cta: { label: "Voir mon abonnement", href },
+    }),
+    text: `Félicitations ${who} ! Gootunes t'offre ${duration} d'abonnement ${input.planName}, actif jusqu'au ${until}. ${href}`,
+  };
+}
