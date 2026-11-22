@@ -1,0 +1,3 @@
+# ffmpeg : tag Gootunes posé sur les démos des prods (src/lib/prods/watermark.ts).
+[phases.setup]
+nixPkgs = ["...", "ffmpeg"]

@@ -206,7 +206,7 @@ export function BeatPublishWizard({
   const artistName = artists.find((a) => a.id === artistId)?.stage_name || "—";
 
   const slots: { kind: BeatFileKind; title: string; hint: string }[] = [
-    { kind: "demo", title: "Démo avec ton tag", hint: "MP3 · aperçu public, écouté sur la vitrine" },
+    { kind: "demo", title: "Démo avec ton tag", hint: "MP3 · aperçu public. Gootunes y ajoute aussi son tag toutes les quelques secondes" },
     { kind: "mp3", title: "MP3 sans tag", hint: "Livré avec la licence MP3" },
     { kind: "wav", title: "WAV sans tag", hint: "Livré avec les licences WAV et Stems · max 95 Mo" },
     { kind: "stems", title: "Stems (ZIP)", hint: "Pistes séparées · licence Stems · max 95 Mo" },

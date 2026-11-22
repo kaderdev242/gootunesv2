@@ -63,6 +63,15 @@ export function useBeatPlayer() {
   return ctx;
 }
 
+/** Durée de l'extrait public (identique à PRODS_DEMO_SECONDS côté serveur). */
+export const PREVIEW_SECONDS = 60;
+
+/** Forme d'onde recadrée sur l'extrait : les pics couvrent le morceau entier. */
+export function previewPeaks(peaks: number[] | null | undefined, fullSeconds: number | null | undefined) {
+  if (!peaks?.length || !fullSeconds || fullSeconds <= PREVIEW_SECONDS) return peaks ?? null;
+  return peaks.slice(0, Math.max(1, Math.round((peaks.length * PREVIEW_SECONDS) / fullSeconds)));
+}
+
 export function formatTime(s: number) {
   if (!Number.isFinite(s) || s <= 0) return "0:00";
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -87,6 +96,8 @@ export function BeatPlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.8);
   const [muted, setMuted] = useState(false);
+  /** Extrait terminé : propose d'acheter la prod pour l'écouter en entier. */
+  const [paywall, setPaywall] = useState<PlayableBeat | null>(null);
 
   useEffect(() => {
     const v = readVolume();
@@ -200,12 +211,89 @@ export function BeatPlayerProvider({ children }: { children: ReactNode }) {
         className="hidden"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onEnded={() => step(1)}
+        onEnded={() => (current && !current.owned ? setPaywall(current) : step(1))}
         onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
       />
       {current ? <PlayerBar /> : null}
+      {paywall ? (
+        <PreviewEndedModal
+          beat={paywall}
+          onClose={() => setPaywall(null)}
+          onNext={() => {
+            setPaywall(null);
+            step(1);
+          }}
+        />
+      ) : null}
     </BeatPlayerContext.Provider>
+  );
+}
+
+/** Fin de l'extrait de 60 s : invitation à acheter la prod. */
+function PreviewEndedModal({
+  beat,
+  onClose,
+  onNext,
+}: {
+  beat: PlayableBeat;
+  onClose: () => void;
+  onNext: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-ended-title"
+        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#151517] p-6 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative mx-auto size-28 overflow-hidden rounded-xl bg-white/5">
+          <AppImage src={beat.cover_url || FALLBACK_COVER} alt="" fill sizes="112px" className="object-cover" />
+        </div>
+        <p className="mt-5 text-sm text-white/50">Fin de l&apos;extrait de 60 secondes</p>
+        <h2 id="preview-ended-title" className="mt-1 text-xl font-semibold text-white">
+          Achète ce beat pour l&apos;écouter en entier
+        </h2>
+        <p className="mt-2 truncate text-sm text-white/60">
+          {beat.title} · {beat.artist}
+        </p>
+        <a
+          href={`/prods/b/${beat.public_id}#licences`}
+          className="mt-6 flex h-11 items-center justify-center rounded-xl bg-white text-sm font-semibold text-black transition-colors hover:bg-white/90"
+        >
+          {beat.priceLabel ? `Acheter · ${beat.priceLabel}` : "Voir les licences"}
+        </a>
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={onNext}
+            className="h-11 flex-1 rounded-xl text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            Prod suivante
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 flex-1 rounded-xl text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -13,6 +13,7 @@ import {
 } from "@/lib/prods/constants";
 import { runCheckBeatOrderStatus, runInitiateBeatPurchase } from "@/lib/prods/purchase";
 import { headObjectFromR2 } from "@/lib/r2";
+import { watermarkDemoKey } from "@/lib/prods/watermark";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { BeatLicense, PaymentMethod } from "@/lib/supabase/database.types";
@@ -136,6 +137,16 @@ export async function createBeat(_prev: ActionState, formData: FormData): Promis
     return { error: "Un fichier n'a pas fini d'être envoyé. Réessaie l'envoi." };
   }
 
+  // Tag Gootunes posé côté serveur sur la démo publique : c'est cette version
+  // taguée qui est diffusée, jamais le fichier envoyé par le beatmaker.
+  let demoKey: string;
+  try {
+    demoKey = await watermarkDemoKey(input.demo_key, user.id);
+  } catch (e) {
+    logServerError("prods.createBeat.watermark", e);
+    return { error: "Impossible de préparer la démo. Vérifie que c'est bien un MP3 et réessaie." };
+  }
+
   const tags = (input.tags || "")
     .split(",")
     .map((t) => t.trim().toLowerCase())
@@ -155,7 +166,7 @@ export async function createBeat(_prev: ActionState, formData: FormData): Promis
       bpm: input.bpm,
       musical_key: input.musical_key || null,
       tags,
-      demo_key: input.demo_key,
+      demo_key: demoKey,
       duration_seconds: input.duration_seconds,
       price_mp3_fcfa: input.price_mp3_fcfa,
       price_wav_fcfa: input.price_wav_fcfa,

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PauseIcon, PlayIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { AppImage } from "@/components/media/AppImage";
-import { formatTime, useBeatPlayer, type PlayableBeat } from "@/components/prods/BeatPlayer";
+import { formatTime, PREVIEW_SECONDS, previewPeaks, useBeatPlayer, type PlayableBeat } from "@/components/prods/BeatPlayer";
 import { Waveform } from "@/components/prods/Waveform";
 import { formatMoney } from "@/lib/format";
 import { lowestBeatPrice, tempoLabel } from "@/lib/prods/constants";
@@ -24,7 +24,7 @@ export function toPlayable(b: PublicBeat, country?: string | null, owned?: Owned
     artist: b.artists?.stage_name || "Beatmaker",
     artistPublicId: b.artists?.public_id ?? null,
     tempo: tempoLabel(b),
-    waveform: b.waveform,
+    waveform: previewPeaks(b.waveform, b.duration_seconds),
     priceLabel: from ? formatMoney(from, country) : null,
     owned: Boolean(owned?.[b.id]?.length),
   };
@@ -241,7 +241,7 @@ export function BeatDetailWave({ beat, country, owned }: { beat: PublicBeat; cou
         {formatTime(active ? progress : 0)}
       </span>
       <Waveform
-        peaks={beat.waveform}
+        peaks={previewPeaks(beat.waveform, beat.duration_seconds)}
         progress={active && duration ? progress / duration : 0}
         onSeek={active ? seek : () => play(playable, [playable])}
         height={72}
@@ -249,7 +249,7 @@ export function BeatDetailWave({ beat, country, owned }: { beat: PublicBeat; cou
         label={`Waveform ${beat.title}`}
       />
       <span className="w-10 font-mono text-[11px] tabular-nums text-white/45">
-        {formatTime(active && duration ? duration : beat.duration_seconds ?? 0)}
+        {formatTime(active && duration ? duration : Math.min(PREVIEW_SECONDS, beat.duration_seconds ?? 0))}
       </span>
     </div>
   );
