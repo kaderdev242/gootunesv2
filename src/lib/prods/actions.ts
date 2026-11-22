@@ -141,7 +141,7 @@ export async function createBeat(_prev: ActionState, formData: FormData): Promis
   // taguée qui est diffusée, jamais le fichier envoyé par le beatmaker.
   let demoKey: string;
   try {
-    demoKey = await watermarkDemoKey(input.demo_key, user.id);
+    demoKey = await watermarkDemoKey(input.demo_key);
   } catch (e) {
     logServerError("prods.createBeat.watermark", e);
     return { error: "Impossible de préparer la démo. Vérifie que c'est bien un MP3 et réessaie." };
