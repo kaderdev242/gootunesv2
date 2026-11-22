@@ -3,6 +3,7 @@ import { LABEL_PLANS } from "@/lib/constants";
 import { notifyPurchaseCompleted } from "@/lib/email/notify";
 import { isTtlExpireMeta } from "@/lib/purchases/expire-pending";
 import type { Json, LabelPlan } from "@/lib/supabase/database.types";
+import { sendPushSafe } from "@/lib/push/fcm";
 import { revalidatePath } from "next/cache";
 import { BEAT_ORDER_PREFIX } from "@/lib/prods/constants";
 import {
@@ -257,6 +258,21 @@ export async function failArtistPlanByOrderId(
   await failPayinOrder("artist_plan_orders", orderId, providerTransactionId, meta);
 }
 
+/** Push vers l'app Gootunes Artistes quand un retrait aboutit ou échoue. */
+async function notifyWithdrawal(withdrawalId: string, status: "completed" | "failed") {
+  const admin = createAdminClient();
+  const { data: w } = await admin
+    .from("withdrawals")
+    .select("profile_id, amount_fcfa")
+    .eq("id", withdrawalId)
+    .maybeSingle();
+  if (!w) return;
+  const amount = new Intl.NumberFormat("fr-FR").format(Number(w.amount_fcfa) || 0);
+  sendPushSafe(w.profile_id, status === "completed"
+    ? { title: "Retrait envoyé", body: `${amount} FCFA ont été envoyés sur ton Mobile Money`, screen: "retraits" }
+    : { title: "Retrait échoué", body: `Le retrait de ${amount} FCFA n'a pas abouti. Ton solde a été recrédité`, screen: "retraits" });
+}
+
 /** Confirme un retrait payout (solde déjà réservé au pending). */
 export async function fulfillWithdrawalByOrderId(
   orderId: string,
@@ -288,6 +304,8 @@ export async function fulfillWithdrawalByOrderId(
 
   if (error) return { ok: false as const, reason: "update_failed" as const };
 
+  void notifyWithdrawal(w.id, "completed");
+
   revalidatePath("/artist");
   revalidatePath("/label");
   revalidatePath("/artist/retraits");
@@ -312,6 +330,14 @@ export async function failWithdrawalByOrderId(
     .eq("order_id", orderId)
     .eq("status", "pending");
   // trigger rembourse le solde
+
+  const { data: failed } = await admin
+    .from("withdrawals")
+    .select("id")
+    .eq("order_id", orderId)
+    .eq("status", "failed")
+    .maybeSingle();
+  if (failed) void notifyWithdrawal(failed.id, "failed");
 
   revalidatePath("/artist/retraits");
   revalidatePath("/label/retraits");

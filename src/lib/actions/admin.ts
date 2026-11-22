@@ -771,6 +771,7 @@ export async function adminSetCreatorPlan(
     touchAdmin("/goo-admin/artistes", "/artist", "/artist/abonnement");
     if (action !== "revoke" && target.email) {
       notifyPlanGifted({
+        userId: target.id,
         email: target.email,
         displayName: target.display_name,
         kind: "artist",
@@ -815,6 +816,7 @@ export async function adminSetCreatorPlan(
   touchAdmin("/goo-admin/artistes", "/label", "/label/abonnement");
   if (action !== "revoke" && target.email) {
     notifyPlanGifted({
+      userId: target.id,
       email: target.email,
       displayName: target.display_name,
       kind: "label",

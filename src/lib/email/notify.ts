@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appUrl, contactInbox, sendEmailSafe } from "./client";
+import { sendPushSafe } from "@/lib/push/fcm";
 import { LICENSES } from "@/lib/prods/constants";
 import {
   accountReactivatedEmail,
@@ -106,6 +107,13 @@ export async function notifyPurchaseCompleted(purchaseId: string) {
     const title = release.title;
     const artist = artistName || "Artiste";
     const releasePathId = release.public_id || release.id;
+
+    // Push vers l'app Gootunes Artistes du vendeur.
+    sendPushSafe(purchase.seller_id, {
+      title: "Nouvelle vente",
+      body: `${title} vient d'être acheté · +${new Intl.NumberFormat("fr-FR").format(Number(purchase.artist_net_fcfa) || 0)} FCFA`,
+      screen: "revenus",
+    });
 
     if (buyer?.email) {
       const mail = purchaseBuyerEmail({
@@ -216,6 +224,12 @@ export async function notifyBeatOrderCompleted(orderId: string) {
     const provided = license.files.filter((f) => files?.[`${f}_key` as const]).map((f) => labels[f]);
     const title = beat?.title || "Prod";
 
+    sendPushSafe(order.seller_id, {
+      title: "Nouvelle vente de prod",
+      body: `${title} · +${new Intl.NumberFormat("fr-FR").format(Number(order.artist_net_fcfa) || 0)} FCFA`,
+      screen: "revenus",
+    });
+
     if (buyer?.email) {
       const mail = beatPurchaseBuyerEmail({
         buyerName: buyer.display_name,
@@ -246,6 +260,7 @@ export async function notifyBeatOrderCompleted(orderId: string) {
 
 /** Abonnement artiste ou label offert par l'admin. */
 export function notifyPlanGifted(input: {
+  userId?: string;
   email: string;
   displayName?: string | null;
   kind: "artist" | "label";
@@ -254,6 +269,13 @@ export function notifyPlanGifted(input: {
   expiresAt: Date;
 }) {
   const mail = planGiftedEmail(input);
+  if (input.userId) {
+    sendPushSafe(input.userId, {
+      title: "Félicitations",
+      body: `Gootunes t'offre ${input.years > 1 ? `${input.years} ans` : "1 an"} d'abonnement ${input.planName}`,
+      screen: "profil",
+    });
+  }
   sendEmailSafe({
     to: input.email,
     subject: mail.subject,

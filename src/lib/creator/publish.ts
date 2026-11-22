@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { isReleasePriceTier } from "@/lib/purchases/apple-tiers";
+import { isMusicGenre } from "@/lib/genres";
 import { notifyReleasePublished } from "@/lib/email/notify";
 import { logServerError, mapDbError, USER_ERRORS } from "@/lib/errors";
 import { hasActiveArtistPlan } from "@/lib/artist-plan";
@@ -32,6 +33,30 @@ export type CreateReleaseInput = {
   }[];
 };
 
+const MAX_TEXT = 120;
+const MAX_TRACKS = 40;
+
+/** Cover envoyée par cet utilisateur via /api/upload (bucket public R2). */
+function isOwnCoverUrl(url: string, userId: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return false;
+    const base = (process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "").trim();
+    if (base) {
+      const b = new URL(base);
+      if (u.host !== b.host) return false;
+    }
+    return u.pathname.includes(`/covers/${userId}/`);
+  } catch {
+    return false;
+  }
+}
+
+/** Audio envoyé par cet utilisateur : clé R2 « audios/<uid>/<fichier> ». */
+function isOwnAudioKey(key: string, userId: string): boolean {
+  return new RegExp(`^audios/${userId}/[A-Za-z0-9._-]+$`).test(key);
+}
+
 export function revalidateCatalog() {
   revalidatePath("/artist/publications");
   revalidatePath("/label/publications");
@@ -54,7 +79,15 @@ export async function runCreateRelease(
 
   if (!["single", "album"].includes(type)) return { error: "Type invalide." };
   if (!title || !artist_id) return { error: "Titre et artiste requis." };
+  if (title.length > MAX_TEXT) return { error: "Titre trop long." };
   if (!cover_url) return { error: "Cover 1000×1000 obligatoire." };
+  if (!input.genre?.trim() || !isMusicGenre(input.genre.trim())) {
+    return { error: "Genre obligatoire." };
+  }
+  if (tracks.length > MAX_TRACKS) return { error: "Trop de pistes." };
+  for (const v of [input.featuring, input.auteur, input.compositeur, input.producteur]) {
+    if ((v || "").trim().length > MAX_TEXT) return { error: "Un des champs est trop long." };
+  }
   if (!input.ownership_certified) {
     return {
       error:
@@ -73,6 +106,17 @@ export async function runCreateRelease(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Non authentifié." };
+
+  // Les fichiers doivent venir des envois de cet utilisateur (pas d'URL externe).
+  if (!isOwnCoverUrl(cover_url, user.id)) return { error: "Cover invalide." };
+  for (const t of tracks) {
+    if (!isOwnAudioKey(String(t.audio_url || ""), user.id)) {
+      return { error: "Fichier audio invalide." };
+    }
+    if (String(t.title || "").trim().length > MAX_TEXT) {
+      return { error: "Titre de piste trop long." };
+    }
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -133,7 +177,7 @@ export async function runCreateRelease(
   const { error: tracksError } = await supabase.from("tracks").insert(
     tracks.map((t, i) => ({
       release_id: release.id,
-      title: t.title || `${title} — piste ${i + 1}`,
+      title: String(t.title || "").trim() || `${title} — piste ${i + 1}`,
       audio_url: t.audio_url,
       track_number: t.track_number || i + 1,
       duration_seconds: t.duration_seconds ?? null,
