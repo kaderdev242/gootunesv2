@@ -17,7 +17,7 @@
     "@hugeicons/react": "^1.1.9",
     "@react-pdf/renderer": "4.9.0",
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.109.0",
+    "@supabase/supabase-js": "^2.119.2",
     "@tiptap/extension-image": "3.32.3",
     "@tiptap/extensions": "3.32.3",
     "@tiptap/pm": "3.32.3",
