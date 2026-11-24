@@ -1,7 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LABEL_PLANS } from "@/lib/constants";
 import { notifyPurchaseCompleted } from "@/lib/email/notify";
-import { isTtlExpireMeta } from "@/lib/purchases/expire-pending";
 import type { Json, LabelPlan } from "@/lib/supabase/database.types";
 import { sendPushSafe } from "@/lib/push/fcm";
 import { revalidatePath } from "next/cache";
@@ -11,12 +10,17 @@ import {
   fulfillBeatOrderByOrderId,
 } from "@/lib/prods/purchase";
 
-function canFulfillFromStatus(
-  status: string,
-  providerMeta: unknown,
-): status is "pending" | "failed" {
-  if (status === "pending") return true;
-  return status === "failed" && isTtlExpireMeta(providerMeta);
+/**
+ * Une commande en attente ou en échec peut passer « completed ».
+ *
+ * Tous les appelants ne livrent qu'après confirmation « successful » de
+ * Mbiyo (webhook contre-vérifié, suivi, rapprochement) ou validation admin :
+ * c'est Mbiyo qui fait foi. Un échec chez nous (expiration à 5 min, suivi
+ * interrompu, réponse opérateur lente) ne doit jamais bloquer un client
+ * réellement débité.
+ */
+function canFulfillFromStatus(status: string): status is "pending" | "failed" {
+  return status === "pending" || status === "failed";
 }
 
 type PayinTable = "purchases" | "label_plan_orders" | "artist_plan_orders";
@@ -74,7 +78,7 @@ export async function fulfillPurchaseByOrderId(
   if (purchase.status === "completed") {
     return { ok: true as const, already: true as const, purchase };
   }
-  if (!canFulfillFromStatus(purchase.status, purchase.provider_meta)) {
+  if (!canFulfillFromStatus(purchase.status)) {
     return { ok: false as const, reason: "not_pending" as const };
   }
 
@@ -83,7 +87,7 @@ export async function fulfillPurchaseByOrderId(
     .update({
       status: "completed",
       provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
+      provider_meta: { ...asObject(purchase.provider_meta), ...asObject(meta ?? null) } as Json,
     })
     .eq("id", purchase.id)
     .eq("status", purchase.status);
@@ -128,7 +132,7 @@ export async function fulfillLabelPlanByOrderId(
   if (order.status === "completed") {
     return { ok: true as const, already: true as const, order };
   }
-  if (!canFulfillFromStatus(order.status, order.provider_meta)) {
+  if (!canFulfillFromStatus(order.status)) {
     return { ok: false as const, reason: "not_pending" as const };
   }
 
@@ -145,7 +149,7 @@ export async function fulfillLabelPlanByOrderId(
     .update({
       status: "completed",
       provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
+      provider_meta: { ...asObject(order.provider_meta), ...asObject(meta ?? null) } as Json,
     })
     .eq("id", order.id)
     .eq("status", order.status);
@@ -203,7 +207,7 @@ export async function fulfillArtistPlanByOrderId(
   if (order.status === "completed") {
     return { ok: true as const, already: true as const, order };
   }
-  if (!canFulfillFromStatus(order.status, order.provider_meta)) {
+  if (!canFulfillFromStatus(order.status)) {
     return { ok: false as const, reason: "not_pending" as const };
   }
   if (order.plan !== "annual") {
@@ -218,7 +222,7 @@ export async function fulfillArtistPlanByOrderId(
     .update({
       status: "completed",
       provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
+      provider_meta: { ...asObject(order.provider_meta), ...asObject(meta ?? null) } as Json,
     })
     .eq("id", order.id)
     .eq("status", order.status);
@@ -283,7 +287,7 @@ export async function fulfillWithdrawalByOrderId(
 
   const { data: w } = await admin
     .from("withdrawals")
-    .select("id, status, profile_id")
+    .select("id, status, profile_id, provider_meta")
     .eq("order_id", orderId)
     .maybeSingle();
 
@@ -297,7 +301,7 @@ export async function fulfillWithdrawalByOrderId(
     .update({
       status: "completed",
       provider_transaction_id: providerTransactionId || undefined,
-      provider_meta: meta ?? {},
+      provider_meta: { ...asObject(w.provider_meta), ...asObject(meta ?? null) } as Json,
     })
     .eq("id", w.id)
     .eq("status", "pending");

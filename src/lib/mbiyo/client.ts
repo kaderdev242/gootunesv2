@@ -148,6 +148,25 @@ export async function getMbiyoTransaction(transactionOrOrderId: string) {
   );
 }
 
+export type MbiyoResendData = {
+  transaction_id: string;
+  webhook_url?: string;
+  status_code?: number;
+  delivered?: boolean;
+};
+
+/**
+ * Redemande à Mbiyo d'envoyer le webhook d'une transaction (même contenu,
+ * même signature). `delivered` = notre serveur a répondu 2xx ou 409.
+ * @see https://dashboard.mbiyo.africa/docs/reference/merchant/resend-webhook
+ */
+export async function resendMbiyoWebhook(transactionId: string) {
+  return mbiyoFetch<MbiyoResendData>(
+    `/api/v1/merchant/transactions/${encodeURIComponent(transactionId)}/resend-webhook`,
+    { method: "POST" },
+  );
+}
+
 export async function finalizeMbiyoPayment(
   transactionId: string,
   otp: string,

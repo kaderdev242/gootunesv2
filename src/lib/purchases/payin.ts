@@ -9,6 +9,7 @@ import {
 } from "@/lib/constants";
 import type { ActionState } from "@/lib/actions/profile";
 import { createMbiyoPayin, getMbiyoTransaction } from "@/lib/mbiyo/client";
+import { isUnconfirmedFailure } from "@/lib/mbiyo/reconcile";
 import { payinErrorFailure, statusFailure } from "@/lib/mbiyo/failure";
 import {
   getMbiyoCurrency,
@@ -358,7 +359,7 @@ export async function runCheckPurchaseStatus(
   const { data: purchase } = await supabase
     .from("purchases")
     .select(
-      "id, status, release_id, provider_transaction_id, order_id, created_at, provider",
+      "id, status, release_id, provider_transaction_id, order_id, created_at, provider, provider_meta",
     )
     .eq("order_id", orderId)
     .eq("buyer_id", user.id)
@@ -369,7 +370,13 @@ export async function runCheckPurchaseStatus(
   if (purchase.status === "completed") {
     return { status: "completed", releaseId: purchase.release_id };
   }
-  if (purchase.status === "failed" || purchase.status === "cancelled") {
+  // Échec non confirmé par Mbiyo (expiration à 5 min) : le client a peut-être
+  // validé tard sur son téléphone. On redemande le vrai statut avant de répondre.
+  const recheckFailed =
+    purchase.status === "failed" &&
+    purchase.provider !== "apple" &&
+    isUnconfirmedFailure(purchase.provider_meta);
+  if ((purchase.status === "failed" && !recheckFailed) || purchase.status === "cancelled") {
     return { status: purchase.status, releaseId: purchase.release_id };
   }
 
@@ -389,6 +396,9 @@ export async function runCheckPurchaseStatus(
       });
       return { status: "completed", releaseId: purchase.release_id };
     }
+    if (recheckFailed) {
+      return { status: "failed", releaseId: purchase.release_id };
+    }
     if (st === "failed" || st === "cancelled") {
       await failPurchaseByOrderId(
         orderId,
@@ -403,6 +413,8 @@ export async function runCheckPurchaseStatus(
   } catch {
     /* garde pending */
   }
+
+  if (recheckFailed) return { status: "failed", releaseId: purchase.release_id };
 
   // TTL 5 min : si toujours pending côté PSP, marquer échec.
   if (

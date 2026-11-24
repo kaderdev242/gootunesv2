@@ -9,7 +9,7 @@ import {
   Download04Icon,
   PlayIcon,
 } from "@hugeicons/core-free-icons";
-import { toJpeg } from "html-to-image";
+import { toCanvas } from "html-to-image";
 import type { RetroData } from "@/lib/retro";
 import type { RetroPeriod } from "@/lib/retro-periods";
 import { RETRO_PERIODS } from "@/lib/retro-periods";
@@ -59,20 +59,61 @@ function useWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
-async function exportJpeg(node: HTMLElement, filename: string) {
-  const dataUrl = await toJpeg(node, {
-    quality: 0.92,
+/** Rend une carte en JPEG 1080 × 1920 (canevas → Blob, sans requête réseau). */
+async function renderJpeg(node: HTMLElement): Promise<Blob> {
+  const opts = {
     width: CARD_W,
     height: CARD_H,
+    canvasWidth: CARD_W,
+    canvasHeight: CARD_H,
     pixelRatio: 1,
     style: { transform: "none" },
-  });
-  const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  };
+  // Safari dessine parfois les images au 2e passage seulement : on chauffe une fois.
+  if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+    await toCanvas(node, opts).catch(() => null);
+  }
+  const canvas = await toCanvas(node, opts);
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Image vide"))), "image/jpeg", 0.92),
+  );
+}
+
+/** Mobile : feuille de partage (Enregistrer l'image, Instagram, WhatsApp…). */
+function canShareFiles(files: File[]) {
+  try {
+    return typeof navigator !== "undefined" && !!navigator.canShare && navigator.canShare({ files });
+  } catch {
+    return false;
+  }
+}
+
+const isTouchDevice = () =>
+  typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
+/** Enregistre un fichier : partage natif sur mobile, sinon téléchargement. */
+async function saveFiles(files: File[]) {
+  if (isTouchDevice() && canShareFiles(files)) {
+    try {
+      await navigator.share({ files, title: "Ma Rétro Gootunes" });
+      return;
+    } catch (e) {
+      // Partage annulé par l'utilisateur : rien d'autre à faire.
+      if (e instanceof DOMException && e.name === "AbortError") return;
+    }
+  }
+  for (const file of files) {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    if (files.length > 1) await new Promise((r) => setTimeout(r, 400));
+  }
 }
 
 function GalleryCard({
@@ -297,7 +338,8 @@ export function RetroView({
     setBusy(true);
     try {
       await document.fonts.ready;
-      await exportJpeg(el, filename(id));
+      const blob = await renderJpeg(el);
+      await saveFiles([new File([blob], filename(id), { type: "image/jpeg" })]);
     } catch {
       toastError("Impossible de créer l'image. Réessaie.");
     } finally {
@@ -309,11 +351,14 @@ export function RetroView({
     setBusy(true);
     try {
       await document.fonts.ready;
+      const files: File[] = [];
       for (const card of cards) {
         const el = nodes.current.get(card.id);
-        if (el) await exportJpeg(el, filename(card.id));
-        await new Promise((r) => setTimeout(r, 350));
+        if (!el) continue;
+        const blob = await renderJpeg(el);
+        files.push(new File([blob], filename(card.id), { type: "image/jpeg" }));
       }
+      await saveFiles(files);
     } catch {
       toastError("Impossible de créer les images. Réessaie.");
     } finally {

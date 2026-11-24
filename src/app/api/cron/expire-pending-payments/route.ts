@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import { expireStalePendingPayins } from "@/lib/purchases/expire-pending";
+import { reconcileMbiyoPayins } from "@/lib/mbiyo/reconcile";
 import { logServerError } from "@/lib/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /**
- * Expire les payins pending > 5 min (achats + abos artiste/label).
- * Planifié une fois par jour à 03:00 UTC (limite du plan Hobby).
- * Auth : Bearer / x-admin-secret = CRON_SECRET (Vercel Cron).
+ * Rapproche avec Mbiyo les paiements en attente (> 5 min) et les échecs
+ * non confirmés des 72 dernières heures : livre ce qui a été payé, passe en
+ * échec ce que Mbiyo a refusé. À appeler toutes les 5 à 10 minutes.
+ * Auth : Bearer / x-admin-secret = CRON_SECRET.
  */
 async function handle(request: Request) {
   try {
@@ -21,12 +22,8 @@ async function handle(request: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const result = await expireStalePendingPayins();
-    return NextResponse.json({
-      ok: true,
-      ...result,
-      total: result.purchases + result.labelPlans + result.artistPlans,
-    });
+    const result = await reconcileMbiyoPayins(40);
+    return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     logServerError("cron.expirePendingPayments", e);
     return NextResponse.json({ error: "Échec expiration" }, { status: 500 });

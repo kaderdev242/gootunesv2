@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
+import { PaymentReviewModal } from "@/components/admin/PaymentReviewModal";
 import {
   Alert02Icon,
   CheckmarkCircle02Icon,
@@ -24,6 +25,7 @@ import {
 } from "@/components/admin/console/ui";
 
 const KIND_TONES: Record<LedgerKind, PillTone> = {
+  beat: "violet",
   purchase: "violet",
   label_plan: "info",
   artist_plan: "info",
@@ -33,6 +35,7 @@ import { formatFcfa } from "@/lib/format";
 import type { AdminLedgerRow, LedgerKind } from "@/lib/admin/queries";
 
 const KIND_LABELS: Record<LedgerKind, string> = {
+  beat: "Achat prod",
   purchase: "Achat musique",
   label_plan: "Abo label",
   artist_plan: "Abo artiste",
@@ -51,6 +54,8 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<LedgerKind | "all">("all");
   const [status, setStatus] = useState<string>("all");
+  const [review, setReview] = useState<string | null>(null);
+  const closeReview = useCallback(() => setReview(null), []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -81,6 +86,7 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
   const counts = useMemo(() => {
     const byKind: Record<string, number> = {
       all: rows.length,
+      beat: 0,
       purchase: 0,
       label_plan: 0,
       artist_plan: 0,
@@ -115,7 +121,7 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
       <ConsoleHeader
         kicker="Finances"
         title="Transactions"
-        description="Achats, abonnements et retraits. Un paiement en attente passe en échec après 5 minutes."
+        description="Achats, prods, abonnements et retraits. Les paiements en attente ou en échec sont revérifiés auprès de Mbiyo : ce qui a été payé se débloque tout seul. Bouton « Vérifier » pour contrôler et valider à la main."
         actions={<ConsoleLink href="/goo-admin/abonnements">Abonnements</ConsoleLink>}
       />
 
@@ -134,6 +140,7 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
             [
               ["all", "Tout"],
               ["purchase", "Achats"],
+              ["beat", "Prods"],
               ["label_plan", "Abo labels"],
               ["artist_plan", "Abo artistes"],
               ["withdrawal", "Retraits"],
@@ -218,6 +225,15 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
                           {row.failureReason}
                         </span>
                       ) : null}
+                      {row.orderId && row.provider !== "apple" && (row.status === "pending" || row.status === "failed") ? (
+                        <button
+                          type="button"
+                          onClick={() => setReview(row.orderId)}
+                          className="mt-2 inline-flex h-7 items-center rounded-md border border-white/[0.12] px-2.5 text-[12px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.06]"
+                        >
+                          Vérifier
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                 ))
@@ -226,6 +242,7 @@ export function AdminTransactionsView({ rows }: { rows: AdminLedgerRow[] }) {
           </table>
         </div>
       </Panel>
+      {review ? <PaymentReviewModal orderId={review} onClose={closeReview} /> : null}
     </div>
   );
 }

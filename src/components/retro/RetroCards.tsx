@@ -35,6 +35,23 @@ function isKnownCountry(code: string): code is CountryCode {
   return COUNTRIES.some((c) => c.code === code);
 }
 
+/** Nom du pays en français, y compris hors de la liste Gootunes (ex. FR → France). */
+function countryName(code: string) {
+  if (isKnownCountry(code)) return getCountryLabel(code);
+  try {
+    return new Intl.DisplayNames(["fr"], { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/** Drapeau en emoji pour les pays hors de la liste Gootunes. */
+function flagEmoji(code: string) {
+  const c = code.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(c)) return "🌍";
+  return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65));
+}
+
 /* ─────────────── Décor : rubans de « lignes de son » ─────────────── */
 
 function Ribbon({
@@ -43,7 +60,7 @@ function Ribbon({
   y,
   flip = false,
   seed = 0,
-  lines = 30,
+  lines = 22,
 }: {
   a: string;
   b: string;
@@ -54,7 +71,7 @@ function Ribbon({
 }) {
   const id = `rg-${seed}-${y}-${flip ? 1 : 0}`;
   const paths = Array.from({ length: lines }, (_, i) => {
-    const o = i * 15;
+    const o = i * 14;
     const w = Math.sin(seed + i * 0.18) * 40;
     return `M -120 ${o + 40} C 260 ${o - 220 + w}, 620 ${o + 360 - w}, 1200 ${o * 0.55 + 60}`;
   });
@@ -78,7 +95,7 @@ function Ribbon({
         </linearGradient>
       </defs>
       {paths.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke={`url(#${id})`} strokeWidth={9} strokeLinecap="round" />
+        <path key={i} d={d} fill="none" stroke={`url(#${id})`} strokeWidth={7} strokeLinecap="round" opacity={0.9} />
       ))}
     </svg>
   );
@@ -110,10 +127,10 @@ function Frame({
       }}
     >
       {ribbons === "top" || ribbons === "both" ? (
-        <Ribbon a={s.ribbonA} b={s.ribbonB} y={-120} seed={seed} />
+        <Ribbon a={s.ribbonA} b={s.ribbonB} y={-170} seed={seed} />
       ) : null}
       {ribbons === "bottom" || ribbons === "both" ? (
-        <Ribbon a={s.ribbonB} b={s.ribbonA} y={1180} flip seed={seed + 3} />
+        <Ribbon a={s.ribbonB} b={s.ribbonA} y={1330} flip seed={seed + 3} />
       ) : null}
       <div style={{ position: "absolute", inset: 0 }}>{children}</div>
       <div
@@ -159,7 +176,7 @@ function Center({ top, children }: { top: number; children: ReactNode }) {
 }
 
 function Kicker({ children, s }: { children: ReactNode; s: RetroScheme }) {
-  return <p style={{ fontSize: 46, fontWeight: 600, color: s.ink, margin: 0 }}>{children}</p>;
+  return <p style={{ fontSize: 52, fontWeight: 600, color: s.ink, margin: 0, letterSpacing: "-0.01em" }}>{children}</p>;
 }
 
 function Cover({ src, size, radius = 6, label }: { src: string | null; size: number; radius?: number; label: string }) {
@@ -232,11 +249,11 @@ export function buildRetroCards({
     title: "Couverture",
     render: () => (
       <Frame s={p.dark} ribbons="both" seed={2}>
-        <Center top={470}>
-          <Cover src={img(avatar)} size={460} radius={999} label={name} />
-          <p style={{ ...display, fontSize: 120, margin: "80px 0 0" }}>Ma Rétro</p>
+        <Center top={400}>
+          <Cover src={img(avatar)} size={440} radius={999} label={name} />
+          <p style={{ ...display, fontSize: 132, margin: "70px 0 0" }}>Ma Rétro</p>
           <p style={{ ...display, fontSize: data.period === "tout" ? 96 : 120, margin: "6px 0 0", color: p.dark.ribbonA }}>{data.period === "tout" ? "depuis mes débuts" : year}</p>
-          <p style={{ fontSize: 50, fontWeight: 500, margin: "50px 0 0", color: p.dark.muted }}>{name}</p>
+          <p style={{ fontSize: 60, fontWeight: 600, margin: "44px 0 0", color: p.dark.ink }}>{name}</p>
         </Center>
       </Frame>
     ),
@@ -252,10 +269,10 @@ export function buildRetroCards({
       title: "Mes écoutes",
       render: () => (
         <Frame s={p.dark} ribbons="bottom" seed={5}>
-          <Center top={420}>
+          <Center top={330}>
             <Kicker s={p.dark}>Mes écoutes</Kicker>
-            <p style={{ ...display, fontSize: data.plays >= 100000 ? 210 : 260, margin: "70px 0 0" }}>{fmt(data.plays)}</p>
-            <p style={{ fontSize: 44, lineHeight: 1.35, margin: "80px 0 0", color: p.dark.muted, maxWidth: 820 }}>
+            <p style={{ ...display, fontSize: data.plays >= 100000 ? 210 : 260, margin: "60px 0 0" }}>{fmt(data.plays)}</p>
+            <p style={{ fontSize: 50, lineHeight: 1.35, margin: "70px 0 0", color: p.dark.muted, maxWidth: 860 }}>
               Par <b style={{ color: p.dark.ink }}>{fmt(data.listeners)}</b> auditeur{data.listeners > 1 ? "s" : ""}
               {data.countriesCount > 1 ? (
                 <>
@@ -265,13 +282,13 @@ export function buildRetroCards({
               .
             </p>
             {best && data.bestDay ? (
-              <p style={{ fontSize: 44, lineHeight: 1.35, margin: "36px 0 0", color: p.dark.muted, maxWidth: 820 }}>
+              <p style={{ fontSize: 50, lineHeight: 1.35, margin: "40px 0 0", color: p.dark.muted, maxWidth: 860 }}>
                 Mon plus beau jour ? Le <b style={{ color: p.dark.ink }}>{best}</b>, avec{" "}
                 <b style={{ color: p.dark.ink }}>{fmt(data.bestDay.plays)}</b> écoutes.
               </p>
             ) : null}
             {delta !== null ? (
-              <p style={{ fontSize: 44, margin: "36px 0 0", color: p.dark.muted }}>
+              <p style={{ fontSize: 50, margin: "40px 0 0", color: p.dark.muted }}>
                 <b style={{ color: p.dark.ink }}>
                   {delta > 0 ? "+" : ""}
                   {delta}&nbsp;%
@@ -292,7 +309,7 @@ export function buildRetroCards({
       title: "Mes titres les plus écoutés",
       render: () => (
         <Frame s={p.vivid} ribbons="top" seed={8}>
-          <div style={{ position: "absolute", left: 90, right: 90, top: 470 }}>
+          <div style={{ position: "absolute", left: 90, right: 90, top: 450 }}>
             <Kicker s={p.vivid}>Mes titres les plus écoutés</Kicker>
             <div style={{ marginTop: 70, display: "flex", flexDirection: "column", gap: 34 }}>
               {data.topTracks.map((t, i) => (
@@ -300,10 +317,10 @@ export function buildRetroCards({
                   <span style={{ ...display, fontSize: 92, width: 110 }}>{i + 1}</span>
                   <Cover src={img(t.cover)} size={170} label={t.title} />
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <p style={{ fontSize: 46, fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontSize: 54, fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {t.title}
                     </p>
-                    <p style={{ fontSize: 36, margin: "8px 0 0", color: p.vivid.muted }}>{fmt(t.plays)} écoutes</p>
+                    <p style={{ fontSize: 42, margin: "8px 0 0", color: p.vivid.muted }}>{fmt(t.plays)} écoutes</p>
                   </div>
                 </div>
               ))}
@@ -324,13 +341,13 @@ export function buildRetroCards({
         <Frame s={p.light} ribbons="top" seed={11}>
           <Center top={330}>
             <Cover src={img(top.cover)} size={620} label={top.title} />
-            <p style={{ fontSize: 46, fontWeight: 600, margin: "90px 0 0" }}>Mon titre le plus écouté</p>
+            <p style={{ fontSize: 52, fontWeight: 600, margin: "80px 0 0" }}>Mon titre le plus écouté</p>
             <p style={{ ...display, fontSize: 104, margin: "34px 0 0", maxWidth: 900 }}>{top.title}</p>
             {top.releaseTitle && top.releaseTitle !== top.title ? (
-              <p style={{ fontSize: 44, margin: "22px 0 0", color: p.light.muted }}>{top.releaseTitle}</p>
+              <p style={{ fontSize: 48, margin: "22px 0 0", color: p.light.muted }}>{top.releaseTitle}</p>
             ) : null}
-            <p style={{ fontSize: 40, margin: "60px 0 0", color: p.light.muted }}>Écoutes</p>
-            <p style={{ ...display, fontSize: 90, margin: "10px 0 0" }}>{fmt(top.plays)}</p>
+            <p style={{ ...display, fontSize: 96, margin: "60px 0 0" }}>{fmt(top.plays)}</p>
+            <p style={{ fontSize: 46, margin: "10px 0 0", color: p.light.muted }}>écoutes</p>
           </Center>
         </Frame>
       ),
@@ -346,7 +363,7 @@ export function buildRetroCards({
       title: "Là où on m'écoute",
       render: () => (
         <Frame s={p.alt} ribbons="bottom" seed={14}>
-          <div style={{ position: "absolute", left: 90, right: 90, top: 380 }}>
+          <div style={{ position: "absolute", left: 90, right: 90, top: 300 }}>
             <Kicker s={p.alt}>Là où on m&apos;écoute</Kicker>
             <div style={{ marginTop: 90, display: "flex", flexDirection: "column", gap: 70 }}>
               {countries.map((c, i) => {
@@ -358,10 +375,14 @@ export function buildRetroCards({
                       <span style={{ width: 150, height: 100, borderRadius: 14, overflow: "hidden", display: "flex", flex: "none" }}>
                         <CountryFlag code={c.country} className="h-full w-full" />
                       </span>
-                    ) : null}
+                    ) : (
+                      <span style={{ width: 150, height: 100, fontSize: 96, lineHeight: "100px", textAlign: "center", flex: "none" }}>
+                        {flagEmoji(c.country)}
+                      </span>
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ ...display, fontSize: 70, margin: 0 }}>{getCountryLabel(c.country)}</p>
-                      <p style={{ fontSize: 38, margin: "10px 0 0", color: p.alt.muted }}>
+                      <p style={{ ...display, fontSize: 72, margin: 0 }}>{countryName(c.country)}</p>
+                      <p style={{ fontSize: 44, margin: "10px 0 0", color: p.alt.muted }}>
                         {share}&nbsp;% de mes écoutes
                       </p>
                     </div>
@@ -384,7 +405,7 @@ export function buildRetroCards({
       title: "Mon moment",
       render: () => (
         <Frame s={p.dark} ribbons="top" seed={17}>
-          <Center top={620}>
+          <Center top={640}>
             <Kicker s={p.dark}>Mes fans m&apos;écoutent surtout le</Kicker>
             <p style={{ ...display, fontSize: 190, margin: "60px 0 0", color: p.dark.ribbonA }}>{DAYS[peakDow]}</p>
             <p style={{ ...display, fontSize: 130, margin: "30px 0 0" }}>vers {peakHour}&nbsp;h</p>
@@ -412,7 +433,7 @@ export function buildRetroCards({
                     <p style={{ fontSize: 48, fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {a.name}
                     </p>
-                    <p style={{ fontSize: 36, margin: "8px 0 0", color: p.vivid.muted }}>{fmt(a.plays)} écoutes</p>
+                    <p style={{ fontSize: 42, margin: "8px 0 0", color: p.vivid.muted }}>{fmt(a.plays)} écoutes</p>
                   </div>
                 </div>
               ))}
@@ -433,11 +454,11 @@ export function buildRetroCards({
           <Center top={520}>
             <Kicker s={p.vivid}>Mes ventes</Kicker>
             <p style={{ ...display, fontSize: 260, margin: "60px 0 0" }}>{fmt(data.sales)}</p>
-            <p style={{ fontSize: 44, margin: "20px 0 0", color: p.vivid.muted }}>achat{data.sales > 1 ? "s" : ""} de ma musique</p>
-            <p style={{ fontSize: 40, margin: "90px 0 0", color: p.vivid.muted }}>Revenus nets</p>
+            <p style={{ fontSize: 50, margin: "20px 0 0", color: p.vivid.muted }}>achat{data.sales > 1 ? "s" : ""} de ma musique</p>
+            <p style={{ fontSize: 46, margin: "90px 0 0", color: p.vivid.muted }}>Revenus nets</p>
             <p style={{ ...display, fontSize: 104, margin: "14px 0 0" }}>{money(data.net)}</p>
             {data.topRelease ? (
-              <p style={{ fontSize: 42, lineHeight: 1.35, margin: "70px 0 0", color: p.vivid.muted, maxWidth: 840 }}>
+              <p style={{ fontSize: 48, lineHeight: 1.35, margin: "70px 0 0", color: p.vivid.muted, maxWidth: 860 }}>
                 Ma sortie la plus achetée : <b style={{ color: p.vivid.ink }}>{data.topRelease.title}</b>
               </p>
             ) : null}
@@ -454,24 +475,24 @@ export function buildRetroCards({
       title: "Mon total",
       render: () => (
         <Frame s={p.dark} ribbons="both" seed={26}>
-          <div style={{ position: "absolute", left: 90, right: 90, top: 560 }}>
+          <div style={{ position: "absolute", left: 90, right: 90, top: 470 }}>
             <Kicker s={p.dark}>Depuis mes débuts sur Gootunes</Kicker>
-            <p style={{ fontSize: 40, margin: "70px 0 0", color: p.dark.muted }}>Total gagné</p>
+            <p style={{ fontSize: 46, margin: "60px 0 0", color: p.dark.muted }}>Total gagné</p>
             <p style={{ ...display, fontSize: 130, margin: "16px 0 0", color: p.dark.ribbonA }}>{money(data.totalNet)}</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 70, marginTop: 90 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 80, rowGap: 50, marginTop: 70 }}>
               <div>
-                <p style={{ fontSize: 38, margin: 0, color: p.dark.muted }}>Écoutes</p>
+                <p style={{ fontSize: 44, margin: 0, color: p.dark.muted }}>Écoutes</p>
                 <p style={{ ...display, fontSize: 86, margin: "12px 0 0" }}>{fmt(data.totalPlays)}</p>
               </div>
               {data.newFollowers > 0 ? (
                 <div>
-                  <p style={{ fontSize: 38, margin: 0, color: p.dark.muted }}>Abonnés · {year}</p>
+                  <p style={{ fontSize: 44, margin: 0, color: p.dark.muted }}>Abonnés · {year}</p>
                   <p style={{ ...display, fontSize: 86, margin: "12px 0 0" }}>{fmt(data.newFollowers)}</p>
                 </div>
               ) : null}
               {data.favorites > 0 ? (
                 <div>
-                  <p style={{ fontSize: 38, margin: 0, color: p.dark.muted }}>Favoris · {year}</p>
+                  <p style={{ fontSize: 44, margin: 0, color: p.dark.muted }}>Favoris · {year}</p>
                   <p style={{ ...display, fontSize: 86, margin: "12px 0 0" }}>{fmt(data.favorites)}</p>
                 </div>
               ) : null}

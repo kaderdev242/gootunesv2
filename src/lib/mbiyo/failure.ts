@@ -54,6 +54,7 @@ export function describeFailure(meta: unknown): string | null {
         : "Refusé par l'opérateur";
     case "webhook":
     case "poll":
+    case "reconcile":
       return status === "cancelled"
         ? "Annulé par le client ou l'opérateur"
         : "Échec confirmé par Mbiyo (solde, PIN ou refus)";

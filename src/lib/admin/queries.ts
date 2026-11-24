@@ -1138,6 +1138,7 @@ export async function searchCatalogForHits(
 export type PaymentRowStatus = PaymentStatus;
 
 export type LedgerKind =
+  | "beat"
   | "purchase"
   | "label_plan"
   | "artist_plan"
@@ -1182,18 +1183,16 @@ function failureReasonFor(status: string, meta: unknown) {
 }
 
 export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
-  // Synchronise les pending > 5 min → failed avant lecture admin.
+  // Rapproche avec Mbiyo les paiements en attente ou en échec non confirmé.
   try {
-    const { expireStalePendingPayins } = await import(
-      "@/lib/purchases/expire-pending"
-    );
-    await expireStalePendingPayins();
+    const { reconcileMbiyoPayins } = await import("@/lib/mbiyo/reconcile");
+    await reconcileMbiyoPayins(10);
   } catch {
     /* ne bloque pas la liste */
   }
 
   const db = createAdminClient();
-  const [purchases, labels, artists, withdrawals] = await Promise.all([
+  const [purchases, labels, artists, withdrawals, beats] = await Promise.all([
     db
       .from("purchases")
       .select(
@@ -1222,9 +1221,46 @@ export async function listAdminLedger(limit = 250): Promise<AdminLedgerRow[]> {
       )
       .order("created_at", { ascending: false })
       .limit(limit),
+    db
+      .from("beat_orders")
+      .select(
+        "id, amount_fcfa, payment_method, status, provider, order_id, payer_phone, provider_meta, created_at, license, buyer_id, seller_id, beats(title)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
   ]);
 
   const rows: AdminLedgerRow[] = [];
+
+  // Achats de prods : acheteurs et beatmakers chargés en une requête.
+  const beatRows = beats.data || [];
+  const beatPeople = new Map<string, { display_name: string | null; email: string | null }>();
+  const peopleIds = [...new Set(beatRows.flatMap((b) => [b.buyer_id, b.seller_id]).filter(Boolean))] as string[];
+  if (peopleIds.length) {
+    const { data: people } = await db.from("profiles").select("id, display_name, email").in("id", peopleIds);
+    for (const p of people || []) beatPeople.set(p.id, p);
+  }
+  for (const b of beatRows) {
+    const beat = one(b.beats as { title: string } | { title: string }[] | null);
+    const buyer = profileLabel(beatPeople.get(b.buyer_id) ?? null);
+    const seller = profileLabel(beatPeople.get(b.seller_id) ?? null);
+    rows.push({
+      id: `beat:${b.id}`,
+      kind: "beat",
+      status: b.status,
+      amountFcfa: Number(b.amount_fcfa) || 0,
+      createdAt: b.created_at,
+      title: `${beat?.title || "Prod"} · licence ${String(b.license).toUpperCase()}`,
+      party: buyer.name,
+      partyEmail: buyer.email,
+      counterparty: seller.name,
+      method: b.payment_method,
+      provider: b.provider,
+      orderId: b.order_id,
+      phone: b.payer_phone,
+      failureReason: failureReasonFor(b.status, b.provider_meta),
+    });
+  }
 
   for (const p of purchases.data || []) {
     const release = one(
@@ -1346,12 +1382,10 @@ export type AdminSubscriptionRevenue = {
 export async function listAdminSubscriptionRevenue(
   limit = 300,
 ): Promise<AdminSubscriptionRevenue> {
-  // Synchronise les pending > 5 min → failed avant lecture admin.
+  // Rapproche avec Mbiyo les paiements en attente ou en échec non confirmé.
   try {
-    const { expireStalePendingPayins } = await import(
-      "@/lib/purchases/expire-pending"
-    );
-    await expireStalePendingPayins();
+    const { reconcileMbiyoPayins } = await import("@/lib/mbiyo/reconcile");
+    await reconcileMbiyoPayins(10);
   } catch {
     /* ne bloque pas la liste */
   }

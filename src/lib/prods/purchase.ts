@@ -24,7 +24,6 @@ import {
 import { payinErrorFailure, statusFailure } from "@/lib/mbiyo/failure";
 import {
   isPendingOlderThanTtl,
-  isTtlExpireMeta,
   TTL_EXPIRE_SOURCE,
 } from "@/lib/purchases/expire-pending";
 import {
@@ -325,8 +324,8 @@ export async function fulfillBeatOrderByOrderId(
   if (order.status === "completed") return { ok: true as const, already: true as const };
 
   const prev = asObject(order.provider_meta);
-  const ttlExpired = order.status === "failed" && isTtlExpireMeta(order.provider_meta);
-  if (order.status !== "pending" && !ttlExpired) {
+  // Mbiyo fait foi : une commande en échec chez nous mais payée se débloque.
+  if (order.status !== "pending" && order.status !== "failed") {
     return { ok: false as const, reason: "not_pending" as const };
   }
 

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getMbiyoTransaction,
+  MbiyoApiError,
   verifyMbiyoWebhookSignature,
 } from "@/lib/mbiyo/client";
+import { recordPaymentEvent } from "@/lib/payments/events";
 import {
   failByOrderId,
   fulfillByOrderId,
@@ -39,6 +41,20 @@ export async function POST(request: NextRequest) {
     request.headers.get("signature") || request.headers.get("x-mbiyo-signature");
 
   if (!verifyMbiyoWebhookSignature(rawBody, signature)) {
+    // Trace (sans faire confiance au contenu) : un secret mal configuré
+    // bloquerait tous les paiements, il faut le voir tout de suite.
+    let claimedOrder: string | null = null;
+    try {
+      claimedOrder = String((JSON.parse(rawBody) as { order_id?: unknown }).order_id ?? "") || null;
+    } catch {
+      /* corps illisible */
+    }
+    await recordPaymentEvent({
+      orderId: claimedOrder,
+      source: "webhook",
+      outcome: "bad_signature",
+      detail: signature ? "Signature HMAC différente (secret MBIYO_WEBHOOK_SECRET ?)" : "En-tête Signature absent",
+    });
     return NextResponse.json({ error: "Signature invalide" }, { status: 401 });
   }
 
@@ -65,6 +81,13 @@ export async function POST(request: NextRequest) {
   if (!expected.found) {
     // Commande inconnue : on accuse réception pour stopper les relances.
     logServerError("mbiyo.webhook.unknown_order", new Error(payload.order_id));
+    await recordPaymentEvent({
+      orderId: payload.order_id,
+      transactionId: payload.transaction_id,
+      source: "webhook",
+      mbiyoStatus: claimed,
+      outcome: "unknown_order",
+    });
     return NextResponse.json({ received: true });
   }
 
@@ -77,7 +100,13 @@ export async function POST(request: NextRequest) {
     transaction_id: string;
   };
   try {
-    const res = await getMbiyoTransaction(payload.transaction_id);
+    // Par identifiant de transaction, sinon par numéro de commande.
+    const res = await getMbiyoTransaction(payload.transaction_id).catch((e: unknown) => {
+      if (e instanceof MbiyoApiError && e.httpStatus === 404) {
+        return getMbiyoTransaction(payload.order_id);
+      }
+      throw e;
+    });
     verified = {
       status: String(res.data.status).toLowerCase(),
       order_id: String(res.data.order_id ?? ""),
@@ -89,6 +118,14 @@ export async function POST(request: NextRequest) {
     // API indisponible : 503 pour que Mbiyo renvoie le webhook plus tard.
     // (Le suivi de paiement côté client revérifie aussi le statut.)
     logServerError("mbiyo.webhook.verify_unavailable", e, { order: payload.order_id });
+    await recordPaymentEvent({
+      orderId: payload.order_id,
+      transactionId: payload.transaction_id,
+      source: "webhook",
+      mbiyoStatus: claimed,
+      outcome: "verify_unavailable",
+      detail: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "Vérification indisponible" }, { status: 503 });
   }
 
@@ -96,6 +133,14 @@ export async function POST(request: NextRequest) {
     logServerError("mbiyo.webhook.order_mismatch", new Error("order_id différent"), {
       webhook: payload.order_id,
       api: verified.order_id,
+    });
+    await recordPaymentEvent({
+      orderId: payload.order_id,
+      transactionId: payload.transaction_id,
+      source: "webhook",
+      mbiyoStatus: verified.status,
+      outcome: "order_mismatch",
+      detail: `Mbiyo rattache cette transaction à ${verified.order_id}`,
     });
     return NextResponse.json({ error: "Commande incohérente" }, { status: 400 });
   }
@@ -128,16 +173,55 @@ export async function POST(request: NextRequest) {
           expected,
           verified: { amount: verified.amount, currency: verified.currency },
         });
+        await recordPaymentEvent({
+          orderId: payload.order_id,
+          transactionId: verified.transaction_id,
+          source: "webhook",
+          mbiyoStatus: verified.status,
+          outcome: "held",
+          detail: `Montant payé ${verified.amount} ${verified.currency}, attendu ${expected.amount ?? "?"} ${expected.currency ?? ""} : à vérifier dans l'admin`,
+        });
         return NextResponse.json({ received: true, held: true });
       }
 
-      await fulfillByOrderId(payload.order_id, verified.transaction_id, meta);
+      const done = await fulfillByOrderId(payload.order_id, verified.transaction_id, meta);
+      await recordPaymentEvent({
+        orderId: payload.order_id,
+        transactionId: verified.transaction_id,
+        source: "webhook",
+        mbiyoStatus: verified.status,
+        outcome: done.ok ? ("already" in done && done.already ? "already_done" : "fulfilled") : `not_fulfilled:${"reason" in done ? done.reason : "?"}`,
+      });
     } else if (FAILURE.has(verified.status)) {
       await failByOrderId(payload.order_id, verified.transaction_id, meta);
+      await recordPaymentEvent({
+        orderId: payload.order_id,
+        transactionId: verified.transaction_id,
+        source: "webhook",
+        mbiyoStatus: verified.status,
+        outcome: "failed",
+      });
+    } else {
+      // Encore « pending » côté API : le rapprochement repassera.
+      await recordPaymentEvent({
+        orderId: payload.order_id,
+        transactionId: verified.transaction_id,
+        source: "webhook",
+        mbiyoStatus: verified.status,
+        outcome: "still_pending",
+        detail: `Webhook « ${claimed} » mais API « ${verified.status} »`,
+      });
     }
-    // Sinon (encore « pending » côté API) : on attend le prochain webhook.
   } catch (e) {
     logServerError("mbiyo.webhook.process", e, { order: payload.order_id });
+    await recordPaymentEvent({
+      orderId: payload.order_id,
+      transactionId: payload.transaction_id,
+      source: "webhook",
+      mbiyoStatus: verified.status,
+      outcome: "error",
+      detail: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "Traitement impossible" }, { status: 500 });
   }
 
