@@ -85,3 +85,42 @@ export function sendEmailSafe(
 ): void {
   void sendEmail(options).catch((e) => console.error("[email]", e));
 }
+
+/**
+ * Envoi groupé : un e-mail par destinataire (personne ne voit les autres
+ * adresses), par lots de 100 via l'API batch de Resend, ~2 lots par seconde.
+ */
+export async function sendEmailBatch(
+  recipients: string[],
+  message: { subject: string; html: string; text?: string },
+): Promise<{ sent: number; failed: number }> {
+  if (!resendConfigured()) throw new Error("RESEND_API_KEY absente : e-mails désactivés");
+  const to = [...new Set(recipients.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  let sent = 0;
+  let failed = 0;
+  for (let i = 0; i < to.length; i += 100) {
+    const chunk = to.slice(i, i + 100);
+    try {
+      const { error } = await getResend().batch.send(
+        chunk.map((addr) => ({
+          from: emailFrom(),
+          to: [addr],
+          subject: message.subject,
+          html: message.html,
+          text: message.text,
+        })),
+      );
+      if (error) {
+        console.error("[email.batch]", error);
+        failed += chunk.length;
+      } else {
+        sent += chunk.length;
+      }
+    } catch (e) {
+      console.error("[email.batch]", e);
+      failed += chunk.length;
+    }
+    if (i + 100 < to.length) await new Promise((r) => setTimeout(r, 600));
+  }
+  return { sent, failed };
+}

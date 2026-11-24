@@ -13,9 +13,11 @@ import {
   File01Icon,
   File02Icon,
   Folder01Icon,
+  Mail01Icon,
   Money01Icon,
   MusicNote01Icon,
   News01Icon,
+  Notification03Icon,
   Playlist01Icon,
   Search01Icon,
   Settings01Icon,
@@ -65,6 +67,13 @@ function buildNav(counts: AdminCounts): DashNavSection[] {
       title: "Éditorial",
       items: [
         { href: "/goo-admin/blog", label: "Blog", icon: News01Icon, keywords: "articles actualités annonces" },
+      ],
+    },
+    {
+      title: "Communication",
+      items: [
+        { href: "/goo-admin/notifications", label: "Notifications", icon: Notification03Icon, keywords: "push annonces téléphone" },
+        { href: "/goo-admin/mails", label: "E-mails", icon: Mail01Icon, keywords: "mail newsletter annonces" },
       ],
     },
     {

@@ -79,25 +79,22 @@ export type PushMessage = {
   screen?: "home" | "revenus" | "retraits" | "catalogue" | "profil";
 };
 
-/** Envoie une notification à tous les appareils d'un compte. Ne lève jamais. */
-export async function sendPushToUser(userId: string, message: PushMessage): Promise<void> {
+/** Envoie à une liste de jetons ; supprime ceux qui ne sont plus valides. */
+export async function sendPushToTokens(
+  tokens: string[],
+  message: PushMessage,
+): Promise<{ sent: number; failed: number }> {
   const sa = serviceAccount();
-  if (!sa) return;
-  try {
-    const admin = createAdminClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rows } = await (admin as any)
-      .from("creator_push_tokens")
-      .select("token")
-      .eq("user_id", userId);
-    const tokens = ((rows ?? []) as { token: string }[]).map((r) => r.token);
-    if (!tokens.length) return;
+  if (!sa) throw new Error("FIREBASE_SERVICE_ACCOUNT manquant : notifications désactivées");
+  const auth = await accessToken(sa);
+  const stale: string[] = [];
+  let sent = 0;
+  let failed = 0;
 
-    const auth = await accessToken(sa);
-    const stale: string[] = [];
-
+  // Par paquets de 20 envois simultanés pour ne pas saturer FCM.
+  for (let i = 0; i < tokens.length; i += 20) {
     await Promise.all(
-      tokens.map(async (token) => {
+      tokens.slice(i, i + 20).map(async (token) => {
         const res = await fetch(
           `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`,
           {
@@ -113,21 +110,40 @@ export async function sendPushToUser(userId: string, message: PushMessage): Prom
               },
             }),
           },
-        );
-        if (res.ok) return;
-        const text = await res.text().catch(() => "");
-        if (res.status === 404 || text.includes("UNREGISTERED") || text.includes("INVALID_ARGUMENT")) {
+        ).catch(() => null);
+        if (res?.ok) {
+          sent += 1;
+          return;
+        }
+        failed += 1;
+        const text = res ? await res.text().catch(() => "") : "";
+        if (res && (res.status === 404 || text.includes("UNREGISTERED") || text.includes("INVALID_ARGUMENT"))) {
           stale.push(token);
-        } else {
+        } else if (res) {
           logServerError("push.send", new Error(`FCM ${res.status}: ${text.slice(0, 200)}`));
         }
       }),
     );
+  }
 
-    if (stale.length) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (admin as any).from("creator_push_tokens").delete().in("token", stale);
-    }
+  if (stale.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (createAdminClient() as any).from("creator_push_tokens").delete().in("token", stale);
+  }
+  return { sent, failed };
+}
+
+/** Envoie une notification à tous les appareils d'un compte. Ne lève jamais. */
+export async function sendPushToUser(userId: string, message: PushMessage): Promise<void> {
+  if (!serviceAccount()) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rows } = await (createAdminClient() as any)
+      .from("creator_push_tokens")
+      .select("token")
+      .eq("user_id", userId);
+    const tokens = ((rows ?? []) as { token: string }[]).map((r) => r.token);
+    if (tokens.length) await sendPushToTokens(tokens, message);
   } catch (e) {
     logServerError("push.sendToUser", e);
   }
